@@ -1,0 +1,18 @@
+---
+import Icon from './Icon.astro';
+import { developSteps, type Locale } from '../data/site';
+
+interface Props { locale: Locale; compact?: boolean; activeIndex?: number }
+const { locale, compact = false, activeIndex = 3 } = Astro.props;
+---
+
+<div class:list={['lifecycle', { compact }]} role="list" aria-label="Develop lifecycle">
+  {developSteps.map((step, index) => (
+    <div class:list={['lifecycle-step', step.id, { active: index === activeIndex }]} role="listitem">
+      <span class="step-orb"><Icon name={step.icon} size={compact ? 17 : 26} /></span>
+      <strong>{step.title[locale]}</strong>
+      {!compact && <small>{step.description[locale]}</small>}
+      {index < developSteps.length - 1 && <span class="step-arrow" aria-hidden="true">→</span>}
+    </div>
+  ))}
+</div>

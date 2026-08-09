@@ -1,0 +1,12 @@
+---
+import { copy, githubUrl, type Locale } from '../data/site';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = copy[locale];
+---
+
+<footer class="site-footer">
+  <span>© 2026 Engineering Flow</span>
+  <span>{t.footer}</span>
+  <a href={githubUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
+</footer>

@@ -1,0 +1,56 @@
+---
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { copy, githubUrl, type Locale } from '../data/site';
+import { localizePath, switchLocale } from '../lib/routes.mjs';
+
+interface Props { locale: Locale; active?: string }
+const { locale, active = '' } = Astro.props;
+const t = copy[locale];
+const nextLocale: Locale = locale === 'en' ? 'zh-CN' : 'en';
+const nextLocalePath = switchLocale(Astro.url.pathname, nextLocale);
+const items = [
+  ['workflows', t.nav.workflows],
+  ['playground', t.nav.playground],
+  ['evidence', t.nav.evidence],
+  ['docs', t.nav.docs],
+];
+---
+
+<header class="site-header">
+  <a class="brand" href={localizePath(locale)} aria-label="Engineering Flow home"><Logo /></a>
+  <nav class="primary-nav" aria-label="Primary navigation">
+    {items.map(([path, label]) => (
+      <a class:list={{ active: active === path }} href={localizePath(locale, path)}>{label}</a>
+    ))}
+    <a class="github-nav" href={githubUrl} target="_blank" rel="noreferrer">
+      {t.github}<Icon name="external" size={15} />
+    </a>
+  </nav>
+  <div class="header-actions">
+    <a class="locale-button" href={nextLocalePath} data-locale-switch data-locale={nextLocale} title={t.language}>
+      {locale === 'en' ? '中文' : 'EN'}
+    </a>
+    <button class="icon-button" type="button" data-theme-toggle aria-label={t.theme} title={t.theme}>
+      <Icon name="moon" size={19} />
+    </button>
+    <a class="icon-button mobile-github" href={githubUrl} target="_blank" rel="noreferrer" aria-label={t.github}>
+      <Icon name="github" size={20} />
+    </a>
+  </div>
+</header>
+
+<script>
+  const localeSwitch = document.querySelector('[data-locale-switch]');
+  localeSwitch?.addEventListener('click', () => {
+    const nextLocale = localeSwitch.getAttribute('data-locale');
+    if (nextLocale) localStorage.setItem('engineering-flow-locale', nextLocale);
+  });
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    localStorage.setItem('engineering-flow-theme', next);
+  });
+</script>

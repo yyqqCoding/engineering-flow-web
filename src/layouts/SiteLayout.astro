@@ -1,0 +1,41 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { copy, type Locale } from '../data/site';
+import '../styles/global.css';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  active?: string;
+  wide?: boolean;
+}
+
+const { locale, title, description, active = '', wide = false } = Astro.props;
+const t = copy[locale];
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#087b32" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M9 4 2 12l7 8M15 4l7 8-7 8%22 fill=%22none%22 stroke=%22%23087b32%22 stroke-width=%223%22/></svg>" />
+    <title>{title} · Engineering Flow</title>
+    <script is:inline>
+      (() => {
+        const saved = localStorage.getItem('engineering-flow-theme');
+        if (saved) document.documentElement.dataset.theme = saved;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t.skip}</a>
+    <Header locale={locale} active={active} />
+    <main id="main" class:list={['page-shell', { wide }]}><slot /></main>
+    <Footer locale={locale} />
+  </body>
+</html>

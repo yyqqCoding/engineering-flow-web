@@ -1,0 +1,86 @@
+---
+import Icon from '../../components/Icon.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { copy, githubUrl, scenarioSnapshot, snapshotMeta, type Locale } from '../../data/site';
+import { locales } from '../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const t = copy[locale];
+---
+
+<SiteLayout locale={locale} title={t.evidencePage.title} description={t.evidencePage.intro} active="evidence" wide>
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">VERIFICATION / PUBLISHED</p>
+      <h1>{t.evidencePage.title}</h1>
+      <p class="lede">{t.evidencePage.intro}</p>
+    </div>
+    <div class="source-stamp">
+      <span><small>{t.evidencePage.snapshot}</small><b class="mono">v{snapshotMeta.version} · {snapshotMeta.sourceCommit}</b></span>
+      <span><small>{t.evidencePage.updated}</small><b class="mono">{snapshotMeta.generatedAt}</b></span>
+    </div>
+  </header>
+
+  <section class="evidence-cards">
+    {t.evidencePage.cards.map((card: string[], index: number) => (
+      <article class="panel-flat evidence-card">
+        <span><Icon name={['grid', 'refresh', 'check', 'flag'][index]} size={26} /></span>
+        <div><h2>{card[0]}</h2><strong>{card[1]}</strong><p>{card[2]}</p></div>
+      </article>
+    ))}
+  </section>
+
+  <div class="evidence-layout">
+    <section class="panel-flat scenario-panel">
+      <header><h2>{t.evidencePage.scenarios}</h2><span class="badge">17 / 17</span></header>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>{locale === 'en' ? 'Scenario' : '场景'}</th><th>{t.evidencePage.expected}</th><th>{t.evidencePage.result}</th></tr></thead>
+          <tbody>
+            {scenarioSnapshot.map((scenario) => (
+              <tr>
+                <td class="mono">{scenario[0]}</td>
+                <td>{locale === 'en' ? scenario[1] : scenario[3]}</td>
+                <td>{locale === 'en' ? scenario[2] : scenario[4]}</td>
+                <td><span class="result"><Icon name="check" size={15} />{t.evidencePage.passed}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside>
+      <section class="panel-flat boundary-card">
+        <span class="boundary-icon"><Icon name="shield" /></span>
+        <p class="eyebrow">{t.evidencePage.noteTitle}</p>
+        <p>{t.evidencePage.note}</p>
+      </section>
+      <section class="panel-flat source-card">
+        <p class="eyebrow">SOURCE SNAPSHOT</p>
+        <dl>
+          <div><dt>Repository</dt><dd>{snapshotMeta.sourceRepository}</dd></div>
+          <div><dt>Release</dt><dd>{snapshotMeta.sourceVersion}</dd></div>
+          <div><dt>Commit</dt><dd>{snapshotMeta.sourceCommit}</dd></div>
+          <div><dt>Runtime API</dt><dd>NONE</dd></div>
+        </dl>
+        <a class="button small" href={`${githubUrl}/blob/main/docs/benchmark-log.md`} target="_blank" rel="noreferrer">{t.source}<Icon name="external" size={15} /></a>
+      </section>
+    </aside>
+  </div>
+</SiteLayout>
+
+<style>
+  .evidence-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 20px; }
+  .evidence-card { display: flex; min-height: 150px; align-items: center; gap: 18px; padding: 22px; }.evidence-card > span { display: grid; width: 58px; height: 58px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--green-soft); color: var(--green); }.evidence-card h2 { margin: 0; font-size: .9rem; }.evidence-card strong { display: block; margin-top: 4px; font-size: 2rem; line-height: 1; letter-spacing: -.05em; }.evidence-card p { margin: 8px 0 0; color: var(--green); font-family: var(--mono); font-size: .65rem; }
+  .evidence-layout { display: grid; grid-template-columns: minmax(650px, 1.65fr) minmax(290px, .7fr); gap: 20px; }.scenario-panel { overflow: hidden; }.scenario-panel > header { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px; border-bottom: 1px solid var(--line); }.scenario-panel h2 { margin: 0; font-size: 1.15rem; }
+  .table-wrap { overflow-x: auto; }table { width: 100%; border-collapse: collapse; font-size: .74rem; }th { padding: 11px 14px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .65rem; font-weight: 500; text-align: left; }td { padding: 11px 14px; border-top: 1px solid var(--line); }tbody tr:hover { background: var(--green-soft); }.result { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-family: var(--mono); font-size: .62rem; font-weight: 700; }
+  aside { display: flex; flex-direction: column; gap: 18px; }.boundary-card, .source-card { padding: 22px; }.boundary-icon { display: grid; width: 45px; height: 45px; place-items: center; border-radius: 50%; background: var(--orange-soft); color: var(--orange); }.boundary-card .eyebrow { margin: 18px 0 10px; }.boundary-card p:last-child { color: var(--muted); font-size: .82rem; }
+  .source-card dl { margin: 0 0 18px; }.source-card dl div { display: flex; justify-content: space-between; gap: 15px; padding: 10px 0; border-bottom: 1px solid var(--line); }.source-card dt { color: var(--muted); font-size: .7rem; }.source-card dd { max-width: 170px; margin: 0; overflow-wrap: anywhere; font-family: var(--mono); font-size: .66rem; text-align: right; }
+  @media (max-width: 1100px) { .evidence-cards { grid-template-columns: 1fr 1fr; }.evidence-layout { grid-template-columns: 1fr; }aside { display: grid; grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) { .evidence-cards, aside { grid-template-columns: 1fr; }.evidence-card { min-height: 120px; } }
+</style>

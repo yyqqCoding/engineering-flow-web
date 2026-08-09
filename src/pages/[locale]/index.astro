@@ -1,0 +1,89 @@
+---
+import Icon from '../../components/Icon.astro';
+import Lifecycle from '../../components/Lifecycle.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { copy, githubUrl, type Locale } from '../../data/site';
+import { locales, localizePath } from '../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const t = copy[locale];
+---
+
+<SiteLayout locale={locale} title={t.home.title} description={t.home.intro}>
+  <section class="hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">{t.home.eyebrow}</p>
+      <h1>{t.home.title}</h1>
+      <p class="lede">{t.home.intro}</p>
+      <div class="hero-actions">
+        <a class="button primary" href={localizePath(locale, 'workflows')}>
+          {t.home.primary}<Icon name="arrow" />
+        </a>
+        <a class="button" href={githubUrl} target="_blank" rel="noreferrer">
+          <Icon name="github" />{t.home.secondary}
+        </a>
+      </div>
+    </div>
+    <div class="hero-flow panel">
+      <div class="flow-heading">
+        <span class="eyebrow">{t.home.lifecycle}</span>
+        <span class="gate-note"><Icon name="lock" size={16} />{t.home.humanGate}</span>
+      </div>
+      <Lifecycle locale={locale} />
+      <div class="feedback-line" aria-hidden="true">
+        <span>↳</span><i></i><span>↰</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="status-strip panel-flat" aria-label={t.home.demoLabel}>
+    <span><Icon name="terminal" /><b>{t.home.demoLabel}</b></span>
+    <span><b>{t.home.demoState}:</b><em>CLARIFY</em></span>
+    <span><b>{t.home.demoEvidence}:</b><em>04</em></span>
+    <span><b>{t.home.demoMutations}:</b><em>00</em></span>
+    <span><b>{t.home.demoApproval}:</b><em>{t.home.required}</em></span>
+  </section>
+
+  <section class="stat-grid">
+    {t.home.stats.map((stat: string[], index: number) => (
+      <article class="stat-card panel-flat">
+        <span class="stat-icon"><Icon name={['grid', 'shield', 'refresh', 'check'][index]} size={26} /></span>
+        <Icon name="arrow" />
+        <strong>{stat[0]}</strong>
+        <h2>{stat[1]}</h2>
+        <p>{stat[2]}</p>
+      </article>
+    ))}
+  </section>
+</SiteLayout>
+
+<style>
+  .hero-grid { display: grid; grid-template-columns: minmax(370px, .78fr) minmax(660px, 1.5fr); gap: clamp(35px, 5vw, 82px); align-items: center; min-height: 470px; }
+  .hero-copy h1 { max-width: 650px; }
+  .hero-copy .lede { max-width: 610px; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
+  .hero-flow { min-width: 0; padding: 28px 26px 23px; }
+  .flow-heading { display: flex; min-height: 50px; align-items: start; justify-content: space-between; gap: 18px; }
+  .gate-note { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: .72rem; }
+  .feedback-line { display: flex; align-items: center; width: 85%; margin: 25px auto 0; color: var(--muted); }
+  .feedback-line i { width: 100%; border-top: 1px dashed var(--line-strong); }
+  .status-strip { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 36px; padding: 18px 22px; }
+  .status-strip > span { display: flex; min-width: 0; align-items: center; justify-content: center; gap: 9px; border-right: 1px solid var(--line); font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; }
+  .status-strip > span:last-child { border-right: 0; }
+  .status-strip b { font-weight: 520; }
+  .status-strip em { color: var(--green); font-style: normal; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 20px; }
+  .stat-card { position: relative; min-height: 190px; padding: 22px; }
+  .stat-card > .icon:last-of-type { position: absolute; top: 24px; right: 21px; }
+  .stat-icon { display: block; margin-bottom: 16px; color: var(--green); }
+  .stat-card strong { display: block; font-size: 2.5rem; line-height: 1; letter-spacing: -.06em; }
+  .stat-card h2 { margin: 7px 0 2px; font-size: 1rem; }
+  .stat-card p { margin: 0; color: var(--muted); font-size: .82rem; }
+  @media (max-width: 1180px) { .hero-grid { grid-template-columns: 1fr; } .hero-flow { order: 2; } }
+  @media (max-width: 850px) { .status-strip { grid-template-columns: 1fr 1fr; gap: 14px; } .status-strip > span { justify-content: start; border: 0; } .stat-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 540px) { .hero-grid { min-height: 0; } .hero-flow { padding: 22px 18px; } .flow-heading { flex-direction: column; margin-bottom: 15px; } .stat-grid { grid-template-columns: 1fr; } }
+</style>

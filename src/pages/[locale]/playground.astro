@@ -1,0 +1,183 @@
+---
+import Icon from '../../components/Icon.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { copy, type Locale } from '../../data/site';
+import { playgroundSnapshot } from '../../data/playground';
+import { locales } from '../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const t = copy[locale];
+---
+
+<SiteLayout locale={locale} title={t.playgroundPage.title} description={t.playgroundPage.notice} active="playground" wide>
+  <section
+    class="playground"
+    data-playground
+    data-waiting={t.playgroundPage.waiting}
+    data-completed={t.playgroundPage.completed}
+    data-next={t.playgroundPage.next}
+    data-status-complete={t.playgroundPage.statuses.complete}
+    data-status-running={t.playgroundPage.statuses.running}
+    data-status-pending={t.playgroundPage.statuses.pending}
+  >
+    <header class="playground-status panel-flat">
+      <span class="running-dot"><i></i>{t.playgroundPage.simulation}</span>
+      <span><b>{locale === 'en' ? 'CURRENT STATE' : '当前状态'}:</b><em data-current-state>DISCOVER</em></span>
+      <span><b>{locale === 'en' ? 'STEP' : '步骤'}:</b><em data-step-count>01/07</em></span>
+      <span><b>{locale === 'en' ? 'EVIDENCE' : '证据'}:</b><em data-evidence-count>01</em></span>
+      <span><b>{locale === 'en' ? 'MUTATIONS' : '变更'}:</b><em>00</em></span>
+      <span><b>{locale === 'en' ? 'SNAPSHOT' : '快照'}:</b><em>v{playgroundSnapshot.version}</em></span>
+    </header>
+
+    <div class="simulation-notice">
+      <Icon name="shield" size={18} /><strong>{t.playgroundPage.simulation}</strong><span>{t.playgroundPage.notice}</span>
+    </div>
+
+    <div class="playground-grid">
+      <aside class="steps-panel panel-flat">
+        <header><h2>{t.playgroundPage.steps}</h2><span>07</span></header>
+        <ol>
+          {playgroundSnapshot.steps.map((step) => (
+            <li data-step={step.index}>
+              <span class="step-dot"><Icon name={step.icon} size={16} /></span>
+              <div><strong>{step.index + 1}. {step.title[locale]}</strong><small>{step.description[locale]}</small></div>
+              <em data-step-status>{t.playgroundPage.statuses.pending}</em>
+            </li>
+          ))}
+        </ol>
+      </aside>
+
+      <section class="trace-panel panel-flat">
+        <header><h2>{t.playgroundPage.trace}</h2><span><i></i>{locale === 'en' ? 'DEMO' : '演示'}</span></header>
+        <div class="request-card">
+          <span><Icon name="document" /></span>
+          <div><small>{locale === 'en' ? 'FIXED REQUEST' : '固定请求'}</small><strong>{playgroundSnapshot.scenario[locale]}</strong><p>{playgroundSnapshot.request[locale]}</p></div>
+        </div>
+        <div class="trace-stack">
+          {playgroundSnapshot.trace.map((entry, index) => (
+            <article data-trace={index} hidden={index > 0}>
+              <header><span>{entry.actor}</span><small>00:0{index + 1}</small></header>
+              <h3>{entry.title[locale]}</h3>
+              <p>{entry.body[locale]}</p>
+            </article>
+          ))}
+        </div>
+        <footer class="playground-controls">
+          <p data-state-message>{locale === 'en' ? 'Start the fixed workflow snapshot.' : '开始运行固定流程快照。'}</p>
+          <div>
+            <button type="button" class="button" data-reset><Icon name="refresh" size={17} />{t.playgroundPage.reset}</button>
+            <button type="button" class="button primary" data-approve hidden><Icon name="lock" size={17} />{t.playgroundPage.approve}</button>
+            <button type="button" class="button primary" data-next>{t.playgroundPage.next}<Icon name="arrow" size={17} /></button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="telemetry-panel">
+        <section class="panel-flat activity-card">
+          <header><h2>{t.playgroundPage.activity}</h2><span><i></i>STATIC</span></header>
+          <ol>
+            {playgroundSnapshot.trace.map((entry, index) => (
+              <li data-activity={index} hidden={index > 0}><time>00:0{index + 1}</time><i></i><strong>{entry.actor}</strong><span>{entry.title[locale]}</span></li>
+            ))}
+          </ol>
+        </section>
+        <section class="panel-flat evidence-card">
+          <header><h2>{t.playgroundPage.evidence}</h2><span data-evidence-total>01 / 05</span></header>
+          <ul>
+            {playgroundSnapshot.evidence.map((entry, index) => (
+              <li data-evidence={index} hidden={index > 0}><Icon name="document" size={18} /><span><strong>{entry[locale]}</strong><small>CURATED SNAPSHOT</small></span><Icon name="check" size={16} /></li>
+            ))}
+          </ul>
+          <footer><span>source: {playgroundSnapshot.sourceReport}</span><span>{playgroundSnapshot.sourceCommit}</span></footer>
+        </section>
+      </aside>
+    </div>
+  </section>
+</SiteLayout>
+
+<script>
+  import {
+    advancePlayground,
+    approvePlayground,
+    createPlaygroundState,
+    playgroundStates,
+    resetPlayground,
+  } from '../../lib/playground.mjs';
+
+  const root = document.querySelector('[data-playground]');
+  if (root instanceof HTMLElement) {
+    let state = createPlaygroundState();
+    const stepItems = [...root.querySelectorAll('[data-step]')];
+    const traceItems = [...root.querySelectorAll('[data-trace]')];
+    const activityItems = [...root.querySelectorAll('[data-activity]')];
+    const evidenceItems = [...root.querySelectorAll('[data-evidence]')];
+    const currentState = root.querySelector('[data-current-state]');
+    const stepCount = root.querySelector('[data-step-count]');
+    const evidenceCount = root.querySelector('[data-evidence-count]');
+    const evidenceTotal = root.querySelector('[data-evidence-total]');
+    const message = root.querySelector('[data-state-message]');
+    const nextButton = root.querySelector('[data-next]');
+    const approveButton = root.querySelector('[data-approve]');
+
+    const render = () => {
+      const visibleEvidence = Math.min(state.stepIndex + 1, evidenceItems.length);
+      if (currentState) currentState.textContent = playgroundStates[state.stepIndex].toUpperCase();
+      if (stepCount) stepCount.textContent = `${String(state.stepIndex + 1).padStart(2, '0')}/07`;
+      if (evidenceCount) evidenceCount.textContent = String(visibleEvidence).padStart(2, '0');
+      if (evidenceTotal) evidenceTotal.textContent = `${String(visibleEvidence).padStart(2, '0')} / 05`;
+
+      stepItems.forEach((item, index) => {
+        item.classList.toggle('complete', index < state.stepIndex);
+        item.classList.toggle('running', index === state.stepIndex);
+        const status = item.querySelector('[data-step-status]');
+        if (status) {
+          status.textContent = index < state.stepIndex
+            ? root.dataset.statusComplete ?? 'COMPLETE'
+            : index === state.stepIndex
+              ? root.dataset.statusRunning ?? 'RUNNING'
+              : root.dataset.statusPending ?? 'PENDING';
+        }
+      });
+      traceItems.forEach((item, index) => item.toggleAttribute('hidden', index > state.stepIndex));
+      activityItems.forEach((item, index) => item.toggleAttribute('hidden', index > state.stepIndex));
+      evidenceItems.forEach((item, index) => item.toggleAttribute('hidden', index >= visibleEvidence));
+
+      const waitingForApproval = state.stepIndex === 3 && !state.approved;
+      const isComplete = state.stepIndex === playgroundStates.length - 1;
+      approveButton?.toggleAttribute('hidden', !waitingForApproval);
+      nextButton?.toggleAttribute('hidden', waitingForApproval || isComplete);
+      if (message) {
+        message.textContent = waitingForApproval
+          ? root.dataset.waiting ?? ''
+          : isComplete
+            ? root.dataset.completed ?? ''
+            : `${root.dataset.next ?? ''}: ${playgroundStates[Math.min(state.stepIndex + 1, 6)].toUpperCase()}`;
+      }
+    };
+
+    nextButton?.addEventListener('click', () => { state = advancePlayground(state); render(); });
+    approveButton?.addEventListener('click', () => { state = approvePlayground(state); render(); });
+    root.querySelector('[data-reset]')?.addEventListener('click', () => { state = resetPlayground(); render(); });
+    render();
+  }
+</script>
+
+<style>
+  .playground-status { display: grid; grid-template-columns: repeat(6, 1fr); overflow: hidden; }.playground-status > span { display: flex; min-height: 58px; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-right: 1px solid var(--line); font-family: var(--mono); font-size: .68rem; }.playground-status > span:last-child { border: 0; }.playground-status b { color: var(--muted); font-weight: 500; }.playground-status em { color: var(--green); font-style: normal; }.running-dot { color: var(--blue); font-weight: 700; }.running-dot i, .activity-card header i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .simulation-notice { display: flex; align-items: center; gap: 9px; margin: 14px 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--green) 35%, var(--line)); border-radius: 7px; background: var(--green-soft); color: var(--green); font-size: .74rem; }.simulation-notice span { color: var(--muted); }
+  .playground-grid { display: grid; grid-template-columns: 315px minmax(500px, 1fr) 385px; gap: 18px; min-height: 670px; }.steps-panel, .trace-panel, .activity-card, .evidence-card { overflow: hidden; }.steps-panel > header, .trace-panel > header, .activity-card > header, .evidence-card > header { display: flex; min-height: 48px; align-items: center; justify-content: space-between; padding: 0 17px; border-bottom: 1px solid var(--line); }.steps-panel h2, .trace-panel h2, .activity-card h2, .evidence-card h2 { margin: 0; font-size: .88rem; }.steps-panel header span, .trace-panel header span, .activity-card header span, .evidence-card header span { color: var(--green); font-family: var(--mono); font-size: .62rem; }
+  .steps-panel ol { display: grid; margin: 0; padding: 16px 14px; list-style: none; }.steps-panel li { position: relative; display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; min-height: 82px; align-items: start; padding: 9px 5px; }.steps-panel li::after { content: ''; position: absolute; top: 43px; bottom: -7px; left: 22px; border-left: 1px dashed var(--line-strong); }.steps-panel li:last-child::after { display: none; }.step-dot { z-index: 1; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--muted); }.steps-panel strong, .steps-panel small { display: block; }.steps-panel strong { margin-bottom: 4px; font-size: .8rem; }.steps-panel small { color: var(--muted); font-size: .66rem; line-height: 1.35; }.steps-panel em { padding: 3px 6px; border-radius: 4px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .55rem; font-style: normal; }.steps-panel li.running { margin: 0 -4px; padding: 9px; border: 1px solid var(--blue); border-radius: 7px; background: var(--blue-soft); }.steps-panel li.running .step-dot { border-color: var(--blue); color: var(--blue); }.steps-panel li.running em { color: var(--blue); }.steps-panel li.complete .step-dot { border-color: var(--green); background: var(--green); color: white; }.steps-panel li.complete em { color: var(--green); }
+  .trace-panel { display: flex; min-width: 0; flex-direction: column; }.trace-panel > header span { display: flex; align-items: center; gap: 6px; }.trace-panel > header i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }.request-card { display: grid; grid-template-columns: 36px 1fr; gap: 12px; margin: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 7px; }.request-card > span { color: var(--green); }.request-card small, .request-card strong { display: block; }.request-card small { color: var(--muted); font-family: var(--mono); font-size: .6rem; }.request-card strong { margin: 4px 0; }.request-card p { margin: 0; color: var(--muted); font-size: .78rem; }
+  .trace-stack { display: grid; gap: 11px; padding: 0 16px 16px; }.trace-stack article { padding: 15px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-soft); }.trace-stack article:nth-child(4) { border-color: var(--orange); background: var(--orange-soft); }.trace-stack article > header { display: flex; justify-content: space-between; margin-bottom: 8px; }.trace-stack header span { color: var(--green); font-family: var(--mono); font-size: .6rem; font-weight: 700; }.trace-stack header small { color: var(--muted); font-family: var(--mono); }.trace-stack h3 { font-size: .85rem; }.trace-stack p { margin: 0; color: var(--muted); font-size: .72rem; }
+  .playground-controls { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: auto; padding: 14px 16px; border-top: 1px solid var(--line); background: var(--panel); }.playground-controls p { margin: 0; color: var(--muted); font-size: .7rem; }.playground-controls > div { display: flex; flex: 0 0 auto; gap: 8px; }.playground-controls .button { min-height: 40px; padding: 0 13px; font-size: .7rem; }
+  .telemetry-panel { display: grid; grid-template-rows: minmax(270px, .8fr) minmax(340px, 1fr); gap: 18px; }.activity-card ol { display: grid; gap: 10px; margin: 0; padding: 15px; list-style: none; }.activity-card li { display: grid; grid-template-columns: 38px 7px 72px 1fr; gap: 7px; align-items: center; font-family: var(--mono); font-size: .58rem; }.activity-card time { color: var(--muted); }.activity-card li > i { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }.activity-card strong { color: var(--green); }.activity-card li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .evidence-card ul { display: grid; gap: 8px; margin: 0; padding: 14px; list-style: none; }.evidence-card li { display: grid; grid-template-columns: 25px 1fr 18px; gap: 8px; align-items: center; padding: 11px; border: 1px solid var(--line); border-radius: 6px; }.evidence-card li > .icon:last-child { color: var(--green); }.evidence-card strong, .evidence-card small { display: block; }.evidence-card strong { font-size: .7rem; }.evidence-card small { color: var(--green); font-family: var(--mono); font-size: .52rem; }.evidence-card footer { display: flex; justify-content: space-between; gap: 8px; padding: 12px 15px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: .54rem; }
+  [hidden] { display: none !important; }
+  @media (max-width: 1260px) { .playground-grid { grid-template-columns: 280px 1fr; }.telemetry-panel { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; grid-template-rows: auto; } }
+  @media (max-width: 850px) { .playground-status { grid-template-columns: 1fr 1fr 1fr; }.playground-status > span { justify-content: flex-start; border-bottom: 1px solid var(--line); }.playground-grid { grid-template-columns: 1fr; }.telemetry-panel { grid-column: auto; }.steps-panel ol { grid-template-columns: 1fr 1fr; }.steps-panel li::after { display: none; } }
+  @media (max-width: 620px) { .simulation-notice { align-items: flex-start; flex-wrap: wrap; }.playground-status { grid-template-columns: 1fr 1fr; }.steps-panel ol, .telemetry-panel { grid-template-columns: 1fr; }.playground-controls { align-items: stretch; flex-direction: column; }.playground-controls > div { flex-wrap: wrap; }.activity-card li { grid-template-columns: 36px 7px 64px 1fr; } }
+</style>

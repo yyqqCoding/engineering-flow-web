@@ -1,0 +1,119 @@
+---
+import Icon from '../../../components/Icon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { copy, workflows, type Locale } from '../../../data/site';
+import { locales, localizePath } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const t = copy[locale];
+---
+
+<SiteLayout locale={locale} title={t.workflowsPage.title} description={t.workflowsPage.intro} active="workflows" wide>
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">ENGINEERING FLOW / 05</p>
+      <h1>{t.workflowsPage.title}</h1>
+      <p class="lede">{t.workflowsPage.intro}</p>
+    </div>
+  </header>
+
+  <div class="workflow-layout">
+    <section class="workflow-list panel-flat" aria-label={t.workflowsPage.title}>
+      {workflows.map((workflow) => (
+        <a href={localizePath(locale, `workflows/${workflow.slug}`)} class="workflow-row">
+          <span class:list={['workflow-icon', workflow.tone]}><Icon name={workflow.icon} size={23} /></span>
+          <span class="workflow-copy">
+            <strong>{workflow.title[locale]}</strong>
+            <small>{workflow.summary[locale]}</small>
+            <em class:list={['badge', workflow.tone]}>{workflow.mode}</em>
+          </span>
+          <Icon name="arrow" />
+        </a>
+      ))}
+    </section>
+
+    <section class="workflow-map panel">
+      <header>
+        <div><p class="eyebrow">{t.workflowsPage.map}</p><p>{t.workflowsPage.mapHelp}</p></div>
+        <span class="badge">EXPLICIT</span>
+      </header>
+      <div class="map-canvas" aria-label={t.workflowsPage.map}>
+        <span class="map-line line-a"></span><span class="map-line line-b"></span>
+        <span class="map-line line-c"></span><span class="map-line line-d"></span>
+        {workflows.map((workflow, index) => (
+          <a
+            href={localizePath(locale, `workflows/${workflow.slug}`)}
+            class:list={['map-node', `node-${index + 1}`, workflow.tone]}
+          >
+            <span><Icon name={workflow.icon} size={26} /></span>
+            <strong>{workflow.title[locale]}</strong>
+            <small>{workflow.mode.split(' · ')[0]}</small>
+          </a>
+        ))}
+      </div>
+      <footer class="map-legend">
+        <span><i class="solid"></i>{locale === 'en' ? 'Task progression' : '任务推进'}</span>
+        <span><i class="dashed"></i>{locale === 'en' ? 'Optional transition' : '可选转换'}</span>
+        <span class="badge">GATED</span>
+        <span class="badge orange">READ-ONLY</span>
+        <span class="badge purple">EXPLICIT</span>
+      </footer>
+    </section>
+
+    <aside class="workflow-summary">
+      <section class="panel-flat summary-card">
+        <p class="eyebrow">{t.workflowsPage.summary}</p>
+        <dl>
+          <div><dt><Icon name="grid" />{t.workflowsPage.active}</dt><dd>5</dd></div>
+          <div><dt><Icon name="terminal" />{t.workflowsPage.explicit}</dt><dd>5</dd></div>
+          <div><dt><Icon name="shield" />{t.workflowsPage.readOnly}</dt><dd>2</dd></div>
+          <div><dt><Icon name="lock" />{t.workflowsPage.gated}</dt><dd>2</dd></div>
+        </dl>
+      </section>
+      <section class="panel-flat about-card">
+        <p class="eyebrow">{locale === 'en' ? 'WHY EXPLICIT?' : '为什么显式调用？'}</p>
+        <p>{locale === 'en' ? 'Full workflows add useful depth when requested, but ordinary tasks keep the compact Engineering Core.' : '完整工作流在需要时提供更深流程，普通任务则只保留紧凑的 Engineering Core。'}</p>
+        <a href={localizePath(locale, 'docs')}>{t.workflowsPage.details} <Icon name="arrow" size={16} /></a>
+      </section>
+    </aside>
+  </div>
+</SiteLayout>
+
+<style>
+  .workflow-layout { display: grid; grid-template-columns: minmax(300px, .78fr) minmax(520px, 1.5fr) minmax(250px, .65fr); gap: 20px; }
+  .workflow-list { overflow: hidden; }
+  .workflow-row { display: grid; grid-template-columns: 48px 1fr 20px; gap: 14px; align-items: start; min-height: 122px; padding: 20px 18px; border-bottom: 1px solid var(--line); }
+  .workflow-row:last-child { border: 0; }
+  .workflow-row:hover { background: var(--panel-soft); }
+  .workflow-icon { display: grid; width: 48px; height: 48px; place-items: center; border: 1px solid currentColor; border-radius: 50%; color: var(--green); }
+  .workflow-icon.orange { color: var(--orange); }.workflow-icon.purple { color: var(--purple); }.workflow-icon.blue { color: var(--blue); }.workflow-icon.slate { color: var(--muted); }
+  .workflow-copy strong, .workflow-copy small, .workflow-copy em { display: block; }
+  .workflow-copy strong { margin-bottom: 4px; font-size: 1.05rem; }
+  .workflow-copy small { margin-bottom: 8px; color: var(--muted); font-size: .78rem; line-height: 1.35; }
+  .workflow-copy em { width: max-content; font-style: normal; }
+  .workflow-map { display: flex; min-height: 615px; flex-direction: column; padding: 24px; }
+  .workflow-map > header { display: flex; justify-content: space-between; gap: 20px; }
+  .workflow-map header p:last-child { color: var(--muted); font-size: .85rem; }
+  .map-canvas { position: relative; min-height: 455px; flex: 1; }
+  .map-node { position: absolute; z-index: 2; display: flex; width: 120px; flex-direction: column; align-items: center; gap: 6px; text-align: center; transform: translate(-50%, -50%); }
+  .map-node > span { display: grid; width: 68px; height: 68px; place-items: center; border: 1.5px solid currentColor; border-radius: 50%; background: var(--panel); }
+  .map-node strong { font-size: .82rem; }.map-node small { padding: 2px 5px; background: var(--green-soft); color: var(--green); font-family: var(--mono); font-size: .58rem; }
+  .map-node.orange { color: var(--orange); }.map-node.purple { color: var(--purple); }.map-node.blue { color: var(--blue); }.map-node.slate { color: var(--muted); }
+  .node-1 { top: 16%; left: 50%; }.node-2 { top: 54%; left: 20%; }.node-3 { top: 54%; left: 50%; }.node-4 { top: 88%; left: 50%; }.node-5 { top: 54%; left: 80%; }
+  .map-line { position: absolute; z-index: 1; height: 1px; background: var(--line-strong); transform-origin: left; }
+  .line-a { top: 25%; left: 47%; width: 34%; transform: rotate(145deg); }.line-b { top: 25%; left: 53%; width: 34%; transform: rotate(35deg); }
+  .line-c { top: 54%; left: 24%; width: 52%; border-top: 1px dashed var(--line-strong); background: none; }.line-d { top: 61%; left: 50%; width: 27%; transform: rotate(90deg); }
+  .map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .65rem; }
+  .map-legend > span { display: inline-flex; align-items: center; gap: 6px; }.map-legend i { width: 28px; border-top: 1px solid var(--text); }.map-legend i.dashed { border-style: dashed; }
+  .workflow-summary { display: flex; flex-direction: column; gap: 18px; }
+  .summary-card, .about-card { padding: 20px; }.summary-card dl { margin: 0; }.summary-card dl > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .summary-card dl > div:last-child { border: 0; }.summary-card dt { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .78rem; }.summary-card dd { margin: 0; font-size: 1.4rem; font-weight: 750; }
+  .about-card p:not(.eyebrow) { color: var(--muted); font-size: .8rem; }.about-card a { display: flex; align-items: center; justify-content: space-between; color: var(--green); font-size: .78rem; font-weight: 700; }
+  @media (max-width: 1240px) { .workflow-layout { grid-template-columns: 330px 1fr; }.workflow-summary { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 840px) { .workflow-layout { grid-template-columns: 1fr; }.workflow-summary { grid-column: auto; }.workflow-map { min-height: 580px; } }
+  @media (max-width: 560px) { .workflow-summary { grid-template-columns: 1fr; }.workflow-map { min-height: 720px; }.map-canvas { min-height: 570px; }.node-1 { top: 8%; }.node-2 { top: 31%; left: 25%; }.node-3 { top: 31%; left: 75%; }.node-4 { top: 56%; left: 25%; }.node-5 { top: 56%; left: 75%; }.map-line { display: none; } }
+</style>
