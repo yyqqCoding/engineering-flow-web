@@ -1,5 +1,7 @@
 # Engineering Flow 官网
 
+**线上地址：<https://engineering-flow-web.vercel.app>**
+
 [Engineering Flow](https://github.com/yyqqCoding/engineering-flow-skills) 的双语产品站点。用 Astro 构建的纯静态站，介绍五个工作流、展示对照实验结果，并提供一段可交互的流程回放。
 
 站点内容全部来自源仓库的已发布文档与测试记录，以提交快照的形式保存在本仓库，**运行时不依赖源仓库、也不调用任何 API**。
@@ -73,7 +75,11 @@ docs/UiImage/        UI 参考图
 
 ## 部署
 
-`output: 'static'`，构建产物在 `dist/`，无运行时 API 与适配器，可直接部署到 Vercel 等静态托管平台。每条路由都能独立加载。
+已部署在 Vercel：<https://engineering-flow-web.vercel.app>
+
+`output: 'static'`，构建产物在 `dist/`，无运行时 API 与适配器，每条路由都能独立加载。Vercel 侧使用 Astro 预设、根目录 `./`、无需任何环境变量；由于 Astro 7 要求 Node.js 22.12 以上，构建环境需选择 Node 22.x。
+
+推送到 `main` 后会自动触发重新部署。
 
 ## 协作约定
 
