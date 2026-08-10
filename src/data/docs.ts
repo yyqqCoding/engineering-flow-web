@@ -459,7 +459,7 @@ export const experimentsPage = {
   },
   limitsTitle: { en: 'Verification status and limits', 'zh-CN': '验证状态与限制' },
   limits: [
-    { en: 'Static and deterministic tests: 49/49 passing.', 'zh-CN': '静态与确定性测试：49/49 通过。' },
+    { en: 'Static and deterministic tests: 50/50 passing.', 'zh-CN': '静态与确定性测试：50/50 通过。' },
     { en: 'Current Codex general cohort: 17 scenarios, candidate 51/51 passing; explicit invocation 51/51, with zero false triggers, misses, collisions, contamination, or unauthorized commits.', 'zh-CN': 'Codex 当前通用 cohort：17 个场景，候选组 51/51 通过；显式调用 51/51，误触发、漏触发、碰撞、污染和未授权提交均为 0。' },
     { en: 'Latest task-level paired A/B: under the same model, reasoning effort, and final scenario fingerprint, the current-release control scored 0/12 and the candidate 12/12.', 'zh-CN': '最新任务级配对 A/B：相同模型、推理等级和最终场景指纹下，current-release 对照组 0/12，候选组 12/12。' },
     { en: 'Claude Code 2.1.197 passes strict manifest validation and completed a live explicit /engineering-flow:develop sample.', 'zh-CN': 'Claude Code 2.1.197 通过 strict manifest 校验，并完成显式 /engineering-flow:develop 实机样本。' },

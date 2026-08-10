@@ -82,7 +82,7 @@ export const evidencePage = {
     { icon: 'terminal', value: '51/51', label: { en: 'Named workflow loaded correctly', 'zh-CN': '点名的工作流被正确加载' } },
     { icon: 'compass', value: '0', label: { en: 'Workflow loaded without being named', 'zh-CN': '未经点名而加载的工作流' } },
     { icon: 'pulse', value: '0', label: { en: 'Named but not loaded', 'zh-CN': '点名后未加载' } },
-    { icon: 'check', value: '49/49', label: { en: 'Deterministic project tests', 'zh-CN': '项目确定性测试' } },
+    { icon: 'check', value: '50/50', label: { en: 'Deterministic project tests', 'zh-CN': '项目确定性测试' } },
   ],
 
   casesTitle: { en: 'Where the two groups diverged', 'zh-CN': '两组在哪里分开' },
