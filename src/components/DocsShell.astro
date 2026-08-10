@@ -1,0 +1,247 @@
+---
+import Icon from './Icon.astro';
+import { docsNav, docsPageOrder, docsUi } from '../data/docs';
+import { githubUrl, type Locale } from '../data/site';
+import { localizePath } from '../lib/routes.mjs';
+
+interface Props {
+  locale: Locale;
+  /** 当前页在 docsNav 中的 path，例如 'docs/install' */
+  path: string;
+  eyebrow: string;
+  title: string;
+  lede: string;
+  /** 右侧「本页内容」锚点，由各文档页显式声明，顺序即阅读顺序 */
+  toc?: Array<{ id: string; label: string }>;
+}
+
+const { locale, path, eyebrow, title, lede, toc = [] } = Astro.props;
+const index = docsPageOrder.findIndex((item) => item.path === path);
+const previous = index > 0 ? docsPageOrder[index - 1] : undefined;
+const next = index >= 0 && index < docsPageOrder.length - 1 ? docsPageOrder[index + 1] : undefined;
+---
+
+<div class="docs-frame" data-copied-label={docsUi.copied[locale]}>
+  <aside class="docs-sidebar">
+    <div class="docs-sidebar-inner">
+      <p class="docs-sidebar-title"><Icon name="document" size={16} />{docsUi.section[locale]}</p>
+      <nav class="docs-tree" aria-label={docsUi.menu[locale]}>
+        {docsNav.map((group) => (
+          <div class="docs-tree-group">
+            <p class="docs-tree-label">{group.label[locale]}</p>
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <a class:list={{ current: item.path === path }} href={localizePath(locale, item.path)}>
+                    {item.label[locale]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+      <a class="docs-repo" href={githubUrl} target="_blank" rel="noreferrer">
+        <Icon name="github" size={16} />{docsUi.sourceLink[locale]}<Icon name="external" size={13} />
+      </a>
+    </div>
+  </aside>
+
+  <article class="docs-article">
+    <header class="docs-article-head">
+      <p class="docs-eyebrow">{eyebrow}</p>
+      <h1>{title}</h1>
+      <p class="docs-lede">{lede}</p>
+    </header>
+
+    <slot />
+
+    <nav class="docs-pager" aria-label={docsUi.section[locale]}>
+      {previous ? (
+        <a class="docs-pager-link prev" href={localizePath(locale, previous.path)}>
+          <span>{docsUi.prev[locale]}</span>
+          <strong>{previous.label[locale]}</strong>
+        </a>
+      ) : <span />}
+      {next && (
+        <a class="docs-pager-link next" href={localizePath(locale, next.path)}>
+          <span>{docsUi.next[locale]}</span>
+          <strong>{next.label[locale]}</strong>
+        </a>
+      )}
+    </nav>
+  </article>
+
+  {toc.length > 0 && (
+    <aside class="docs-toc">
+      <div class="docs-toc-inner">
+        <p class="docs-toc-title">{docsUi.onThisPage[locale]}</p>
+        <ul>
+          {toc.map((item) => <li><a href={`#${item.id}`} data-toc-link={item.id}>{item.label}</a></li>)}
+        </ul>
+      </div>
+    </aside>
+  )}
+</div>
+
+<script>
+  const frame = document.querySelector('.docs-frame');
+  const copiedLabel = frame instanceof HTMLElement ? frame.dataset.copiedLabel ?? 'Copied' : 'Copied';
+  document.querySelectorAll('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(button.getAttribute('data-copy') ?? '');
+      button.setAttribute('aria-label', copiedLabel);
+      button.classList.add('copied');
+      setTimeout(() => button.classList.remove('copied'), 1200);
+    });
+  });
+
+  // 「本页内容」跟随滚动高亮；不支持 IntersectionObserver 时锚点仍可正常使用
+  const tocLinks = Array.from(document.querySelectorAll('[data-toc-link]'));
+  if (tocLinks.length > 0 && 'IntersectionObserver' in window) {
+    const visible = new Set<string>();
+    const highlight = () => {
+      const first = tocLinks.find((link) => visible.has(link.getAttribute('data-toc-link') ?? ''));
+      tocLinks.forEach((link) => link.classList.toggle('current', link === first));
+    };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      });
+      highlight();
+    }, { rootMargin: '-88px 0px -70% 0px' });
+    tocLinks.forEach((link) => {
+      const target = document.getElementById(link.getAttribute('data-toc-link') ?? '');
+      if (target) observer.observe(target);
+    });
+  }
+
+  const sections = Array.from(document.querySelectorAll('.docs-article section'));
+  if (sections.length > 0 && 'IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    sections.forEach((section) => section.classList.add('doc-fade'));
+    const fade = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('shown');
+        fade.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -6% 0px', threshold: .04 });
+    sections.forEach((section) => fade.observe(section));
+  }
+
+  const current = document.querySelector('.docs-tree a.current');
+  const sidebar = document.querySelector('.docs-sidebar-inner');
+  if (current instanceof HTMLElement && sidebar instanceof HTMLElement) {
+    const offset = current.offsetTop - sidebar.clientHeight / 2;
+    if (offset > 0) sidebar.scrollTop = offset;
+  }
+</script>
+
+<style>
+  .docs-frame { display: grid; grid-template-columns: 222px minmax(0, 1fr) 200px; gap: clamp(26px, 2.8vw, 46px); }
+
+  /* 左侧目录整列拉满行高，内层才有 sticky 可以滑动的空间 */
+  .docs-sidebar { position: relative; border-right: 1px solid var(--line); }
+  .docs-sidebar-inner { position: sticky; top: 92px; max-height: calc(100vh - 124px); padding-right: 16px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  .docs-sidebar-inner::-webkit-scrollbar { width: 6px; }
+  .docs-sidebar-inner::-webkit-scrollbar-thumb { border-radius: 6px; background: var(--line); }
+  .docs-sidebar-inner:hover::-webkit-scrollbar-thumb { background: var(--line-strong); }
+  .docs-sidebar-title { display: flex; align-items: center; gap: 7px; margin: 0 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: .76rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
+  .docs-tree-group + .docs-tree-group { margin-top: 22px; }
+  .docs-tree-label { margin: 0 0 8px; font-size: .84rem; font-weight: 700; letter-spacing: -.01em; }
+  .docs-tree ul { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+  .docs-tree a { position: relative; display: block; padding: 7px 12px; border-radius: 0 7px 7px 0; color: var(--muted); font-size: .89rem; transition: color .2s var(--ease-out), background-color .2s var(--ease-out), padding-left .2s var(--ease-out); }
+  .docs-tree a::before { content: ''; position: absolute; top: 4px; bottom: 4px; left: 0; width: 2px; border-radius: 2px; background: var(--line-strong); transform: scaleY(.45); opacity: .55; transition: transform .26s var(--ease-spring), background-color .2s var(--ease-out), opacity .2s var(--ease-out); }
+  .docs-tree a:hover { padding-left: 15px; color: var(--text); }
+  .docs-tree a:hover::before { opacity: 1; transform: scaleY(.8); }
+  .docs-tree a.current { background: var(--green-soft); color: var(--green); font-weight: 650; }
+  .docs-tree a.current::before { background: var(--green); opacity: 1; transform: scaleY(1); }
+  .docs-repo { display: flex; align-items: center; gap: 8px; margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .84rem; transition: color .18s ease, gap .18s ease; }
+  .docs-repo:hover { gap: 11px; color: var(--green); }
+
+  .docs-article { min-width: 0; max-width: 980px; padding-bottom: 8px; }
+  .docs-article-head { margin-bottom: 8px; }
+  .docs-eyebrow { margin-bottom: 14px; color: var(--green); font-family: var(--mono); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .docs-article-head h1 { margin-bottom: 16px; font-size: clamp(2.3rem, 3.4vw, 3.3rem); }
+  .docs-lede { margin: 0; color: var(--muted); font-size: 1.12rem; line-height: 1.62; }
+
+  .docs-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 56px; padding-top: 30px; border-top: 1px solid var(--line); }
+  .docs-pager-link { display: grid; gap: 4px; padding: 15px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); transition: border-color .22s var(--ease-out), transform .22s var(--ease-out), box-shadow .22s var(--ease-out); }
+  .docs-pager-link:hover { border-color: var(--green); transform: translateY(-3px); box-shadow: var(--shadow); }
+  .docs-pager-link span { color: var(--muted); font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+  .docs-pager-link strong { font-size: 1rem; }
+  .docs-pager-link.next { text-align: right; }
+
+  .docs-toc-inner { position: sticky; top: 92px; max-height: calc(100vh - 124px); overflow-y: auto; scrollbar-width: none; }
+  .docs-toc-inner::-webkit-scrollbar { width: 0; }
+  .docs-toc-title { margin: 0 0 12px; color: var(--muted); font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .docs-toc ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; border-left: 1.5px solid var(--line); }
+  .docs-toc a { position: relative; display: block; padding: 6px 0 6px 13px; color: var(--muted); font-size: .84rem; line-height: 1.45; transition: color .22s var(--ease-out), transform .26s var(--ease-out); }
+  .docs-toc a::before { content: ''; position: absolute; top: 6px; bottom: 6px; left: -1.5px; width: 1.5px; background: var(--green); transform: scaleY(0); transform-origin: center; transition: transform .3s var(--ease-spring); }
+  .docs-toc a:hover { color: var(--text); transform: translateX(2px); }
+  .docs-toc a.current { color: var(--green); font-weight: 600; }
+  .docs-toc a.current::before { transform: scaleY(1); }
+
+  @media (max-width: 1240px) {
+    .docs-frame { grid-template-columns: 216px minmax(0, 1fr); gap: 32px; }
+    .docs-toc { display: none; }
+  }
+  @media (max-width: 900px) {
+    .docs-frame { grid-template-columns: 1fr; gap: 30px; }
+    .docs-sidebar { border-right: 0; }
+    .docs-sidebar-inner { position: static; max-height: none; padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .docs-tree-group + .docs-tree-group { margin-top: 16px; }
+    .docs-tree ul { grid-template-columns: 1fr 1fr; }
+    .docs-article { max-width: none; }
+    .docs-pager { grid-template-columns: 1fr; }
+  }
+</style>
+
+<style is:global>
+  .docs-article section { padding-top: 44px; scroll-margin-top: 92px; }
+  .docs-article section.doc-fade { opacity: 0; transform: translateY(10px); transition: opacity .55s var(--ease-out), transform .55s var(--ease-out); }
+  .docs-article section.doc-fade.shown { opacity: 1; transform: none; }
+  .docs-article section > h2 { position: relative; margin-bottom: 14px; padding-top: 18px; border-top: 1px solid var(--line); font-size: clamp(1.5rem, 2vw, 1.85rem); }
+  .docs-article h3 { margin: 30px 0 10px; font-size: 1.12rem; }
+  .docs-article h4 { margin: 0 0 8px; font-size: .95rem; }
+  .docs-article p { margin: 0 0 15px; font-size: 1.01rem; line-height: 1.72; }
+  .docs-article p.subtle { color: var(--muted); }
+  .docs-article section > p:first-of-type { color: var(--muted); }
+  .docs-article strong { font-weight: 680; }
+  .docs-article :not(pre) > code { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-soft); font-size: .87em; }
+  .docs-article a:not(.docs-pager-link):not(.doc-card) { color: var(--green); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  .docs-article ul.doc-list { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+  .docs-article ul.doc-list > li { position: relative; padding-left: 22px; line-height: 1.68; }
+  .docs-article ul.doc-list > li::before { content: ''; position: absolute; top: .68em; left: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .docs-article ul.doc-check { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+  .docs-article ul.doc-check > li { display: flex; align-items: start; gap: 10px; line-height: 1.65; }
+  .docs-article ul.doc-check > li > .icon { flex: 0 0 auto; margin-top: 4px; color: var(--green); }
+
+  .docs-article .doc-grid { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 14px; margin: 0 0 18px; }
+  .docs-article .doc-card { display: block; padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  .docs-article .doc-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--green) 38%, var(--line)); box-shadow: var(--shadow); }
+  .docs-article .doc-card h3, .docs-article .doc-card h4 { margin: 0 0 6px; font-size: 1rem; }
+  .docs-article .doc-card p { margin: 0; color: var(--muted); font-size: .91rem; line-height: 1.62; }
+  .docs-article .doc-card-icon { display: grid; width: 38px; height: 38px; place-items: center; margin-bottom: 13px; border-radius: 9px; background: var(--green-soft); color: var(--green); }
+
+  .docs-article .doc-table { width: 100%; margin: 0 0 18px; border: 1px solid var(--line); border-radius: var(--radius); border-collapse: separate; border-spacing: 0; overflow: hidden; font-size: .95rem; }
+  .docs-article .doc-table th { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .76rem; font-weight: 700; letter-spacing: .07em; text-align: left; text-transform: uppercase; }
+  .docs-article .doc-table td { padding: 13px 16px; border-bottom: 1px solid var(--line); line-height: 1.6; vertical-align: top; }
+  .docs-article .doc-table tr:last-child td { border-bottom: 0; }
+  .docs-article .doc-table tr:hover td { background: var(--panel-soft); }
+
+  .docs-article .doc-note { display: flex; align-items: start; gap: 11px; margin: 0 0 18px; padding: 14px 17px; border: 1px solid color-mix(in srgb, var(--green) 32%, var(--line)); border-left: 3px solid var(--green); border-radius: 0 8px 8px 0; background: var(--green-soft); font-size: .94rem; line-height: 1.6; }
+  .docs-article .doc-note > .icon { flex: 0 0 auto; margin-top: 3px; color: var(--green); }
+  .docs-article .doc-note.warn { border-color: color-mix(in srgb, var(--orange) 32%, var(--line)); border-left-color: var(--orange); background: var(--orange-soft); }
+  .docs-article .doc-note.warn > .icon { color: var(--orange); }
+
+  .docs-article .code-block { margin: 10px 0 18px; }
+  .docs-article .copy-button.copied { border-color: var(--green); color: var(--green); }
+
+  @media (max-width: 760px) {
+    .docs-article .doc-grid { grid-template-columns: 1fr; }
+    .docs-article .doc-table { display: block; overflow-x: auto; }
+  }
+</style>

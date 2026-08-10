@@ -1,0 +1,219 @@
+---
+import CodeBlock from '../../../../components/CodeBlock.astro';
+import DocsShell from '../../../../components/DocsShell.astro';
+import Icon from '../../../../components/Icon.astro';
+import WorkflowIcon from '../../../../components/WorkflowIcon.astro';
+import SiteLayout from '../../../../layouts/SiteLayout.astro';
+import { docsUi, guideLabels, inlineCode, workflowGuides } from '../../../../data/docs';
+import { workflows, type Locale, type WorkflowSlug } from '../../../../data/site';
+import { locales } from '../../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.flatMap((locale) => workflows.map((workflow) => ({
+    params: { locale, slug: workflow.slug },
+  })));
+}
+
+const locale = Astro.params.locale as Locale;
+const slug = Astro.params.slug as WorkflowSlug;
+const workflow = workflows.find((item) => item.slug === slug)!;
+const guide = workflowGuides[slug];
+const l = guideLabels;
+const stages = guide.stages[locale];
+const toc = [
+  { id: 'why', label: l.why[locale] },
+  { id: 'stages', label: l.stages[locale] },
+  { id: 'rules', label: l.rules[locale] },
+  { id: 'example', label: l.example[locale] },
+  { id: 'when', label: l.when[locale] },
+  { id: 'faq', label: l.faq[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={`${workflow.title[locale]} · ${l.eyebrow[locale]}`} description={guide.purpose[locale]} active="docs" docs>
+  <DocsShell
+    locale={locale}
+    path={`docs/workflows/${slug}`}
+    eyebrow={l.eyebrow[locale]}
+    title={workflow.title[locale]}
+    lede={guide.purpose[locale]}
+    toc={toc}
+  >
+    <div class:list={['guide', `tone-${workflow.tone}`]}>
+      <div class="guide-head">
+        <span class="guide-icon"><WorkflowIcon slug={workflow.slug} size={24} /></span>
+        <div class="guide-meta">
+          <code>engineering-flow:{slug}</code>
+          <span class:list={['badge', workflow.tone]}>{workflow.mode[locale]}</span>
+        </div>
+      </div>
+
+      <div class="invoke-grid">
+        <div>
+          <p class="invoke-label">{docsUi.codex[locale]}</p>
+          <CodeBlock locale={locale} code={`$engineering-flow:${slug}`} />
+        </div>
+        <div>
+          <p class="invoke-label">{docsUi.claude[locale]}</p>
+          <CodeBlock locale={locale} code={`/engineering-flow:${slug}`} />
+        </div>
+      </div>
+
+      <section id="why">
+        <h2>{l.why[locale]}</h2>
+        <p class="why-text">{guide.why[locale]}</p>
+      </section>
+
+      <section id="stages">
+        <h2>{l.stages[locale]}</h2>
+        <p>{l.stagesIntro[locale]}</p>
+        <ol class="stage-rail">
+          {stages.map((stage, index) => (
+            <li class:list={['stage', { gate: stage.gate }]}>
+              <span class="stage-marker">
+                {String(index + 1).padStart(2, '0')}
+                {stage.gate && <i class="stage-lock" aria-hidden="true"><Icon name="lock" size={10} /></i>}
+              </span>
+              <div class="stage-body">
+                <h3>
+                  {stage.name}
+                  {stage.gate && <em class="stage-pill"><Icon name="lock" size={11} />{l.gate[locale]}</em>}
+                </h3>
+                <p class="stage-summary">{stage.summary}</p>
+                <ul class="stage-rules">
+                  {stage.rules.map((rule) => <li set:html={inlineCode(rule)}></li>)}
+                </ul>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="rules">
+        <h2>{l.rules[locale]}</h2>
+        <div class="doc-grid">
+          {guide.hardRules[locale].map((rule) => (
+            <article class="hard-rule">
+              <span class="hard-rule-icon"><Icon name={rule.icon} size={19} /></span>
+              <h3>{rule.title}</h3>
+              <p>{rule.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="example">
+        <h2>{l.example[locale]}</h2>
+        <p>{l.exampleIntro[locale]}</p>
+        <CodeBlock locale={locale} code={guide.example[locale].prompt} />
+        <ol class="turn-list">
+          {guide.example[locale].turns.map((turn) => (
+            <li class:list={[turn.who]}>
+              <span class="turn-who">{turn.who === 'user' ? l.you[locale] : l.agent[locale]}</span>
+              <p set:html={inlineCode(turn.text)}></p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="when">
+        <h2>{l.when[locale]}</h2>
+        <ul class="doc-check">
+          {guide.useWhen[locale].map((item) => <li><Icon name="check" size={16} />{item}</li>)}
+        </ul>
+
+        <h3>{l.avoid[locale]}</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>{l.avoidColumns[locale].map((column) => <th>{column}</th>)}</tr>
+          </thead>
+          <tbody>
+            {guide.avoidWhen[locale].map((row) => (
+              <tr><td>{row.situation}</td><td><strong>{row.instead}</strong></td></tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section id="faq">
+        <h2>{l.faq[locale]}</h2>
+        <div class="faq-list">
+          {guide.faq[locale].map((item) => (
+            <details>
+              <summary>{item.q}<Icon name="arrow" size={16} /></summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+    </div>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .tone-green { --tone: var(--green); --tone-soft: var(--green-soft); }
+  .tone-orange { --tone: var(--orange); --tone-soft: var(--orange-soft); }
+  .tone-purple { --tone: var(--purple); --tone-soft: var(--purple-soft); }
+  .tone-blue { --tone: var(--blue); --tone-soft: var(--blue-soft); }
+  .tone-slate { --tone: var(--muted); --tone-soft: var(--panel-soft); }
+
+  .guide-head { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
+  .guide-icon { display: grid; width: 46px; height: 46px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: var(--tone-soft); color: var(--tone); }
+  .guide-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .guide-meta code { padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-soft); font-family: var(--mono); font-size: .84rem; }
+
+  .invoke-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+  .invoke-label { margin: 0; color: var(--muted); font-family: var(--mono); font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+  .why-text { color: var(--text) !important; font-size: 1.06rem !important; }
+
+  .stage-rail { margin: 22px 0 0; padding: 0; list-style: none; }
+  .stage { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 18px; }
+  .stage:not(:last-child) { padding-bottom: 26px; }
+  .stage:not(:last-child)::before { content: ''; position: absolute; top: 46px; bottom: 0; left: 21px; width: 2px; background: var(--line); }
+  .stage-marker { position: relative; z-index: 1; display: grid; width: 44px; height: 44px; place-items: center; border: 1.5px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--tone); font-family: var(--mono); font-size: .8rem; font-weight: 700; }
+  .stage-body { padding: 4px 0 0; }
+  .stage-body h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 4px 0 6px; font-size: 1.1rem; }
+  .stage-summary { margin: 0 0 12px; color: var(--muted); font-size: .96rem; }
+  .stage-rules { display: grid; gap: 9px; margin: 0; padding: 15px 18px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); list-style: none; }
+  .stage-rules li { position: relative; padding-left: 19px; font-size: .93rem; line-height: 1.65; }
+  .stage-rules li::before { content: ''; position: absolute; top: .6em; left: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--tone); }
+
+  .stage.gate .stage-marker { border-color: var(--orange); background: var(--orange-soft); color: var(--orange); }
+  .stage.gate:not(:last-child)::before { background: color-mix(in srgb, var(--orange) 38%, var(--line)); }
+  .stage.gate .stage-rules { border-color: color-mix(in srgb, var(--orange) 30%, var(--line)); background: color-mix(in srgb, var(--orange) 4%, var(--panel)); }
+  .stage.gate .stage-rules li::before { background: var(--orange); }
+  .stage-lock { position: absolute; right: -3px; bottom: -3px; display: grid; width: 19px; height: 19px; place-items: center; border: 2px solid var(--bg); border-radius: 50%; background: var(--orange); color: #fff; }
+  .stage-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; background: var(--orange-soft); color: var(--orange); font-family: var(--mono); font-size: .68rem; font-weight: 700; font-style: normal; letter-spacing: .05em; text-transform: uppercase; }
+
+  .hard-rule { padding: 19px 21px; border: 1px solid var(--line); border-top: 2px solid var(--tone); border-radius: var(--radius); background: var(--panel); }
+  .hard-rule-icon { display: grid; width: 38px; height: 38px; place-items: center; margin-bottom: 13px; border-radius: 9px; background: var(--tone-soft); color: var(--tone); }
+  .hard-rule h3 { margin: 0 0 6px; font-size: 1rem; }
+  .hard-rule p { margin: 0; color: var(--muted); font-size: .91rem; line-height: 1.62; }
+
+  .turn-list { display: grid; gap: 10px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .turn-list li { display: grid; grid-template-columns: 76px 1fr; gap: 14px; padding: 13px 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
+  .turn-list li.user { border-color: color-mix(in srgb, var(--tone) 32%, var(--line)); background: var(--tone-soft); }
+  .turn-who { color: var(--muted); font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+  .turn-list li.user .turn-who { color: var(--tone); }
+  .turn-list p { margin: 0; font-size: .95rem; line-height: 1.65; }
+
+  .faq-list { display: grid; gap: 10px; margin-top: 18px; }
+  .faq-list details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); transition: border-color .18s ease; }
+  .faq-list details[open] { border-color: color-mix(in srgb, var(--tone) 34%, var(--line)); }
+  .faq-list summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 19px; cursor: pointer; font-weight: 650; list-style: none; }
+  .faq-list summary::-webkit-details-marker { display: none; }
+  .faq-list summary:hover { color: var(--tone); }
+  .faq-list summary .icon { flex: 0 0 auto; color: var(--muted); transform: rotate(90deg); transition: transform .2s ease, color .2s ease; }
+  .faq-list details[open] summary .icon { color: var(--tone); transform: rotate(-90deg); }
+  .faq-list p { margin: 0; padding: 0 19px 18px; color: var(--muted); font-size: .96rem; }
+
+  @media (max-width: 700px) {
+    .invoke-grid { grid-template-columns: 1fr; gap: 0; }
+    .stage { grid-template-columns: 34px 1fr; gap: 13px; }
+    .stage-marker { width: 34px; height: 34px; font-size: .7rem; }
+    .stage:not(:last-child)::before { top: 36px; left: 16px; }
+    .stage-rules { padding: 13px 15px; }
+    .turn-list li { grid-template-columns: 1fr; gap: 5px; }
+  }
+</style>

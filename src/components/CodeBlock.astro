@@ -1,0 +1,19 @@
+---
+import Icon from './Icon.astro';
+import { docsUi } from '../data/docs';
+import type { Locale } from '../data/site';
+
+interface Props {
+  locale: Locale;
+  code: string;
+}
+
+const { locale, code } = Astro.props;
+---
+
+<div class="code-block">
+  <code>{code}</code>
+  <button class="copy-button" type="button" data-copy={code} aria-label={docsUi.copy[locale]}>
+    <Icon name="copy" size={16} />
+  </button>
+</div>

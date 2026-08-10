@@ -1,0 +1,183 @@
+---
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { inlineCode } from '../../../data/docs';
+import { engineeringPage } from '../../../data/engineering';
+import type { Locale } from '../../../data/site';
+import { locales, localizePath } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = engineeringPage;
+const bold = (text: string) => inlineCode(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+const toc = [
+  { id: 'reading', label: d.readingTitle[locale] },
+  { id: 'principles', label: d.principlesTitle[locale] },
+  { id: 'budget', label: d.budgetTitle[locale] },
+  { id: 'process', label: d.processTitle[locale] },
+  { id: 'owner', label: d.ownerTitle[locale] },
+  { id: 'measured', label: d.measuredTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs/engineering" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="reading">
+      <h2>{d.readingTitle[locale]}</h2>
+      <p set:html={bold(d.readingBody[locale])}></p>
+      <div class="doc-note">
+        <Icon name="document" size={17} />
+        <span>{d.readingNote[locale]}</span>
+      </div>
+    </section>
+
+    <section id="principles">
+      <h2>{d.principlesTitle[locale]}</h2>
+      <p>{d.principlesIntro[locale]}</p>
+
+      <table class="doc-table principle-index">
+        <thead>
+          <tr>
+            <th>{locale === 'en' ? 'Principle' : '原则'}</th>
+            <th>{locale === 'en' ? 'Standard definition' : '标准定义'}</th>
+            <th>{locale === 'en' ? 'Status' : '状态'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {d.principles.map((item) => (
+            <tr>
+              <td><a href={`#p-${item.abbr}`}><code>{item.abbr}</code> {item.name[locale]}</a></td>
+              <td class="subtle">{item.definition[locale]}</td>
+              <td><span class:list={['status', item.status]}>{d.statusLabels[item.status][locale]}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div class="principle-list">
+        {d.principles.map((item) => (
+          <article class:list={['principle', item.status]} id={`p-${item.abbr}`}>
+            <header>
+              <span class="principle-icon"><Icon name={item.icon} size={20} /></span>
+              <div>
+                <p class="principle-abbr">{item.abbr}</p>
+                <h3>{item.name[locale]}</h3>
+              </div>
+              <span class:list={['status', item.status]}>{d.statusLabels[item.status][locale]}</span>
+            </header>
+            <p class="principle-definition">{item.definition[locale]}</p>
+            <p class="principle-encoded">{item.encoded[locale]}</p>
+            <ul class="rule-chips">
+              {item.rules.map((rule) => <li>{rule}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="budget">
+      <h2>{d.budgetTitle[locale]}</h2>
+      <p>{d.budgetIntro[locale]}</p>
+      <div class="doc-grid" style="--cols: 1">
+        {d.budgetItems.map((item) => (
+          <article class="budget-card">
+            <span class="budget-icon"><Icon name={item.icon} size={19} /></span>
+            <div>
+              <h3>{item.title[locale]}</h3>
+              <p>{item.detail[locale]}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="process">
+      <h2>{d.processTitle[locale]}</h2>
+      <p>{d.processIntro[locale]}</p>
+      <div class="doc-grid">
+        {d.processItems.map((item) => (
+          <article class="process-card">
+            <span class="process-icon"><Icon name={item.icon} size={19} /></span>
+            <h3>{item.title[locale]}</h3>
+            <p>{item.detail[locale]}</p>
+            <ul class="rule-chips">
+              {item.rules.map((rule) => <li>{rule}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="owner">
+      <h2>{d.ownerTitle[locale]}</h2>
+      <p>{d.ownerIntro[locale]}</p>
+      <table class="doc-table">
+        <thead>
+          <tr>{d.ownerColumns[locale].map((column) => <th>{column}</th>)}</tr>
+        </thead>
+        <tbody>
+          {d.ownerRows.map((row) => (
+            <tr>
+              <td>{row.activity[locale]}</td>
+              <td><strong>{row.owner[locale]}</strong></td>
+              <td class="subtle">{row.guarantee[locale]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section id="measured">
+      <h2>{d.measuredTitle[locale]}</h2>
+      <p>{d.measuredBody[locale]}</p>
+      <div class="doc-note">
+        <Icon name="check" size={17} />
+        <span><a href={localizePath(locale, 'docs/experiments')}>{d.measuredNote[locale]}</a></span>
+      </div>
+    </section>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .status { display: inline-flex; align-items: center; white-space: nowrap; padding: 3px 9px; border-radius: 5px; font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
+  .status.direct { background: var(--green-soft); color: var(--green); }
+  .status.conditional { background: var(--orange-soft); color: var(--orange); }
+  .status.indirect { background: var(--panel-soft); color: var(--muted); }
+
+  .principle-index td:first-child { width: 30%; }
+  .principle-index td:last-child { width: 130px; }
+  .principle-index a { display: inline-flex; align-items: baseline; gap: 7px; font-weight: 650; text-decoration: none !important; }
+
+  .principle-list { display: grid; gap: 16px; margin-top: 26px; }
+  .principle { padding: 22px 24px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); background: var(--panel); scroll-margin-top: 96px; transition: box-shadow .24s var(--ease-out); }
+  .principle:hover { box-shadow: var(--shadow); }
+  .principle.direct { --accent: var(--green); --accent-soft: var(--green-soft); }
+  .principle.conditional { --accent: var(--orange); --accent-soft: var(--orange-soft); }
+  .principle.indirect { --accent: var(--line-strong); --accent-soft: var(--panel-soft); }
+  .principle header { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start; margin-bottom: 14px; }
+  .principle-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 9px; background: var(--accent-soft); color: var(--accent); }
+  .principle-abbr { margin: 0 0 3px !important; color: var(--accent); font-family: var(--mono); font-size: .76rem !important; font-weight: 700; letter-spacing: .08em; }
+  .principle h3 { margin: 0; font-size: 1.1rem; }
+  .principle-definition { margin: 0 0 14px !important; padding: 12px 16px; border-radius: 8px; background: var(--panel-soft); font-weight: 620; }
+  .principle-encoded { margin: 0 !important; color: var(--muted); }
+
+  .rule-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+  .rule-chips li { padding: 3px 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); font-family: var(--mono); font-size: .72rem; }
+
+  .budget-card, .process-card { padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  .budget-card { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+  .budget-icon, .process-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 9px; background: var(--green-soft); color: var(--green); }
+  .process-icon { margin-bottom: 13px; }
+  .budget-card h3, .process-card h3 { margin: 0 0 7px; font-size: 1.02rem; }
+  .budget-card p, .process-card p { margin: 0; color: var(--muted); font-size: .93rem; line-height: 1.66; }
+
+  @media (max-width: 700px) {
+    .principle header { grid-template-columns: auto 1fr; }
+    .principle header > .status { grid-column: 1 / -1; justify-self: start; }
+    .principle-index { display: block; overflow-x: auto; }
+  }
+</style>

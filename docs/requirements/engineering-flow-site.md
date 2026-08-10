@@ -46,17 +46,24 @@ Build a bilingual, static product website for the `engineering-flow-skills` proj
 
 ## Implementation
 
-- `src/layouts/SiteLayout.astro`, shared components, and `src/styles/global.css` implement the bilingual layout, navigation, visual system, responsive behavior, theme preference, keyboard focus, and reduced-motion handling.
-- `src/pages/[locale]/` generates English and Simplified Chinese home, workflow catalog, five workflow detail, evidence, documentation, and Playground routes.
-- `src/data/site.ts` owns published product copy, workflow definitions, evidence figures, and source metadata for snapshot `3a70929` / release `1.0.1`.
+- `src/layouts/SiteLayout.astro`, shared components, and `src/styles/global.css` implement the bilingual layout, navigation, visual system, responsive behavior, theme preference, keyboard focus, and reduced-motion handling. The layout also owns the shared scroll-reveal observer used by the marketing pages; reveal styles apply only when scripting is available.
+- `src/pages/[locale]/` generates English and Simplified Chinese home, workflow catalog, five workflow detail, evidence, and Playground routes. Documentation is a multi-page section under `src/pages/[locale]/docs/`: overview, installation, quick start, design philosophy, software engineering practices, one reference page per workflow, experiments, and best practices.
+- `src/components/DocsShell.astro` owns the documentation shell — grouped sidebar contents pinned while the article scrolls, on-page anchors, previous/next paging, and the shared documentation typography; `src/components/CodeBlock.astro` owns copyable command blocks. Documentation routes use the wider `page-shell docs` variant so the side columns sit at the edges and the article column carries the extra width.
+- `src/components/WorkflowIcon.astro` owns the five workflow marks. Each mark draws that workflow's own action, and its parts animate from a single `--wf` switch that any interactive ancestor can flip, so list rows, tabs, map nodes, and documentation headers all share one behavior.
+- `src/data/site.ts` owns published product copy, workflow definitions, evidence figures, and source metadata for snapshot `3a70929` / release `1.0.1`. Workflow entries carry no icon name; the mark is selected by slug.
+- `src/data/docs.ts` owns the documentation contents tree and the per-workflow reference content (stage rules, hard rules, worked example, selection guidance, and questions) transcribed from `skills/<slug>/SKILL.md`, `docs/user-guide*.md`, and `docs/product-design.md`.
+- `src/data/engineering.ts` owns the design-principles page. Each of the seven classical object-oriented principles carries a status — encoded directly, adopted with a stated condition, or no dedicated rule — and cites the rule identifiers in `docs/behavior-spec.md` that support it. Principles the source repository does not legislate (LSP, ISP) are labelled as such rather than attributed.
+- `src/data/evidence.ts` owns the Results-page narrative: comparison method, matched-pair outcomes, the four scenarios that separated the two groups, the measured process cost, and the data source — all summarized from `docs/benchmark-log.md` without provider, model, endpoint, or raw-log details. Deterministic test counts follow the release README of `1.0.1` (49/49) rather than a later log entry, so every published figure describes one release.
+- The workflow map on `src/pages/[locale]/workflows/index.astro` draws one edge per documented transition. Solid edges are the normal path and carry a looping highlight; dashed edges are the conditional ones. Hovering either the list or the map highlights the same workflow on the other side.
 - `src/data/playground.ts` owns the curated customer CSV export lifecycle. It contains no raw prompts, local paths, thread identifiers, model/provider details, stderr, or source diffs.
-- `src/lib/routes.mjs` owns locale path mapping; `src/lib/playground.mjs` owns the deterministic simulation state and approval gate.
+- `src/lib/routes.mjs` owns locale path mapping; `src/lib/playground.mjs` owns the deterministic simulation state and approval gate. The Playground page adds browser-local autoplay that always stops at the approval gate and at completion, so approval remains a user action.
 - `package.json`, `astro.config.mjs`, `tsconfig.json`, and `scripts/astro.mjs` provide a static Astro build suitable for Vercel without a runtime API or adapter.
 
 ## Verification
 
-- `npm test`: 5 focused locale-routing and Playground-state assertions passed.
-- `npm run check`: 19 Astro/TypeScript files checked with 0 errors, warnings, or hints.
-- `npm run build`: 21 static pages generated successfully.
+- `npm test`: 7 focused locale-routing and Playground-state assertions passed.
+- `npm run check`: 32 Astro/TypeScript files checked with 0 errors, warnings, or hints.
+- `npm run build`: 43 static pages generated successfully.
 - Local production-output review covered the Chinese home, workflow catalog, Develop and Diagnose details, Playground, Evidence, and Docs routes; navigation and assets returned successfully.
+- Documentation routes were re-checked to contain zero links into the marketing workflow pages.
 - User acceptance review confirmed the current functionality is correct.

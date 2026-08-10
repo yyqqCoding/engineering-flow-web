@@ -1,0 +1,1567 @@
+import { workflows, type Locale, type WorkflowSlug } from './site';
+
+// 文档内容与站点营销文案分开维护：这里只放"参考手册"口径的深度内容，
+// 全部摘自源仓库 skills/<slug>/SKILL.md、docs/user-guide*.md、docs/product-design.md（v1.0.1, commit 3a70929）
+type L<T> = Record<Locale, T>;
+
+export const docsUi = {
+  section: { en: 'Documentation', 'zh-CN': '文档' },
+  onThisPage: { en: 'On this page', 'zh-CN': '本页内容' },
+  prev: { en: 'Previous', 'zh-CN': '上一页' },
+  next: { en: 'Next', 'zh-CN': '下一页' },
+  copy: { en: 'Copy', 'zh-CN': '复制' },
+  copied: { en: 'Copied', 'zh-CN': '已复制' },
+  menu: { en: 'Documentation menu', 'zh-CN': '文档目录' },
+  sourceLink: { en: 'Source repository', 'zh-CN': '源仓库' },
+  codex: { en: 'Codex CLI', 'zh-CN': 'Codex CLI' },
+  claude: { en: 'Claude Code', 'zh-CN': 'Claude Code' },
+} satisfies Record<string, L<string>>;
+
+/** 侧边目录：分组 → 条目，条目顺序同时决定页脚上一页/下一页 */
+export const docsNav: Array<{ label: L<string>; items: Array<{ path: string; label: L<string> }> }> = [
+  {
+    label: { en: 'Getting started', 'zh-CN': '开始使用' },
+    items: [
+      { path: 'docs', label: { en: 'Overview', 'zh-CN': '概览' } },
+      { path: 'docs/install', label: { en: 'Installation', 'zh-CN': '安装' } },
+      { path: 'docs/quickstart', label: { en: 'Quick start', 'zh-CN': '快速开始' } },
+    ],
+  },
+  {
+    label: { en: 'Concepts', 'zh-CN': '核心概念' },
+    items: [
+      { path: 'docs/philosophy', label: { en: 'Design philosophy', 'zh-CN': '设计思想' } },
+      { path: 'docs/engineering', label: { en: 'Design principles', 'zh-CN': '设计原则' } },
+    ],
+  },
+  {
+    label: { en: 'Workflow reference', 'zh-CN': '工作流详解' },
+    items: workflows.map((workflow) => ({
+      path: `docs/workflows/${workflow.slug}`,
+      label: workflow.title,
+    })),
+  },
+  {
+    label: { en: 'Reference', 'zh-CN': '参考资料' },
+    items: [
+      { path: 'docs/experiments', label: { en: 'Experiments & results', 'zh-CN': '实验与验证' } },
+      { path: 'docs/practices', label: { en: 'Best practices & FAQ', 'zh-CN': '最佳实践与常见问题' } },
+    ],
+  },
+];
+
+export const docsPageOrder = docsNav.flatMap((group) => group.items);
+
+/**
+ * 文案里用反引号标记的行内代码渲染成 <code>。
+ * 内容全部来自本仓库维护的常量，先转义再替换，避免 set:html 引入注入面。
+ */
+export function inlineCode(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+export const overviewPage = {
+  eyebrow: { en: 'DOCUMENTATION', 'zh-CN': '完整文档' },
+  title: { en: 'Engineering Flow docs', 'zh-CN': 'Engineering Flow 文档' },
+  lede: {
+    en: 'An open-source workflow plugin for Codex CLI and Claude Code. Ordinary tasks keep their existing speed; the five full workflows load only when you invoke one by name.',
+    'zh-CN': '一个面向 Codex CLI 与 Claude Code 的开源工作流插件。普通任务保持原有速度；五个完整工作流只在你点名调用时加载。',
+  },
+  whatTitle: { en: 'What this is', 'zh-CN': '这是什么' },
+  whatBody: {
+    en: 'Strong coding models already know these engineering techniques; the problem is that they apply them inconsistently, and the occasions they skip are usually the expensive ones. Engineering Flow targets a small number of those high-value failure modes. It does not take control away from you and it does not replace your project’s own instruction files. Each session automatically loads a compact set of engineering, completion, and safety rules. Anything heavier than that must be invoked by name.',
+    'zh-CN': '强编码模型已经掌握这些工程技巧，问题在于应用不稳定，而被跳过的那些场合往往代价最高。Engineering Flow 只针对其中少数几种高价值失败模式，既不接管你的控制权，也不取代项目自身的指令文件。每次会话开始时自动加载一组精简规则，涵盖工程习惯、完成标准与安全边界；比这更重的能力，一律需要点名调用。',
+  },
+  modelTitle: { en: 'How a session runs', 'zh-CN': '一次会话如何运行' },
+  modelSteps: [
+    {
+      title: { en: 'New session', 'zh-CN': '新会话' },
+      detail: { en: 'The minimal Engineering Core loads automatically. No planning, TDD, worktree, or release ceremony.', 'zh-CN': '自动加载精简的 Engineering Core，不含计划、TDD、worktree 或发布仪式。' },
+    },
+    {
+      title: { en: 'Ordinary request', 'zh-CN': '普通请求' },
+      detail: { en: 'Core only. A clear, routine task is handled directly at full speed.', 'zh-CN': '只使用 Core。清晰的常规任务直接完成，不走流程。' },
+    },
+    {
+      title: { en: 'Named workflow', 'zh-CN': '点名工作流' },
+      detail: { en: 'The full workflow loads and owns the whole task, not just the message that named it.', 'zh-CN': '完整工作流加载，并接管整个任务，而不只是点名它的那一条消息。' },
+    },
+    {
+      title: { en: 'Same-task follow-up', 'zh-CN': '同任务后续回复' },
+      detail: { en: 'Ordinary replies continue the current phase — no need to repeat the token.', 'zh-CN': '普通回复继续当前阶段，不需要重复输入 token。' },
+    },
+  ],
+  chooseTitle: { en: 'Choose a workflow', 'zh-CN': '选择工作流' },
+  chooseIntro: {
+    en: 'Choose by the situation you are in, not by how large the task looks.',
+    'zh-CN': '按你当前所处的情况选择，而不是按任务规模。',
+  },
+  chooseColumns: {
+    en: ['Situation', 'Workflow', 'Modifies code?'],
+    'zh-CN': ['你的情况', '工作流', '是否修改代码'],
+  },
+  chooseRows: [
+    {
+      slug: 'develop' as WorkflowSlug,
+      when: { en: 'Feature, refactor, tests, or maintainability work', 'zh-CN': '新功能、重构、补测试、代码完善' },
+      edits: { en: 'After your approval', 'zh-CN': '你批准后才改' },
+    },
+    {
+      slug: 'diagnose' as WorkflowSlug,
+      when: { en: 'Bug, regression, wrong output, intermittent fault, or slowdown', 'zh-CN': 'bug、回归、错误输出、间歇故障、性能下降' },
+      edits: { en: 'Only when you authorize a fix', 'zh-CN': '你授权修复后才改' },
+    },
+    {
+      slug: 'code-design' as WorkflowSlug,
+      when: { en: 'A goal with no settled solution, or a design draft to refine', 'zh-CN': '有目标但方案未定，或已有设计需要完善' },
+      edits: { en: 'No', 'zh-CN': '否' },
+    },
+    {
+      slug: 'review' as WorkflowSlug,
+      when: { en: 'Review a diff, branch, pull request, or uncommitted work', 'zh-CN': '评审 diff、分支、PR 或未提交改动' },
+      edits: { en: 'No — strictly read-only', 'zh-CN': '否，严格只读' },
+    },
+    {
+      slug: 'handoff' as WorkflowSlug,
+      when: { en: 'Continue in a new session or hand over to another agent', 'zh-CN': '换会话继续，或交给其他 agent' },
+      edits: { en: 'No', 'zh-CN': '否' },
+    },
+  ],
+  boundariesTitle: { en: 'Boundaries that always hold', 'zh-CN': '始终成立的边界' },
+  boundaries: [
+    { en: 'Your current request, the project’s AGENTS.md / CLAUDE.md, and its authoritative documents always win.', 'zh-CN': '你当前的请求，以及项目内的 AGENTS.md、CLAUDE.md 和权威文档，始终优先。' },
+    { en: 'A full workflow is never loaded unless you name it. An unknown token triggers nothing.', 'zh-CN': '没有点名的完整工作流不会自动加载；未知 token 不会触发任何工作流。' },
+    { en: 'Explicit cancellation, switching workflows, or starting an unrelated task ends the inheritance.', 'zh-CN': '明确取消、切换工作流或开始无关的新任务，都会结束继承。' },
+    { en: 'No workflow gains permission to commit, push, publish, open issues, install dependencies, or change global configuration.', 'zh-CN': '任何工作流都不会自动获得提交、推送、发布、创建 issue、安装依赖或修改全局配置的权限。' },
+  ],
+  startTitle: { en: 'Start here', 'zh-CN': '从这里开始' },
+  startCards: [
+    {
+      path: 'docs/install',
+      icon: 'terminal',
+      title: { en: 'Installation', 'zh-CN': '安装' },
+      detail: { en: 'Add the marketplace and plugin on Codex CLI or Claude Code, then verify it is enabled.', 'zh-CN': '在 Codex CLI 或 Claude Code 里添加 marketplace 和插件，并确认已启用。' },
+    },
+    {
+      path: 'docs/quickstart',
+      icon: 'code',
+      title: { en: 'Quick start', 'zh-CN': '快速开始' },
+      detail: { en: 'Your first ordinary task, your first named workflow, and how approval actually works.', 'zh-CN': '第一个普通任务、第一次点名工作流，以及批准到底怎么生效。' },
+    },
+    {
+      path: 'docs/philosophy',
+      icon: 'compass',
+      title: { en: 'Design philosophy', 'zh-CN': '设计思想' },
+      detail: { en: 'Why ceremony is optional, why approval is explicit, and why nothing auto-triggers.', 'zh-CN': '为什么仪式是可选的、批准必须显式，以及为什么没有任何东西自动触发。' },
+    },
+    {
+      path: 'docs/engineering',
+      icon: 'design',
+      title: { en: 'Design principles', 'zh-CN': '设计原则' },
+      detail: { en: 'The seven classical principles, and exactly which rule in this project encodes each one.', 'zh-CN': '七条经典设计原则，以及本项目中具体由哪条规则承载它们。' },
+    },
+  ],
+};
+
+export const installPage = {
+  eyebrow: { en: 'GETTING STARTED / 01', 'zh-CN': '开始使用 / 01' },
+  title: { en: 'Installation', 'zh-CN': '安装' },
+  lede: {
+    en: 'Add the marketplace, install the plugin, confirm it is enabled, then open a new session in your project.',
+    'zh-CN': '添加 marketplace、安装插件、确认已启用，然后在你的项目里开一个新会话。',
+  },
+  requirement: {
+    en: 'Supported hosts are Codex CLI and Claude Code. Marketplace commands run in your system terminal for Codex, and in the Claude Code conversation for Claude.',
+    'zh-CN': '支持的宿主是 Codex CLI 和 Claude Code。Codex 的安装命令在系统终端里执行，Claude Code 的安装命令在对话框里执行。',
+  },
+  codexTitle: { en: 'Codex CLI', 'zh-CN': 'Codex CLI' },
+  codexSteps: [
+    {
+      title: { en: 'Add the marketplace and plugin', 'zh-CN': '添加 marketplace 和插件' },
+      note: { en: 'Run in your system terminal.', 'zh-CN': '在系统终端执行。' },
+      code: 'codex plugin marketplace add yyqqCoding/engineering-flow-skills\ncodex plugin add engineering-flow@engineering-flow',
+    },
+    {
+      title: { en: 'Confirm it is enabled', 'zh-CN': '确认插件已启用' },
+      note: { en: 'The output should contain installed and enabled set to true.', 'zh-CN': '输出中 installed 和 enabled 都应为 true。' },
+      code: 'codex plugin list --json',
+    },
+    {
+      title: { en: 'Open a new session in your project', 'zh-CN': '在项目里开启新会话' },
+      note: { en: 'Close old sessions first — the Core loads at session start.', 'zh-CN': '先关掉旧会话，Core 在会话启动时加载。' },
+      code: 'cd /path/to/your-project\ncodex',
+    },
+  ],
+  codexLocalTitle: { en: 'Installing from a local checkout', 'zh-CN': '从本地仓库安装' },
+  codexLocalNote: {
+    en: 'For local development, point the marketplace at an absolute repository path.',
+    'zh-CN': '本地开发时，可以把 marketplace 指向仓库的绝对路径。',
+  },
+  codexLocalCode: 'codex plugin marketplace add /absolute/path/to/engineering-flow-skills\ncodex plugin add engineering-flow@engineering-flow',
+  claudeTitle: { en: 'Claude Code', 'zh-CN': 'Claude Code' },
+  claudeNote: {
+    en: 'Run these inside the Claude Code conversation, then start a new session. Claude Code invokes workflows with /engineering-flow:<workflow>.',
+    'zh-CN': '在 Claude Code 对话中执行，然后开启新会话。Claude Code 用 /engineering-flow:<工作流> 调用。',
+  },
+  claudeCode: '/plugin marketplace add yyqqCoding/engineering-flow-skills\n/plugin install engineering-flow@engineering-flow',
+  updateTitle: { en: 'Updating', 'zh-CN': '更新' },
+  updateCodexNote: {
+    en: 'Codex has no separate plugin update command. Refresh the marketplace, reinstall, then open a new session.',
+    'zh-CN': 'Codex 目前没有独立的 plugin update 命令。刷新 marketplace、重装插件，然后开启新会话。',
+  },
+  updateCodexCode: 'codex plugin marketplace upgrade engineering-flow\ncodex plugin remove engineering-flow@engineering-flow\ncodex plugin add engineering-flow@engineering-flow',
+  updateClaudeNote: {
+    en: 'In the Claude Code conversation, refresh the marketplace and update the plugin, then open a new session.',
+    'zh-CN': '在 Claude Code 对话中刷新 marketplace 并更新插件，然后开启新会话。',
+  },
+  updateClaudeCode: '/plugin marketplace update engineering-flow\n/plugin update engineering-flow@engineering-flow',
+  removeTitle: { en: 'Uninstalling', 'zh-CN': '卸载' },
+  removeNote: {
+    en: 'Remove the plugin first, then the marketplace entry.',
+    'zh-CN': '先移除插件，再移除 marketplace 条目。',
+  },
+  removeCode: 'codex plugin remove engineering-flow@engineering-flow\ncodex plugin marketplace remove engineering-flow',
+  tip: {
+    en: 'Workflow tokens belong in the agent conversation. Typing $engineering-flow:develop in Bash or PowerShell only produces “command not found”.',
+    'zh-CN': '工作流 token 要发到智能体对话里。在 Bash 或 PowerShell 里输入 $engineering-flow:develop 只会得到 command not found。',
+  },
+};
+
+export const quickstartPage = {
+  eyebrow: { en: 'GETTING STARTED / 02', 'zh-CN': '开始使用 / 02' },
+  title: { en: 'Quick start', 'zh-CN': '快速开始' },
+  lede: {
+    en: 'Three things to learn: how ordinary tasks behave, how to name a workflow, and what actually counts as approval.',
+    'zh-CN': '三件事：普通任务是什么表现、怎么点名工作流，以及到底什么才算批准。',
+  },
+  step1Title: { en: '1 · Describe clear work directly', 'zh-CN': '1 · 清晰任务直接描述' },
+  step1Body: {
+    en: 'After installing the plugin and opening a new session, describe routine work exactly as you always have. The basic engineering rules are already active: the model inspects project instructions and relevant code, preserves unrelated work, asks only about decisions that materially change the result, and runs scope-appropriate verification before claiming completion.',
+    'zh-CN': '安装插件并开启新会话之后，常规任务照常描述即可。基础工程规则已经生效：模型会检查项目规则和相关代码、保护无关改动、只问会实质改变结果的问题，并在声称完成之前运行范围匹配的验证。',
+  },
+  step1Code: {
+    en: 'Add an optional middleName to formatDisplayName and ignore blank values. Preserve the existing export, add the smallest meaningful verification, and do not commit.',
+    'zh-CN': '给 formatDisplayName 增加可选 middleName；空白值忽略。保留现有导出，添加最小验证，不要提交。',
+  },
+  step2Title: { en: '2 · Name a workflow for deeper work', 'zh-CN': '2 · 复杂任务点名工作流' },
+  step2Body: {
+    en: 'Send the workflow token together with the task, preferably on the first line. The workflow then owns the whole task — not just that one message.',
+    'zh-CN': '把工作流 token 和需求一起发送，建议放在第一行。之后这个工作流会接管整个任务，而不只是那一条消息。',
+  },
+  step2Code: {
+    en: '$engineering-flow:develop\nImplement order batch export. Reuse existing permission and query capabilities, add focused tests, and reconcile the authoritative documentation. Do not commit.',
+    'zh-CN': '$engineering-flow:develop\n实现订单批量导出。复用现有权限和查询能力，添加聚焦测试并同步权威文档。不要提交。',
+  },
+  formatTitle: { en: 'Invocation format', 'zh-CN': '调用格式' },
+  formatColumns: { en: ['Host', 'Format'], 'zh-CN': ['环境', '格式'] },
+  formatRows: [
+    { host: 'Codex CLI', format: '$engineering-flow:<workflow>' },
+    { host: 'Claude Code', format: '/engineering-flow:<workflow>' },
+  ],
+  step3Title: { en: '3 · Read the checkpoint, then approve', 'zh-CN': '3 · 读完检查点再批准' },
+  step3Body: {
+    en: 'Develop always returns a checkpoint first — goal, acceptance behavior, out of scope, assumptions, and solution boundary — and then stops, even when the request was already clear. Only action language you send after that checkpoint approves implementation. The initial request, answers to clarification questions, and “got it” do not.',
+    'zh-CN': 'Develop 一定会先给出检查点——目标、验收行为、范围外、假设和方案边界——然后停下，哪怕需求本来就很清楚。只有你在检查点之后发出的行动语言才批准实施；初始请求、回答澄清问题、"明白了"都不算。',
+  },
+  step3Code: { en: 'Proceed with the plan above.', 'zh-CN': '按上述方案执行。' },
+  step3Note: {
+    en: 'Requirement records move through Draft → Accepted → Implemented, and can be marked Superseded when replaced.',
+    'zh-CN': '需求记录的状态依次是 Draft → Accepted → Implemented，被新文档替代时可标记 Superseded。',
+  },
+  continuityTitle: { en: 'Staying in the same task', 'zh-CN': '同一个任务里继续' },
+  continuityBody: {
+    en: 'Answers, approval, corrections, and reports of omitted acceptance behavior all stay in the same task without repeating the token. An omitted original item reopens implementation directly. New or changed scope gets its own incremental checkpoint and another approval. An unrelated new task never inherits the old workflow.',
+    'zh-CN': '回答、批准、纠正和补漏都留在同一个任务里，不必重复输入 token。原验收行为的遗漏会直接重新进入实施；新增或改变范围则只对齐增量，并再次等待批准。无关的新任务不会继承旧工作流。',
+  },
+  troubleTitle: { en: 'If something looks wrong', 'zh-CN': '看起来不对劲时' },
+  troubleColumns: { en: ['Symptom', 'What to do'], 'zh-CN': ['现象', '处理方式'] },
+  troubleRows: [
+    {
+      symptom: { en: 'The terminal says `$engineering-flow:develop: command not found`', 'zh-CN': '终端提示 `$engineering-flow:develop: command not found`' },
+      fix: { en: 'The token belongs in the Codex conversation, not the system shell.', 'zh-CN': 'Token 应发送到 Codex 对话，而不是系统终端。' },
+    },
+    {
+      symptom: { en: 'Nothing seems different after installing', 'zh-CN': '安装后看不出变化' },
+      fix: { en: 'Confirm the plugin is installed and enabled, then close old sessions and restart.', 'zh-CN': '确认插件已安装并启用，然后关闭旧会话重新启动。' },
+    },
+    {
+      symptom: { en: 'No welcome banner on startup', 'zh-CN': '启动时没有欢迎提示' },
+      fix: { en: 'Expected. The Core loads quietly and is not required to announce itself.', 'zh-CN': '正常。Core 在后台加载，不要求显示横幅。' },
+    },
+    {
+      symptom: { en: 'The workflow did not trigger', 'zh-CN': '工作流没有触发' },
+      fix: { en: 'Use the complete, exact token, preferably on the first line of the request.', 'zh-CN': '使用完整、准确的 token，建议放在请求第一行。' },
+    },
+    {
+      symptom: { en: 'Still behaving like the old version after an update', 'zh-CN': '更新后仍是旧行为' },
+      fix: { en: 'Refresh the marketplace, reinstall the plugin, and open a new session.', 'zh-CN': '刷新 marketplace、重装插件并开启新会话。' },
+    },
+  ],
+};
+
+export const philosophyPage = {
+  eyebrow: { en: 'CONCEPTS', 'zh-CN': '核心概念' },
+  title: { en: 'Design philosophy', 'zh-CN': '设计思想' },
+  lede: {
+    en: 'Understand the task well enough to implement safely. Write the smallest clear change at the right boundary. Prove it works with fresh evidence. Make the docs match the facts.',
+    'zh-CN': '先把需求理解到足以安全实施，再在正确的边界写最小而清晰的改动，用新鲜证据证明它有效，最后让文档反映事实。',
+  },
+  problemTitle: { en: 'Three failure modes this corrects', 'zh-CN': '要纠正的三种失败模式' },
+  problems: [
+    {
+      title: { en: 'Ceremony everywhere', 'zh-CN': '仪式泛滥' },
+      detail: {
+        en: 'General workflow packages force every task through planning, TDD, worktrees, subagents, and release rituals. Hard tasks improve slightly while ordinary work gets slower and more fragile. Here, simple tasks are handled directly and full workflows load only on explicit request.',
+        'zh-CN': '通用工作流包把每个任务都塞进计划、TDD、worktree、子智能体和发布仪式。难任务只是略有改善，普通任务却更慢更脆。这里简单任务直接处理，完整工作流只在你显式请求时加载。',
+      },
+    },
+    {
+      title: { en: 'Lost multi-turn context', 'zh-CN': '多轮任务中断' },
+      detail: {
+        en: 'Answers, approvals, corrections, and reports of omitted acceptance items stay inside the same task context. There is no need to invoke the entry point again halfway through.',
+        'zh-CN': '回答、批准、纠正和补漏都保持在同一个任务上下文里，任务做到一半不需要重新调用入口。',
+      },
+    },
+    {
+      title: { en: 'Clarification mistaken for approval', 'zh-CN': '澄清被当成授权' },
+      detail: {
+        en: 'Independent questions are asked in one batch, dependent ones follow in order, and answering a question never authorizes code. Approval is a separate, explicit act.',
+        'zh-CN': '独立问题批量询问，依赖问题顺序追问；回答问题永远不等于授权编码。批准是一个独立、明确的动作。',
+      },
+    },
+  ],
+  layerTitle: { en: 'Two layers, on purpose', 'zh-CN': '刻意分成两层' },
+  layerIntro: {
+    en: 'Cost and control are separated. The always-on layer is small enough to be free; the expensive layer is opt-in.',
+    'zh-CN': '把成本和控制权分开：常驻层小到几乎无成本，昂贵的那一层由你主动选择。',
+  },
+  layers: [
+    {
+      kind: 'auto' as const,
+      label: { en: 'Automatic', 'zh-CN': '自动' },
+      title: { en: 'Minimal Engineering Core', 'zh-CN': '极简 Engineering Core' },
+      detail: {
+        en: 'A minimal set of engineering, completion, and safety rules is injected at session boundaries — start, resume, and compaction. No planning, TDD, worktree, or release ceremony is included.',
+        'zh-CN': '会话启动、恢复和压缩时注入一组最小的工程、完成和安全规则。不包含计划、TDD、worktree 或发布仪式。',
+      },
+    },
+    {
+      kind: 'explicit' as const,
+      label: { en: 'Explicit', 'zh-CN': '显式' },
+      title: { en: 'Five full workflows', 'zh-CN': '五个完整工作流' },
+      detail: {
+        en: 'A full workflow changes the shape and cost of the whole session, so it loads only when you name it — and then stays active at task level until the task ends.',
+        'zh-CN': '完整工作流会改变整个会话的形态和成本，所以只有你点名才加载；一旦加载，就在任务级保持活跃直到任务结束。',
+      },
+    },
+  ],
+  lifecycleTitle: { en: 'The develop lifecycle', 'zh-CN': 'Develop 生命周期' },
+  lifecycleBody: {
+    en: 'Develop is the only workflow with a human gate in the middle. Alignment happens before approval; implementation and verification happen after it. A material scope change returns to alignment; an omitted accepted behavior reopens implementation.',
+    'zh-CN': 'Develop 是唯一在中间设置人工关卡的工作流。批准之前只对齐，批准之后才实施和验证。实质范围变化回到对齐阶段；原验收行为的遗漏则直接重新进入实施。',
+  },
+  explicitTitle: { en: 'Why nothing triggers automatically', 'zh-CN': '为什么没有自动触发' },
+  explicitIntro: {
+    en: 'Auto-triggering was built, measured, and removed. Both experiments are recorded in the project’s benchmark log.',
+    'zh-CN': '自动触发做过、测过，然后被移除了。两个实验都记录在项目的基准日志里。',
+  },
+  lessons: [
+    {
+      icon: 'pulse',
+      title: { en: 'The auto-loaded design skill', 'zh-CN': '自动加载设计技能' },
+      detail: {
+        en: 'Loading code-design automatically scored 100% trigger precision, but produced no outcome benefit: duration +34.6%, tool calls +75%, input tokens +76.9%. The cost was real and the benefit was not, so it became user-invoked.',
+        'zh-CN': '自动加载 code-design 的触发准确率是 100%，但结果没有变好：耗时 +34.6%、工具调用 +75%、输入 token +76.9%。开销是真的，收益不存在，于是改为用户显式调用。',
+      },
+    },
+    {
+      icon: 'refresh',
+      title: { en: 'The auto-triggered diagnosis', 'zh-CN': '自动触发诊断' },
+      detail: {
+        en: 'Even after narrowing the description, the model still routed an unrelated policy change into diagnosis. Negative wording is not a deterministic boundary, so every workflow became explicit and only a minimal core stays automatic.',
+        'zh-CN': '即使收窄了描述，模型仍然会把无关的策略修改当成诊断任务。负面措辞构不成确定性边界，于是全部工作流改为显式调用，只保留极简核心自动注入。',
+      },
+    },
+  ],
+  lessonsConclusion: {
+    en: 'Explicit invocation chooses how the whole task is handled. The automatic part stays small and certain.',
+    'zh-CN': '显式调用决定整个任务的处理方式；自动的那部分只保留小而确定的规则。',
+  },
+  standardTitle: { en: 'The maintainable-code standard', 'zh-CN': '可维护代码标准' },
+  standardIntro: {
+    en: 'The objective is minimum necessary complexity — not minimum syntax, and not minimum line count. Every workflow that touches design applies the same list.',
+    'zh-CN': '目标是"必要的最低复杂度"，不是最少语法，也不是最少行数。所有涉及设计的工作流都用同一份清单。',
+  },
+  standards: [
+    { title: { en: 'Familiar', 'zh-CN': '熟悉' }, detail: { en: 'Established in the repository or idiomatic in the language and framework.', 'zh-CN': '在仓库里已经确立，或在语言与框架中地道。' } },
+    { title: { en: 'Explicit', 'zh-CN': '显式' }, detail: { en: 'Control flow, state changes, failures, and external effects are visible.', 'zh-CN': '控制流、状态变化、失败和外部副作用都看得见。' } },
+    { title: { en: 'Local', 'zh-CN': '局部' }, detail: { en: 'A maintainer can change behavior without tracing unrelated modules.', 'zh-CN': '维护者不必追踪无关模块就能改动行为。' } },
+    { title: { en: 'Named', 'zh-CN': '有名字' }, detail: { en: 'Intermediate concepts carry domain meaning instead of being compressed into expressions.', 'zh-CN': '中间概念带领域含义，而不是压缩成表达式。' } },
+    { title: { en: 'Debuggable', 'zh-CN': '可调试' }, detail: { en: 'Meaningful steps can be inspected, logged, and given breakpoints.', 'zh-CN': '有意义的步骤可以检查、打日志、下断点。' } },
+    { title: { en: 'Change-resilient', 'zh-CN': '抗变化' }, detail: { en: 'One rule has one authoritative owner; related behavior changes together.', 'zh-CN': '一条规则只有一个权威归属，相关行为一起变化。' } },
+    { title: { en: 'Boring', 'zh-CN': '无聊' }, detail: { en: 'It avoids novelty that exists only to reduce lines or show off language cleverness.', 'zh-CN': '避免那种只为减少行数或炫技而存在的新奇写法。' } },
+  ],
+  nonGoalsTitle: { en: 'Explicit non-goals', 'zh-CN': '明确的非目标' },
+  nonGoals: [
+    { en: 'Owning issue tracking, branching, pull requests, or release management.', 'zh-CN': '接管问题跟踪、分支管理、Pull Request 或发布流程。' },
+    { en: 'Requiring worktrees, subagents, saved plans, or commits for every task.', 'zh-CN': '要求每个任务都用 worktree、子智能体、保存的计划或提交。' },
+    { en: 'Replacing an established project documentation layout.', 'zh-CN': '取代项目已有的文档结构。' },
+    { en: 'Enforcing a universal language style guide.', 'zh-CN': '强推一套通用的语言风格指南。' },
+    { en: 'Optimizing for minimum lines of code.', 'zh-CN': '以最少代码行数为优化目标。' },
+    { en: 'Requiring unit tests where they provide no useful feedback.', 'zh-CN': '在没有有效反馈价值的地方也强制写单元测试。' },
+  ],
+};
+
+export const experimentsPage = {
+  eyebrow: { en: 'REFERENCE', 'zh-CN': '参考资料' },
+  title: { en: 'Experiments & results', 'zh-CN': '实验与验证' },
+  lede: {
+    en: 'Every number on this site comes from controlled A/B runs in the project repository — not from intuition.',
+    'zh-CN': '本站的每个数字都来自项目仓库里的对照实验，不来自直觉。',
+  },
+  methodTitle: { en: 'How the benchmark is run', 'zh-CN': '基准测试怎么跑' },
+  method: [
+    {
+      icon: 'shield',
+      title: { en: 'Isolated environments', 'zh-CN': '隔离环境' },
+      detail: { en: 'Each run uses a temporary HOME and a dedicated workspace with other plugins stripped. Any run showing contamination traces is discarded.', 'zh-CN': '每次运行使用临时 HOME 和独立工作区，并剥离其他插件；发现任何污染痕迹的运行直接作废。' },
+    },
+    {
+      icon: 'grid',
+      title: { en: 'Controlled A/B', 'zh-CN': '对照设计' },
+      detail: { en: 'Same model, same prompt, same repository state: the baseline arm runs without the plugin, the candidate arm with it. Stochastic scenarios take at least three samples per arm.', 'zh-CN': '同一模型、同一提示词、同一仓库状态：基线组不装插件，候选组装当前插件；随机场景每组至少采样 3 次。' },
+    },
+    {
+      icon: 'terminal',
+      title: { en: 'Deterministic scoring', 'zh-CN': '确定性评分' },
+      detail: { en: 'Executable scorers check what actually changed — which files, whether existing capabilities were reused, whether any commit was unauthorized — not impressions.', 'zh-CN': '用可执行的评分器检查实际发生了什么：改了哪些文件、是否复用了既有能力、有没有未授权提交，而不是印象分。' },
+    },
+    {
+      icon: 'document',
+      title: { en: 'Fingerprinted cohorts', 'zh-CN': '指纹分群' },
+      detail: { en: 'Every instruction change produces a new fingerprint; results from different fingerprints are never averaged together.', 'zh-CN': '每次指令修改都会产生新指纹；不同指纹的结果绝不混合平均。' },
+    },
+  ],
+  resultsTitle: { en: 'Headline results', 'zh-CN': '关键结果' },
+  resultsNote: {
+    en: 'Counts come from the project’s own published test records and are not recomputed here.',
+    'zh-CN': '这些数字来自项目自己公开的测试记录，本页不会重新计算。',
+  },
+  viewResults: { en: 'Open the full results page', 'zh-CN': '打开完整验证结果页' },
+  lessonsTitle: { en: 'What the experiments changed', 'zh-CN': '实验改变了什么' },
+  lessonsIntro: {
+    en: 'Two auto-trigger experiments were run and both were rolled back. They are the reason every workflow is explicit today.',
+    'zh-CN': '两个自动触发实验都被回滚。它们就是今天所有工作流都必须显式调用的原因。',
+  },
+  limitsTitle: { en: 'Verification status and limits', 'zh-CN': '验证状态与限制' },
+  limits: [
+    { en: 'Static and deterministic tests: 49/49 passing.', 'zh-CN': '静态与确定性测试：49/49 通过。' },
+    { en: 'Current Codex general cohort: 17 scenarios, candidate 51/51 passing; explicit invocation 51/51, with zero false triggers, misses, collisions, contamination, or unauthorized commits.', 'zh-CN': 'Codex 当前通用 cohort：17 个场景，候选组 51/51 通过；显式调用 51/51，误触发、漏触发、碰撞、污染和未授权提交均为 0。' },
+    { en: 'Latest task-level paired A/B: under the same model, reasoning effort, and final scenario fingerprint, the current-release control scored 0/12 and the candidate 12/12.', 'zh-CN': '最新任务级配对 A/B：相同模型、推理等级和最终场景指纹下，current-release 对照组 0/12，候选组 12/12。' },
+    { en: 'Claude Code 2.1.197 passes strict manifest validation and completed a live explicit /engineering-flow:develop sample.', 'zh-CN': 'Claude Code 2.1.197 通过 strict manifest 校验，并完成显式 /engineering-flow:develop 实机样本。' },
+    { en: 'Claude Core-only ambiguous samples have not yet reached Codex-equivalent behavior, so name a full workflow for material data or permission decisions.', 'zh-CN': 'Claude 的 Core-only 歧义样本尚未达到 Codex 同等行为，涉及数据、权限等重大决定时应显式调用完整工作流。' },
+    { en: 'Full workflows add context, tool calls, and duration, which is exactly why they are not loaded into every request.', 'zh-CN': '完整工作流会增加上下文、工具调用和耗时，这正是它们不会被加载到每个请求里的原因。' },
+  ],
+  limitsWarning: {
+    en: 'These numbers describe the listed versions only. They are not guarantees for other models, providers, or setups.',
+    'zh-CN': '这些数字只代表所列版本的真实结果，不能当作对其他模型、供应商或环境的保证。',
+  },
+};
+
+export const practicesPage = {
+  eyebrow: { en: 'REFERENCE', 'zh-CN': '参考资料' },
+  title: { en: 'Best practices & FAQ', 'zh-CN': '最佳实践与常见问题' },
+  lede: {
+    en: 'How to get the most out of the plugin day to day, and answers to the questions that come up first.',
+    'zh-CN': '日常使用怎么用得最顺手，以及最常被问到的问题。',
+  },
+  advantagesTitle: { en: 'What you get', 'zh-CN': '你会得到什么' },
+  advantages: [
+    { title: { en: 'Pay for depth only when needed', 'zh-CN': '深度按需付费' }, detail: { en: 'Simple tasks carry zero ceremony; full workflows load only when you ask.', 'zh-CN': '简单任务零仪式；完整工作流只在你要求时加载。' } },
+    { title: { en: 'Task-level continuity', 'zh-CN': '任务级连续' }, detail: { en: 'Corrections and omissions continue inside the same flow, with no re-invocation.', 'zh-CN': '纠正和补漏在同一流程内继续，不用重新调用。' } },
+    { title: { en: 'Approval is never implied', 'zh-CN': '批准绝不默认' }, detail: { en: 'A separate, explicit human act separates understanding from doing.', 'zh-CN': '理解需求与动手实施之间，隔着一个独立、明确的人工动作。' } },
+    { title: { en: 'Evidence-driven completion', 'zh-CN': '证据驱动完成' }, detail: { en: 'Nothing counts as done without fresh, scope-appropriate verification.', 'zh-CN': '没有新鲜、范围匹配的验证，就不算完成。' } },
+    { title: { en: 'Two hosts, one semantics', 'zh-CN': '双平台一致语义' }, detail: { en: 'Codex CLI and Claude Code share synchronized invocation behavior.', 'zh-CN': 'Codex CLI 与 Claude Code 的调用行为保持同步。' } },
+    { title: { en: 'Read-only where it matters', 'zh-CN': '该只读时严格只读' }, detail: { en: 'Review and handoff never touch your repository.', 'zh-CN': '评审和交接绝不改动你的仓库。' } },
+  ],
+  practicesTitle: { en: 'Day-to-day practices', 'zh-CN': '日常做法' },
+  practices: [
+    { en: 'Use ordinary prompts for clear, routine tasks — naming a workflow adds cost you do not need.', 'zh-CN': '清晰的常规任务直接描述，点名工作流只会增加你不需要的开销。' },
+    { en: 'Name a workflow when you want its deeper process, and put the token on the first line.', 'zh-CN': '想要更完整流程时才点名工作流，并把 token 放在第一行。' },
+    { en: 'Read the checkpoint before approving. Approval is the one place where your attention pays the most.', 'zh-CN': '批准前先读检查点。这是你的注意力回报最高的一个位置。' },
+    { en: 'Treat repository docs and instruction files as domain truth — they always take priority over the plugin.', 'zh-CN': '把仓库文档和指令文件当作领域事实，它们的优先级永远高于插件。' },
+    { en: 'Say what is out of scope. It is as useful as saying what you want.', 'zh-CN': '明确写出"范围外"，它和写清楚"要什么"一样有用。' },
+    { en: 'For material data, permission, or destructive decisions, name a full workflow instead of relying on the Core.', 'zh-CN': '涉及数据、权限或破坏性操作的重大决定，点名完整工作流，不要只依赖 Core。' },
+  ],
+  faqTitle: { en: 'Frequently asked questions', 'zh-CN': '常见问题' },
+  faq: [
+    {
+      q: { en: 'Do I have to name a workflow for every task?', 'zh-CN': '每个任务都要点名工作流吗？' },
+      a: { en: 'No — and you should not. The always-on Core already covers ordinary work. A full workflow changes the shape and cost of the session, so reach for one when you want its deeper process.', 'zh-CN': '不需要，也不建议。常驻 Core 已经覆盖普通任务。完整工作流会改变会话的形态和成本，只在你需要它那套更深流程时才用。' },
+    },
+    {
+      q: { en: 'Why did it stop and wait even though my request was clear?', 'zh-CN': '需求已经很清楚了，它为什么还是停下来等？' },
+      a: { en: 'Invoking Develop is not approval to code. The checkpoint is a fixed step: it states the goal and boundary first, then pauses. Reply with action language such as “proceed with the plan above” and it continues.', 'zh-CN': '调用 Develop 本身不是编码授权。检查点是固定动作：先说清目标和边界，然后暂停。你回一句"按上述方案执行"它就继续。' },
+    },
+    {
+      q: { en: 'Can it commit or push my work?', 'zh-CN': '它会自己提交或推送吗？' },
+      a: { en: 'Not without authorization. Committing, pushing, publishing, opening issues, installing dependencies, and changing global configuration all require explicit permission from you.', 'zh-CN': '未获授权不会。提交、推送、发布、创建 issue、安装依赖和修改全局配置都需要你的明确授权。' },
+    },
+    {
+      q: { en: 'Does the plugin override my project instructions?', 'zh-CN': '插件会覆盖我的项目规则吗？' },
+      a: { en: 'No. Your current request, the project’s AGENTS.md or CLAUDE.md, and its authoritative documents always take priority. The workflows discover and consume your conventions; they do not replace them.', 'zh-CN': '不会。你当前的请求、项目里的 AGENTS.md 或 CLAUDE.md，以及权威文档始终优先。工作流只会读取并遵循你的约定，不会取代它们。' },
+    },
+    {
+      q: { en: 'How do I stop a workflow that is still active?', 'zh-CN': '工作流还活跃，怎么让它结束？' },
+      a: { en: 'Cancel it explicitly, switch to another workflow, or start an unrelated task. Any of the three ends the inheritance; a new unrelated task never inherits a stale workflow or approval.', 'zh-CN': '明确取消、切换到另一个工作流，或者开始一个无关的新任务。三者任一都会结束继承；无关的新任务不会继承旧工作流或旧批准。' },
+    },
+    {
+      q: { en: 'Is there a way to see what actually ran?', 'zh-CN': '有办法看到实际跑了什么吗？' },
+      a: { en: 'Yes. Every workflow reports its evidence: which commands ran, what changed, and which acceptance behavior was verified, partially verified, incomplete, or deviated.', 'zh-CN': '有。每个工作流都会报告证据：跑了哪些命令、改了什么，以及每条验收行为是已验证、部分验证、未完成还是有偏差。' },
+    },
+  ],
+};
+
+/** 工作流详解页的固定标题与标签 */
+export const guideLabels = {
+  eyebrow: { en: 'WORKFLOW REFERENCE', 'zh-CN': '工作流详解' },
+  invocation: { en: 'Invocation', 'zh-CN': '调用方式' },
+  why: { en: 'Why this workflow exists', 'zh-CN': '为什么需要这个工作流' },
+  stages: { en: 'How it runs, stage by stage', 'zh-CN': '流程逐阶段拆解' },
+  stagesIntro: {
+    en: 'Every rule below is taken from the workflow definition in the source repository — this is what the agent is actually told to do.',
+    'zh-CN': '下面每一条规则都取自源仓库里的工作流定义——这就是智能体真正被要求做的事。',
+  },
+  rules: { en: 'Rules that cannot be bypassed', 'zh-CN': '不可绕过的规则' },
+  example: { en: 'A real invocation', 'zh-CN': '一次真实调用' },
+  exampleIntro: {
+    en: 'What the conversation actually looks like, from the token you send to the evidence you get back.',
+    'zh-CN': '从你发出的 token 到你拿回的证据，这次对话实际长什么样。',
+  },
+  when: { en: 'When to use it', 'zh-CN': '什么时候用它' },
+  avoid: { en: 'When to reach for something else', 'zh-CN': '什么时候改用别的' },
+  avoidColumns: { en: ['Situation', 'Use instead'], 'zh-CN': ['你的情况', '改用'] },
+  faq: { en: 'Questions', 'zh-CN': '常见问题' },
+  gate: { en: 'Human gate', 'zh-CN': '人工关卡' },
+  you: { en: 'You', 'zh-CN': '你' },
+  agent: { en: 'Agent', 'zh-CN': '智能体' },
+} satisfies Record<string, L<string> | L<string[]>>;
+
+/** 五个工作流的参考手册内容：阶段规则逐条摘自 skills/<slug>/SKILL.md */
+export const workflowGuides: Record<WorkflowSlug, {
+  purpose: L<string>;
+  why: L<string>;
+  stages: L<Array<{ name: string; gate?: boolean; summary: string; rules: string[] }>>;
+  hardRules: L<Array<{ icon: string; title: string; detail: string }>>;
+  example: L<{ prompt: string; turns: Array<{ who: 'user' | 'agent'; text: string }> }>;
+  useWhen: L<string[]>;
+  avoidWhen: L<Array<{ situation: string; instead: string }>>;
+  faq: L<Array<{ q: string; a: string }>>;
+}> = {
+  develop: {
+    purpose: {
+      en: 'Carry one implementation task from understanding to evidence-backed completion, with a human approval gate in the middle.',
+      'zh-CN': '把一次实现任务从"理解需求"带到"有证据的完成"，中间隔一道人工批准关卡。',
+    },
+    why: {
+      en: 'Most bad agent output is not bad coding — it is coding before understanding. Develop splits one implementation into two halves. First it states the goal, acceptance behavior, out of scope, assumptions, and solution boundary, then stops. Only action language you send after that checkpoint allows production code to change. Everything after that — corrections, omissions, follow-up questions — stays inside the same task without another invocation.',
+      'zh-CN': '智能体写坏代码，多数时候不是因为不会写，而是没搞清楚要做什么就开始写。Develop 把一次实现拆成两段：先把目标、验收行为、范围外、假设和方案边界讲清楚，然后停下；只有你在检查点之后发出的行动语言，才允许它动生产代码。之后的纠正、补漏和追问都留在同一个任务里，不需要重新调用。',
+    },
+    stages: {
+      en: [
+        {
+          name: 'Discover once',
+          summary: 'Read everything worth reading — and read it only once.',
+          rules: [
+            'Read applicable project instructions and authoritative requirement or design documents.',
+            'Inspect version-control state and preserve unrelated uncommitted work.',
+            'Read the relevant implementation, tests, callers, and nearby existing patterns.',
+            'If the existing behavior is itself broken, switch to the Diagnose lifecycle.',
+            'Evidence is gathered once and reused; unchanged discovery is never repeated for narration.',
+          ],
+        },
+        {
+          name: 'Clarify to a safe threshold',
+          summary: 'Ask only what changes the result, and ask it all at once.',
+          rules: [
+            'A question is allowed only when all three hold: the answer changes accepted behavior, the request leaves it unresolved or authoritative evidence contradicts it, and no contract or precedent already resolves it.',
+            'Implementation facts discoverable in the repository — field names, associations, helper choice, storage shape — are investigation work, not user choices.',
+            'Inventory every behavior marked undefined, unknown, intentional, or not established before asking. Undefined never means out of scope on its own.',
+            'For delete and write operations, an undefined unknown or missing-resource result is a hard-stop question. It cannot be inferred from a success return value, absent precedent, or a neighboring read API.',
+            'All independent qualifying questions go into one compact batch; only genuinely dependent questions follow the answers.',
+            'A complete contract closes its named input domain. Inputs outside it stay out of scope instead of extending the interview.',
+          ],
+        },
+        {
+          name: 'Present the checkpoint',
+          summary: 'Put the final understanding on the table, then stop.',
+          rules: [
+            'Present the goal, acceptance behavior, out of scope, assumptions, and material solution boundary.',
+            'A short checkpoint stays in the conversation. A substantial one uses the project’s authoritative document, or `docs/requirements/<feature-slug>.md` with status `Draft` when no convention exists.',
+            'When the first request already supplies a complete contract, create and verify that Draft in the same turn — hypothetical optional inputs cannot delay it.',
+            'Do not change production code, tests, or configuration before approval. Writing the requirement record is allowed.',
+            'End the turn after the checkpoint. The Develop invocation itself is not approval to code.',
+          ],
+        },
+        {
+          name: 'Approval',
+          gate: true,
+          summary: 'One explicit sentence from you opens this gate — nothing else does.',
+          rules: [
+            'Only action language sent after the checkpoint approves implementation, such as “implement this”, “start implementation”, or “proceed with the plan above”.',
+            'The initial request, answers to clarification questions, and reading acknowledgements never count as approval.',
+            'On approval, a durable requirement record is marked `Accepted` and work continues directly — you are never asked to invoke Develop again.',
+          ],
+        },
+        {
+          name: 'Choose boundary and feedback',
+          summary: 'Decide where the change belongs and what evidence will prove it.',
+          rules: [
+            'Reuse existing behavior only when it has the same domain responsibility and should evolve together.',
+            'Place rules with the module that owns the relevant data and invariant; inspect sibling callers before changing shared behavior.',
+            'Choose the highest stable public seam that can prove each behavior slice.',
+            'Use red-green-refactor for regressions and valuable business behavior; use compile, lint, or integration checks for mechanical, presentation, configuration, and framework-wiring work.',
+            'When new stable behavior closes a coverage gap, leave focused automated coverage — unless it would be ceremonial or could not detect the behavior.',
+          ],
+        },
+        {
+          name: 'Implement and harden',
+          summary: 'Smallest clear change at the owning boundary, then targeted hardening only.',
+          rules: [
+            'Make the smallest clear change at the owning boundary and keep control flow, effects, failures, and state transitions explicit.',
+            'Avoid speculative abstractions, dependencies, configuration, and unrelated cleanup.',
+            'Preserve validation, permissions, security, data integrity, compatibility, accessibility, and unrelated work.',
+            'Run focused feedback after a behavior-changing slice only when its result could have changed — never rerun the same command against the same state.',
+            'Add targeted coverage only for real risk: input, numeric/time, collection, state/lifecycle, duplicate/concurrent, permission/trust, resource/external-failure, migration, or compatibility.',
+            'If implementation reveals a material requirement change, align only that increment, update the checkpoint, and pause for approval again.',
+          ],
+        },
+        {
+          name: 'Complete and reconcile',
+          summary: 'Prove every accepted behavior, and make the documents true again.',
+          rules: [
+            'Re-read the accepted behavior and inspect the diff for correctness, safety, ownership, readability, test sensitivity, scope, and temporary artifacts.',
+            'Reconcile every accepted behavior as verified, partially verified, incomplete, or deviated.',
+            'Before marking a record `Implemented`, replace stale future-tense language — “will be added”, “to be created”, “pending” — with the actual files and fresh evidence. A status-only edit is not sufficient.',
+            'Update authoritative documentation only for changed facts; update project instructions only for durable cross-task rules.',
+            'Remove temporary diagnostics and report remaining gaps.',
+            'Do not commit, push, publish, create external issues, install dependencies, or change global configuration unless authorized.',
+          ],
+        },
+      ],
+      'zh-CN': [
+        {
+          name: '一次性发现',
+          summary: '把该读的读完，而且只读一次。',
+          rules: [
+            '读适用的项目指令和权威需求/设计文档。',
+            '检查版本控制状态，保护无关的未提交改动。',
+            '读相关实现、测试、调用方和邻近的既有写法。',
+            '如果是已有行为本身坏了，转用 Diagnose 生命周期。',
+            '证据只收集一次并全程复用，不为了"看起来在工作"重复执行没有变化的命令。',
+          ],
+        },
+        {
+          name: '澄清到可安全实施',
+          summary: '只问会改变结果的问题，而且一次问完。',
+          rules: [
+            '一个问题必须同时满足三个条件才允许提出：答案会改变验收行为；请求本身未决，或权威证据与请求矛盾；契约、权威文档和同类操作的先例都没有解决它。',
+            '仓库里查得到的实现事实——字段名、关联关系、辅助函数选择、存储形态——属于调查范围，不能推给你来选。',
+            '提问前先清点所有被标为"未定义/未知/有意为之/尚未建立"的行为。"未定义"本身从来不等于"范围外"。',
+            '对删除和写操作，未知资源或资源不存在时的结果是硬停问题，不能从成功返回值、缺少先例或相邻的读接口推断出来。',
+            '所有独立且合格的问题合并成一批一次问完；只有答案引出的依赖问题才继续追问。',
+            '完整的契约会关闭它覆盖的输入域，契约外的输入保持范围外，不用来扩大访谈。',
+          ],
+        },
+        {
+          name: '给出检查点',
+          summary: '把最终理解摆到台面上，然后停下。',
+          rules: [
+            '给出目标、验收行为、范围外、假设和实质方案边界。',
+            '内容少时留在对话里；实质需求优先写进项目已有的权威文档，没有适用约定时新建 `docs/requirements/<feature-slug>.md`，状态 `Draft`。',
+            '首轮请求已经给出完整契约时，就在这一轮创建并核实 Draft，契约外的假设性可选输入不能拖住它。',
+            '批准之前不改生产代码、测试和配置——写需求记录是允许的。',
+            '给完检查点就结束这一轮。调用 Develop 本身不是编码授权。',
+          ],
+        },
+        {
+          name: '批准',
+          gate: true,
+          summary: '只有你的一句明确指令能打开这道门。',
+          rules: [
+            '只有检查点之后发出的行动语言才算批准，例如"开始实施""按上述方案执行"。',
+            '初始请求、澄清问题的回答、"我看过了/明白了"，都不算批准。',
+            '获得批准后把需求记录标记为 `Accepted` 并直接继续，不会要求你再调用一次 Develop。',
+          ],
+        },
+        {
+          name: '选定边界与反馈',
+          summary: '决定改动该落在哪里，以及用什么证据证明它。',
+          rules: [
+            '只有同一领域职责、且应该共同演进的行为才允许复用。',
+            '规则放在拥有相关数据和不变式的模块；改动共享行为前先看兄弟调用方。',
+            '选择能证明每个行为切片的最高稳定公共缝隙。',
+            '回归和有价值的业务行为走红-绿-重构；机械改动、纯展示、配置和框架接线用编译、lint 或集成检查。',
+            '新增的稳定行为填上了覆盖缺口时留下聚焦测试，除非它只是仪式，或根本测不出该行为。',
+          ],
+        },
+        {
+          name: '实施与加固',
+          summary: '在拥有该规则的边界上做最小改动，只为真实风险加固。',
+          rules: [
+            '在拥有该规则的边界上做最小且清晰的改动，控制流、副作用、失败和状态转换保持显式。',
+            '不引入投机抽象、依赖和配置，也不顺手做无关清理。',
+            '保留校验、权限、安全、数据完整性、兼容性、可访问性和无关工作。',
+            '只在结果可能变化时才跑反馈命令，绝不对同一状态重复同一条命令。',
+            '只为真实风险补测试：输入、数值/时间、集合、状态/生命周期、重复/并发、权限/信任、资源/外部失败、迁移、兼容性。',
+            '实施过程中发现实质需求变化，只对齐这个增量、更新检查点，并再次暂停等待批准。',
+          ],
+        },
+        {
+          name: '完成与对齐',
+          summary: '每条验收行为都要有证据，文档也要重新变成真的。',
+          rules: [
+            '重读验收行为，检查 diff 的正确性、安全、归属、可读性、测试敏感度、范围和临时产物。',
+            '把每条验收行为标记为已验证、部分验证、未完成或有偏差。',
+            '标记 `Implemented` 之前，把"将会添加""待创建""待补充"这类未来时改写成事实，并写上真实文件与新鲜证据；只改状态不算完成。',
+            '只为发生变化的事实更新权威文档；只为跨任务的长期规则更新项目指令文件。',
+            '删掉临时诊断代码，并报告剩余缺口。',
+            '未获授权不提交、不推送、不发布、不创建外部 issue、不安装依赖、不修改全局配置。',
+          ],
+        },
+      ],
+    },
+    hardRules: {
+      en: [
+        { icon: 'lock', title: 'Approval gate', detail: 'Coding starts only after explicit post-checkpoint action language. The initial request, clarification answers, and “looks good” never count.' },
+        { icon: 'chat', title: 'Batched clarification', detail: 'Independent questions are asked in one batch; only questions created by those answers get follow-ups. No drip-feed interviewing.' },
+        { icon: 'refresh', title: 'Task-level continuity', detail: 'Corrections, omissions, and same-task follow-ups continue inside the same flow. An `Implemented` record returns to `Accepted` until the omission is completed.' },
+        { icon: 'shield', title: 'Undefined is a question', detail: 'An explicitly undefined result never becomes out of scope by itself — least of all the unknown-resource behavior of a delete or write operation.' },
+      ],
+      'zh-CN': [
+        { icon: 'lock', title: '批准关卡', detail: '只有检查点之后的明确行动语言才开始编码。初始请求、澄清回答和"看起来不错"都不算。' },
+        { icon: 'chat', title: '批量澄清', detail: '独立问题一次问完；只有这些答案引出的依赖问题才追问，不做挤牙膏式访谈。' },
+        { icon: 'refresh', title: '任务级连续', detail: '纠正、补漏和同任务追问都在当前流程内继续。已标 `Implemented` 的记录会退回 `Accepted`，补完后再标回去。' },
+        { icon: 'shield', title: '未定义即问题', detail: '显式标注为"未定义"的结果不会自己变成范围外，尤其是删除和写操作对未知资源的行为。' },
+      ],
+    },
+    example: {
+      en: {
+        prompt: '$engineering-flow:develop\nImplement order batch export. Reuse existing permission and query capabilities, add focused tests, and reconcile the authoritative documentation. Do not commit.',
+        turns: [
+          { who: 'agent', text: 'Reads project rules, Git state, the existing export and permission code, then asks the single question that changes the result: what should happen for an order ID that does not exist?' },
+          { who: 'user', text: 'Fail with a 404.' },
+          { who: 'agent', text: 'Returns the checkpoint — goal, acceptance behavior, out of scope, assumptions, solution boundary — creates `docs/requirements/order-batch-export.md` as `Draft`, and stops.' },
+          { who: 'user', text: 'Proceed with the plan above.' },
+          { who: 'agent', text: 'Marks the record `Accepted`, implements inside the order module boundary, adds a focused test for the 404 branch, runs verification, then marks the record `Implemented` with the real files and fresh results.' },
+        ],
+      },
+      'zh-CN': {
+        prompt: '$engineering-flow:develop\n实现订单批量导出。复用现有权限和查询能力，添加聚焦测试并同步权威文档。不要提交。',
+        turns: [
+          { who: 'agent', text: '读项目规则、Git 状态、现有的导出与权限代码，然后只提一个会改变结果的问题：导出中包含不存在的订单 ID 时应该怎么办？' },
+          { who: 'user', text: '报错，返回 404。' },
+          { who: 'agent', text: '给出检查点——目标、验收行为、范围外、假设、方案边界，创建 `docs/requirements/order-batch-export.md`（状态 `Draft`），然后停下。' },
+          { who: 'user', text: '按上述方案执行。' },
+          { who: 'agent', text: '把记录标为 `Accepted`，在订单模块边界内实现，为 404 分支补一个聚焦测试，跑验证，最后把记录标为 `Implemented` 并写上真实文件和最新测试结果。' },
+        ],
+      },
+    },
+    useWhen: {
+      en: [
+        'A feature, refactor, test-only change, or maintainability improvement.',
+        'The change affects product behavior and needs alignment before implementation.',
+        'The task spans several turns and corrections must keep their context.',
+        'You want one explicit approval point before any code is written.',
+      ],
+      'zh-CN': [
+        '新功能、重构、只补测试，或者可维护性改造。',
+        '改动会影响产品行为，需要先对齐再动手。',
+        '任务跨多轮对话，纠正和补漏要保留上下文。',
+        '你希望在写任何代码之前，有一个明确的批准点。',
+      ],
+    },
+    avoidWhen: {
+      en: [
+        { situation: 'Existing behavior is broken — a bug, regression, or wrong output', instead: 'Diagnose' },
+        { situation: 'You have a goal but no settled solution yet', instead: 'Code Design' },
+        { situation: 'You only want a findings report, not edits', instead: 'Review' },
+        { situation: 'A small, clear, routine change', instead: 'Just describe it — no workflow needed' },
+      ],
+      'zh-CN': [
+        { situation: '现有行为坏了——bug、回归或输出错误', instead: 'Diagnose' },
+        { situation: '只有目标，方案还没定', instead: 'Code Design' },
+        { situation: '只想要一份问题报告，不希望改代码', instead: 'Review' },
+        { situation: '清晰的小改动、常规任务', instead: '直接描述即可，不必调用工作流' },
+      ],
+    },
+    faq: {
+      en: [
+        { q: 'I already invoked Develop — why is it still waiting for me?', a: 'Invoking the workflow is not approval to code. The checkpoint is a fixed step even when the request is clear: it states the goal and boundary, then pauses. Reply with action language and it continues.' },
+        { q: 'I noticed a missing acceptance item. Do I re-invoke?', a: 'No. An omitted original acceptance item belongs to the same task, so Develop reopens implementation and verification directly and returns the record from `Implemented` to `Accepted` until it is done.' },
+        { q: 'Is adding a new requirement an omission or new scope?', a: 'Explicitly adding or changing behavior is a scope increment. Develop aligns only that increment, presents an incremental checkpoint, and waits for approval again.' },
+        { q: 'Will it commit my work?', a: 'No. Committing, pushing, publishing, opening issues, installing dependencies, and changing global configuration all require separate authorization.' },
+      ],
+      'zh-CN': [
+        { q: '我已经调用 Develop 了，它为什么还在等我？', a: '调用工作流不是编码授权。哪怕需求很清楚，检查点也是固定动作：先讲清目标和边界，然后暂停。你回一句行动指令它就继续。' },
+        { q: '发现漏了一条验收行为，要重新调用吗？', a: '不用。原验收行为的遗漏属于同一个任务，Develop 会直接重新进入实施和验证，并把记录从 `Implemented` 退回 `Accepted`，补完后再标回去。' },
+        { q: '追加新需求算遗漏还是新范围？', a: '明确新增或改变行为算范围增量。Develop 只对齐这个增量，给出增量检查点，然后再次等待你批准。' },
+        { q: '它会自己提交代码吗？', a: '不会。提交、推送、发布、创建 issue、安装依赖和修改全局配置，都需要你另外授权。' },
+      ],
+    },
+  },
+
+  diagnose: {
+    purpose: {
+      en: 'Carry one broken behavior from reproduction to an evidence-backed root cause, and — once you authorize it — to a repair that leaves a regression test behind.',
+      'zh-CN': '把一个坏掉的行为从"复现"带到"根因有证据"，并在你授权后完成修复，同时留下防回归的测试。',
+    },
+    why: {
+      en: 'The most common bug-fixing failure is patching while guessing: no reproduction, a speculative cause, and no proof the fix worked. Diagnose forces evidence first — reproduce, locate, then repair — and stays completely read-only until you authorize a fix. After authorization, the first write must be a regression test that is observed failing before any production code changes.',
+      'zh-CN': '修 bug 最常见的失败是边猜边改：没复现就断定原因，改完也说不清有没有治好。Diagnose 强制证据先行——先复现、再定位、后修复——并且在你授权修复之前完全只读。授权之后，第一次写入只能是回归测试，必须亲眼看到它失败，才允许改生产代码。',
+    },
+    stages: {
+      en: [
+        {
+          name: 'Pin the symptom and signal',
+          summary: 'Say exactly what is wrong, then build the fastest way to see it happen.',
+          rules: [
+            'State the expected versus the actual behavior.',
+            'Read applicable instructions and docs, plus the relevant implementation, tests, callers, and recent changes.',
+            'Build the fastest practical signal for the exact symptom: focused test, command or request, replay, minimal harness, stress loop, or performance measurement.',
+            'Tighten that signal for speed, determinism, and unattended execution.',
+            'Inspect once and reuse the evidence. If automated reproduction is impractical, report what was attempted and calibrate confidence instead of guessing.',
+          ],
+        },
+        {
+          name: 'Minimize and locate ownership',
+          summary: 'Watch it fail, strip it down, and find the module that owns the broken rule.',
+          rules: [
+            'Observe the failure before committing to a cause.',
+            'Remove inputs, steps, dependencies, and callers while preserving the failure.',
+            'Follow data and control flow across boundaries, and inspect sibling entry points.',
+            'Locate the module that owns the violated invariant.',
+            'Test a small ranked set of falsifiable hypotheses, one distinguishing observation at a time.',
+            'If you reject the diagnosis, it stays read-only, discards the rejected cause, and looks for new distinguishing evidence — no re-invocation needed.',
+          ],
+        },
+        {
+          name: 'Repair when authorized',
+          gate: true,
+          summary: 'Read-only until you say fix it — then red before green, with no exceptions.',
+          rules: [
+            'An initial request to fix the defect already grants repair authority. Otherwise the root cause, evidence, repair boundary, and remaining uncertainty are presented and the workflow pauses.',
+            'A later same-task instruction such as “fix it” grants authority without a Develop invocation.',
+            'After authority, the first write must change only the regression test. Run it immediately and observe a non-zero failing result before any production code changes.',
+            'Earlier diagnostic probes, a passing pre-existing suite, or a failed editing tool never replace that red observation.',
+            'Apply the smallest clear change at the owning boundary, observe focused green, and verify affected sibling callers.',
+            'When no correct regression seam exists, report the limitation instead of adding a misleading test.',
+            'If repair requires undefined product behavior or materially expands scope, align that increment and pause for approval first.',
+          ],
+        },
+        {
+          name: 'Harden around the root cause',
+          summary: 'Prevent this class of regression — and nothing more.',
+          rules: [
+            'For a boundary defect, add only adjacent cases that prevent the same class of regression: below/at/above, before/at/after, first/duplicate/concurrent, or allowed/denied.',
+            'Derive expectations from requirements; do not invent product behavior.',
+            'Improve the owning design only when the root cause demonstrates scattered rules, hidden effects, repeated variation, distributed state transitions, or an unstable dependency.',
+            'Do not turn a focused fix into a broad redesign, or apply a pattern without pressure.',
+          ],
+        },
+        {
+          name: 'Complete',
+          summary: 'Re-verify the original symptom and report what remains uncertain.',
+          rules: [
+            'Remove temporary diagnostics.',
+            'Verify the regression signal, the original symptom, relevant siblings, and one warranted broader check — without rerunning unchanged evidence.',
+            'Reconcile affected acceptance behavior and authoritative documentation.',
+            'Report the root cause, evidence, authorized fix, hardening performed, and remaining uncertainty.',
+            'If you later identify an omitted part of the same defect, repair and verification reopen without repeating the full diagnosis or approval.',
+          ],
+        },
+      ],
+      'zh-CN': [
+        {
+          name: '锁定症状与信号',
+          summary: '先说清哪里不对，再搭一个最快能看到它发生的信号。',
+          rules: [
+            '写清预期行为与实际行为的差别。',
+            '读适用的指令和文档，以及相关实现、测试、调用方和近期改动。',
+            '为这个确切症状搭最快的可用信号：聚焦测试、命令/请求、回放、最小复现程序、压力循环或性能测量。',
+            '把信号调到更快、更确定、可以无人值守重复运行。',
+            '现场只勘察一次并复用证据。确实无法自动复现时，如实说明尝试过什么并给出置信度，而不是猜。',
+          ],
+        },
+        {
+          name: '最小化并定位归属',
+          summary: '先亲眼看到失败，再逐层剥离，找到拥有这条规则的模块。',
+          rules: [
+            '先观察到失败，再下结论。',
+            '在保持失败的前提下，删掉输入、步骤、依赖和调用方。',
+            '跨边界跟踪数据流和控制流，并检查兄弟入口。',
+            '定位到拥有被破坏不变式的那个模块。',
+            '用一小组排好序的可证伪假设，每次只做一个能区分它们的观察。',
+            '你否定这个诊断结论时，它保持只读、丢掉该结论，去找新的区分证据——不需要重新调用。',
+          ],
+        },
+        {
+          name: '授权后修复',
+          gate: true,
+          summary: '你说"可以修"之前完全只读；之后先红后绿，没有例外。',
+          rules: [
+            '初始请求里就写了"修复"，等于已经授予修复权限；否则先给出根因、证据、修复边界和剩余不确定性，然后暂停。',
+            '之后同一任务里的一句"可以修了"同样授权，不需要另外调用 Develop。',
+            '拿到授权后，第一次写入只能改回归测试；立刻运行它，观察到非零的失败结果，才允许动生产代码。',
+            '之前的诊断探针、已经通过的既有测试套件、失败的编辑工具，都不能替代这次"红"。',
+            '在拥有该规则的边界上做最小且清晰的改动，观察聚焦的"绿"，并验证受影响的兄弟调用方。',
+            '确实不存在正确的回归缝隙时，如实报告这个限制，而不是加一个测不到问题的测试。',
+            '修复需要未定义的产品行为、或者会实质扩大范围时，先对齐这个增量并暂停等待批准。',
+          ],
+        },
+        {
+          name: '围绕根因加固',
+          summary: '只防住同一类回归，不多做。',
+          rules: [
+            '边界类缺陷只补能防住同类回归的相邻用例：below/at/above、before/at/after、首次/重复/并发、允许/拒绝。',
+            '期望值从需求推导，不自己发明产品行为。',
+            '只有根因确实暴露出规则分散、隐藏副作用、重复变化、状态转换分散或不稳定依赖时，才改进设计。',
+            '不把一次聚焦修复变成大重构，也不在没有压力时套用设计模式。',
+          ],
+        },
+        {
+          name: '完成',
+          summary: '复验原始症状，并说清还有什么不确定。',
+          rules: [
+            '删掉临时诊断代码。',
+            '复验回归信号、原始症状、相关兄弟路径，必要时加一个更广的检查；不重复跑没有变化的证据。',
+            '对齐受影响的验收行为和权威文档。',
+            '报告根因、证据、已授权的修复、加固内容和剩余不确定性。',
+            '之后你指出同一缺陷还有遗漏部分时，直接重新进入修复与验证，不重跑整套诊断和审批。',
+          ],
+        },
+      ],
+    },
+    hardRules: {
+      en: [
+        { icon: 'shield', title: 'Read-only until authorized', detail: 'No file changes before explicit repair authority. Rejecting the conclusion keeps it read-only and sends it back for new evidence.' },
+        { icon: 'pulse', title: 'Red before green', detail: 'The first write after authorization is the regression test, and its failure must be observed. No probe or workaround bypasses this gate.' },
+        { icon: 'compass', title: 'One hypothesis at a time', detail: 'Each observation is chosen to distinguish between ranked hypotheses. Two variables are never changed at once.' },
+        { icon: 'flag', title: 'Honest limitations', detail: 'When no correct regression seam exists, the limitation is reported instead of shipping a test that cannot detect the defect.' },
+      ],
+      'zh-CN': [
+        { icon: 'shield', title: '授权前只读', detail: '没有明确的修复授权就不动任何文件。你否定结论时它保持只读，回去找新证据。' },
+        { icon: 'pulse', title: '先红后绿', detail: '授权后的第一次写入是回归测试，并且必须观察到它失败。任何探针或变通都绕不过这道关卡。' },
+        { icon: 'compass', title: '逐假设证伪', detail: '每次观察都用来区分排好序的假设，绝不同时改变两个变量。' },
+        { icon: 'flag', title: '如实说限制', detail: '确实没有正确的回归缝隙时，如实报告限制，而不是交一个测不到缺陷的测试。' },
+      ],
+    },
+    example: {
+      en: {
+        prompt: '$engineering-flow:diagnose\nFix calculateRenewalDate moving January 31 into March. Reproduce it first, locate the root cause, and leave a test that detects the regression.',
+        turns: [
+          { who: 'agent', text: 'States expected (February 28/29) versus actual (March 3) and builds the smallest reliable reproduction.' },
+          { who: 'agent', text: 'Strips the case down and locates month-end overflow inside the date utility module — not in the caller that reported the symptom.' },
+          { who: 'agent', text: 'The initial request already said “fix”, so repair authority exists: it writes only the regression test first and shows it failing.' },
+          { who: 'agent', text: 'Applies the smallest fix inside the date utility, observes focused green, and checks sibling callers of the same module.' },
+          { who: 'agent', text: 'Reports the root cause, the evidence, what was repaired, what was hardened, and what remains uncertain.' },
+        ],
+      },
+      'zh-CN': {
+        prompt: '$engineering-flow:diagnose\n修复 calculateRenewalDate 在 1 月 31 日加一个月后进入 3 月的问题。先复现，定位根因，留下能检测该回归的测试。',
+        turns: [
+          { who: 'agent', text: '写清预期（2 月 28/29 日）与实际（3 月 3 日），并搭出最小可靠复现。' },
+          { who: 'agent', text: '逐层剥离，把根因定位到日期工具模块里的月末溢出，而不是报告症状的那个调用方。' },
+          { who: 'agent', text: '初始请求已经说了"修复"，修复权限已经具备：先只写回归测试，并展示它失败。' },
+          { who: 'agent', text: '在日期工具模块内做最小修复，观察聚焦测试变绿，并检查同模块的兄弟调用方。' },
+          { who: 'agent', text: '报告根因、证据、修复了什么、加固了什么，以及还有什么不确定。' },
+        ],
+      },
+    },
+    useWhen: {
+      en: [
+        'A bug, regression, intermittent fault, wrong output, or measured slowdown.',
+        'You want an evidence-backed root cause before anyone changes code.',
+        'The repair must leave behind a test that catches this regression.',
+        'A previous fix did not hold and you need to know why.',
+      ],
+      'zh-CN': [
+        'bug、回归、间歇性故障、输出错误，或者实测到的性能下降。',
+        '想在任何人动代码之前，拿到有证据支持的根因。',
+        '修复必须留下一个能捕捉该回归的测试。',
+        '上次修复没治住，需要知道为什么。',
+      ],
+    },
+    avoidWhen: {
+      en: [
+        { situation: 'Nothing is broken — you want new behavior', instead: 'Develop' },
+        { situation: 'You want a findings report on a diff or branch', instead: 'Review' },
+        { situation: 'The architecture itself is the question', instead: 'Code Design' },
+      ],
+      'zh-CN': [
+        { situation: '没有东西坏掉，你要的是新行为', instead: 'Develop' },
+        { situation: '想对某个 diff 或分支拿一份问题报告', instead: 'Review' },
+        { situation: '真正的问题是架构本身', instead: 'Code Design' },
+      ],
+    },
+    faq: {
+      en: [
+        { q: 'I only want the cause, not a fix. Is that possible?', a: 'Yes — that is the default. Invoke it without asking for a fix and it stays read-only, presents the root cause, evidence, repair boundary, and uncertainty, then stops until you authorize repair.' },
+        { q: 'What if I disagree with the diagnosis?', a: 'Say so. It stays read-only, discards the rejected cause as a conclusion, and looks for new distinguishing evidence. You do not need to invoke the workflow again.' },
+        { q: 'Why must the test fail first?', a: 'A test that has never been observed failing cannot prove it detects this defect. Red before green is a hard gate, and earlier debugging probes do not satisfy it.' },
+        { q: 'What if this bug cannot be tested?', a: 'It reports that no correct regression seam exists, rather than adding a test that would pass either way.' },
+      ],
+      'zh-CN': [
+        { q: '我只想知道原因，不想它改代码，可以吗？', a: '可以，这就是默认行为。不带修复意图地调用，它会保持只读，给出根因、证据、修复边界和不确定性，然后停下来等你授权。' },
+        { q: '它给的根因我不认可怎么办？', a: '直接说不对。它会保持只读，丢掉这个结论，去寻找新的区分证据——你不需要重新调用工作流。' },
+        { q: '为什么一定要先看到测试失败？', a: '一个从没被观察到失败的测试，无法证明它真的能发现这个缺陷。先红后绿是硬关卡，之前的调试探针不能顶替。' },
+        { q: '如果这个 bug 写不了测试呢？', a: '它会如实报告"没有正确的回归缝隙"，而不是加一个无论有没有 bug 都会通过的测试。' },
+      ],
+    },
+  },
+
+  'code-design': {
+    purpose: {
+      en: 'Produce an implementation-ready solution proposal — or repair an existing design until it is implementation-ready — without writing production code.',
+      'zh-CN': '产出一份可实施的方案，或者把已有设计改到可实施——全程不写生产代码。',
+    },
+    why: {
+      en: 'The enemy of design is not simplicity but unjustified complexity. Code Design requires naming the real design pressure before choosing a technique: no observed pressure means no new abstraction. Every uncommon construct pays a novelty tax in concrete benefit — correctness, measured performance, framework alignment, or lower total maintenance cost. The output is a proposal, never code.',
+      'zh-CN': '设计的敌人不是简单，而是没有根据的复杂。Code Design 要求先命名真实的设计压力，再选技术：没有观察到压力，就不引入新抽象。任何不常见的写法都要交"新奇税"——在正确性、实测性能、框架一致性或总维护成本上给出具体收益。它的产出是方案，不是代码。',
+    },
+    stages: {
+      en: [
+        {
+          name: 'Select the design mode',
+          summary: 'Greenfield discovery and refinement ask different questions.',
+          rules: [
+            'Greenfield / discovery: you have a goal or problem but no settled solution.',
+            'Refinement: you supply an existing proposal or design document that needs correction, completion, or simplification.',
+            'If the task is to implement an already accepted design, use Develop. If existing behavior is broken, use Diagnose.',
+          ],
+        },
+        {
+          name: 'Establish problem and local context',
+          summary: 'Separate accepted requirements, repository facts, reversible choices, and open decisions.',
+          rules: [
+            'Clarify the user problem, desired outcome, acceptance behavior, constraints, and out of scope.',
+            'Read applicable project instructions, authoritative documents, existing capabilities, representative code, and tests when a repository exists.',
+            'Ask only about unresolved decisions that materially change product behavior or the viable solution space.',
+            'Distinguish accepted requirements, repository facts, reversible design choices, and open product decisions.',
+          ],
+        },
+        {
+          name: 'Explore the design pressure',
+          summary: 'Name the actual problem before reaching for a technique.',
+          rules: [
+            'Look for real pressure: hard-to-follow control flow; hidden mutation, I/O, errors, or state transitions; semantic duplication that should change together; similar-looking rules that should stay independent; repeated conditionals along one real variation axis; an unstable external dependency; scattered ownership of one invariant; construction or lifecycle rules with real combinations; a missing stable public seam.',
+            'No observed pressure means no new abstraction.',
+            'For greenfield work, propose the smallest coherent architecture that satisfies known behavior and credible near-term variation.',
+            'For refinement, identify missing behavior, contradictions, unclear ownership, infeasible assumptions, accidental complexity, and decisions that lack evidence.',
+          ],
+        },
+        {
+          name: 'Develop and compare options',
+          summary: 'Only genuinely different trade-offs deserve to be separate options.',
+          rules: [
+            'Produce alternatives only when they represent materially different trade-offs.',
+            'Compare ownership, coupling, cohesion, state and failure behavior, compatibility, testability, operability, migration cost, and expected change pressure.',
+            'Prefer existing repository language, frameworks, and boundaries unless a concrete problem justifies change.',
+            'Recommend one option and state why it is the lowest necessary complexity.',
+            'Reject speculative extension points and unnecessary dependencies explicitly when they are tempting.',
+          ],
+        },
+        {
+          name: 'Apply the maintainability standard',
+          summary: 'Familiar, explicit, named, local, debuggable, single-owner — and boring.',
+          rules: [
+            'Prefer code that is familiar in the repository, explicit about branches and effects, named with domain concepts, locally understandable, easy to debug, and structured so one rule has one authoritative owner.',
+            'Novelty tax: an uncommon construct, reflection, metaprogramming, dense expression, implicit runtime behavior, new dependency, abstraction, or design pattern must provide concrete benefit. When justified, localize it, name the intent, keep effects observable, and explain why it exists rather than how the syntax works.',
+            'Reuse by semantics: share code only when it implements the same domain rule, every caller should change together, the owner holds the relevant data and invariant, parameterization does not obscure the result, and no existing abstraction already suffices.',
+            'Allow duplication when rules only happen to look alike and will evolve independently.',
+            'Use a pattern only under real pressure — Strategy for multiple real policies, an explicit state machine for distributed transitions, an Adapter for an unstable third-party interface, a factory or builder for real construction combinations, a pipeline for ordered independent stages. A pattern name is not evidence of quality.',
+            'Use the standard to shape module boundaries and contracts, not to prescribe internal classes prematurely.',
+          ],
+        },
+        {
+          name: 'Produce the proposal',
+          summary: 'Deliver boundaries, contracts, trade-offs, and a sequence — not code.',
+          rules: [
+            'Include only relevant sections: problem, goals, accepted behavior, constraints, and out of scope; existing context and reusable capabilities; recommended boundaries, responsibilities, contracts, data and state ownership, and dependency direction.',
+            'Cover failure, security, compatibility, migration, and operational behavior when material.',
+            'Record decisions, trade-offs, alternatives considered, and rejected unnecessary abstractions.',
+            'List open questions and assumptions, plus acceptance evidence and an implementation sequence.',
+            'Do not claim decisions are accepted when they remain assumptions, and do not implement the design in this invocation.',
+          ],
+        },
+      ],
+      'zh-CN': [
+        {
+          name: '选择设计模式',
+          summary: '从零设计和完善已有设计，问的问题完全不同。',
+          rules: [
+            '全新 / 探索：你有目标或问题，但方案还没定下来。',
+            '完善：你给出已有的方案或设计文档，需要纠错、补全或简化。',
+            '如果要实施的是已经接受的设计，用 Develop；如果是现有行为坏了，用 Diagnose。',
+          ],
+        },
+        {
+          name: '建立问题与本地上下文',
+          summary: '把已接受需求、仓库事实、可逆选择和开放决定分清楚。',
+          rules: [
+            '明确用户问题、期望结果、验收行为、约束和范围外。',
+            '有仓库时，读项目指令、权威文档、既有能力、代表性代码和测试。',
+            '只询问会实质改变产品行为或可行方案空间的未决问题。',
+            '区分开：已接受的需求、仓库事实、可逆的设计选择、开放的产品决定。',
+          ],
+        },
+        {
+          name: '探索设计压力',
+          summary: '先命名真实问题，再去找技术手段。',
+          rules: [
+            '寻找真实压力：难以跟随的控制流；隐藏的修改、I/O、错误或状态转换；应该一起改的语义重复；只是长得像、但应各自演化的规则；沿同一条真实变化轴反复出现的条件分支；不稳定的外部依赖；同一不变式的归属分散；有真实组合的构造与生命周期规则；缺少稳定的公共缝隙。',
+            '没有观察到压力，就不引入新抽象。',
+            '全新设计给出满足已知行为和可信近期变化的最小连贯架构。',
+            '完善已有设计则找出缺失行为、矛盾、归属不清、不可行假设、附带复杂度和缺乏证据的决定。',
+          ],
+        },
+        {
+          name: '发展并比较方案',
+          summary: '只有取舍真的不同，才配成为两个方案。',
+          rules: [
+            '只在取舍实质不同时才给出多个备选方案。',
+            '从归属、耦合、内聚、状态与失败行为、兼容性、可测性、可运维性、迁移成本和预期变化压力来比较。',
+            '优先沿用仓库既有的语言、框架和边界，除非有具体问题要求改变。',
+            '推荐一个方案，并说明它为什么是"必要的最低复杂度"。',
+            '对诱人但投机的扩展点和不必要依赖，明确写出拒绝理由。',
+          ],
+        },
+        {
+          name: '应用可维护性标准',
+          summary: '熟悉、显式、有名字、局部、可调试、单一归属——而且无聊。',
+          rules: [
+            '偏好这样的代码：在仓库里熟悉、对分支和副作用显式、用领域概念命名、无需追踪无关模块即可理解、能在有意义的步骤上调试、一条规则只有一个权威归属。',
+            '新奇税：不常见的写法、反射、元编程、密集表达式、隐式运行时行为、新依赖、抽象或设计模式，都必须给出具体收益。确有必要时把它隔离在清晰边界后、命名意图、保持副作用可观察，并解释它为什么存在，而不是语法怎么运作。',
+            '按语义复用：只有实现同一条领域规则、所有调用方都应共同改变、拟定的归属者拥有相关数据和不变式、参数化不会让结果更难懂、且没有现成抽象够用时，才共享代码。',
+            '规则只是碰巧长得像、且会各自演化时，允许重复。',
+            '只有真实压力才用模式：多个真实策略用 Strategy；转换逻辑分散用显式状态机；不稳定的第三方接口用 Adapter；真实的构造组合与不变式用工厂或建造者；有序且独立的处理阶段用管道。模式名字本身不是质量证明。',
+            '这套标准用来塑造模块边界和契约，而不是提前规定内部类怎么写。',
+          ],
+        },
+        {
+          name: '产出方案',
+          summary: '交付边界、契约、取舍和实施顺序，不交付代码。',
+          rules: [
+            '只写相关章节：问题、目标、已接受行为、约束和范围外；既有上下文与可复用能力；推荐的边界、职责、契约、数据与状态归属、依赖方向。',
+            '失败、安全、兼容、迁移和运维行为重要时也要写。',
+            '记录决定、取舍、考虑过的备选，以及被明确拒绝的不必要抽象。',
+            '列出开放问题与假设，以及验收证据和实施顺序。',
+            '不把假设说成已接受的决定，也不在这次调用里实现这个设计。',
+          ],
+        },
+      ],
+    },
+    hardRules: {
+      en: [
+        { icon: 'design', title: 'No pressure, no abstraction', detail: 'If the real design pressure cannot be named — hidden effects, semantic duplication, a true variation axis — no new abstraction is introduced.' },
+        { icon: 'document', title: 'Novelty tax', detail: 'Reflection, metaprogramming, new dependencies, and design patterns must show concrete benefit and explain why they exist.' },
+        { icon: 'grid', title: 'Reuse by semantics', detail: 'Code is shared only when it implements the same domain rule and should evolve together. Looking similar is not a reason.' },
+        { icon: 'shield', title: 'No production code', detail: 'The proposal is returned in the response. Design documents are updated only when you explicitly ask; implementation belongs to Develop.' },
+      ],
+      'zh-CN': [
+        { icon: 'design', title: '无压力不抽象', detail: '说不出真实设计压力（隐藏副作用、语义重复、真实变化轴……），就不引入新抽象。' },
+        { icon: 'document', title: '新奇税', detail: '反射、元编程、新依赖和设计模式必须给出具体收益，并说明它为什么存在。' },
+        { icon: 'grid', title: '按语义复用', detail: '只有实现同一条领域规则、且应共同演进时才共享代码。看起来像不构成理由。' },
+        { icon: 'shield', title: '不写生产代码', detail: '方案直接返回在回复里。只有你明确要求时才更新设计文档；实施交给 Develop。' },
+      ],
+    },
+    example: {
+      en: {
+        prompt: '$engineering-flow:code-design\nWe need multi-channel notifications, but the modules and interfaces are unsettled. Use this repository to propose the lowest necessary complexity, trade-offs, open questions, and implementation sequence. Do not code.',
+        turns: [
+          { who: 'agent', text: 'Selects greenfield/discovery mode and reads the existing notification and queue capabilities in the repository.' },
+          { who: 'agent', text: 'Names the actual pressure: channels differ only in delivery, which is one real variation axis; the remaining rules should change together.' },
+          { who: 'agent', text: 'Offers two options with materially different trade-offs, compares ownership, testability, and migration cost, and recommends the simpler one.' },
+          { who: 'agent', text: 'Explicitly rejects a plugin registry for hypothetical future channels — no observed pressure, so no abstraction.' },
+          { who: 'agent', text: 'Returns boundaries, contracts, data ownership, open questions, acceptance evidence, and an implementation sequence. No production code is written.' },
+        ],
+      },
+      'zh-CN': {
+        prompt: '$engineering-flow:code-design\n我们要增加多渠道通知，但模块和接口还没确定。结合当前仓库给出最低必要复杂度的方案、权衡、开放问题和实施顺序。不要编码。',
+        turns: [
+          { who: 'agent', text: '判定为"全新 / 探索"模式，读取仓库里既有的通知和队列能力。' },
+          { who: 'agent', text: '命名真实压力：各渠道只有投递方式不同，这是一条真实变化轴；其余规则应该共同变化。' },
+          { who: 'agent', text: '给出两个取舍实质不同的方案，从归属、可测性和迁移成本比较，并推荐更简单的那个。' },
+          { who: 'agent', text: '明确拒绝"为将来可能出现的渠道预留插件注册表"——没有观察到压力，就不引入抽象。' },
+          { who: 'agent', text: '输出边界、契约、数据归属、开放问题、验收证据和实施顺序，不写一行生产代码。' },
+        ],
+      },
+    },
+    useWhen: {
+      en: [
+        'You have a goal or problem but no settled solution yet.',
+        'An existing design or proposal needs correction, completion, or simplification.',
+        'You want trade-offs compared and rejected options recorded before anyone writes code.',
+        'You suspect a proposed architecture is more complex than the problem requires.',
+      ],
+      'zh-CN': [
+        '有目标或问题，但方案还没定下来。',
+        '已有的设计或提案需要纠错、补全或简化。',
+        '希望在写代码之前，先把取舍比较清楚、把被拒绝的选项记下来。',
+        '怀疑某个架构方案比问题本身还复杂。',
+      ],
+    },
+    avoidWhen: {
+      en: [
+        { situation: 'The design is already accepted and needs implementing', instead: 'Develop' },
+        { situation: 'Existing behavior is broken', instead: 'Diagnose' },
+        { situation: 'You want findings on code that already exists', instead: 'Review' },
+      ],
+      'zh-CN': [
+        { situation: '设计已经确定，只差实施', instead: 'Develop' },
+        { situation: '现有行为坏了', instead: 'Diagnose' },
+        { situation: '想对已经写好的代码拿一份问题清单', instead: 'Review' },
+      ],
+    },
+    faq: {
+      en: [
+        { q: 'Will it edit my design documents?', a: 'Only when you explicitly ask. By default the proposal is returned in the response and no repository file is silently changed.' },
+        { q: 'How do I turn the proposal into code?', a: 'Accept it, then invoke Develop. Code Design never implements production code in the same invocation.' },
+        { q: 'Can I use it on a draft I already wrote?', a: 'Yes — that is refinement mode. It looks for missing behavior, contradictions, unclear ownership, infeasible assumptions, and decisions that lack evidence.' },
+        { q: 'Why did it reject the abstraction I proposed?', a: 'Because no real design pressure was observed. Without pressure an abstraction only adds indirection, so the rejection is written down with its reason rather than silently accepted.' },
+      ],
+      'zh-CN': [
+        { q: '它会直接改我的设计文档吗？', a: '只有你明确要求时才会。默认只把方案返回在回复里，不会静默修改仓库文件。' },
+        { q: '方案怎么变成代码？', a: '你接受方案后调用 Develop。Code Design 在同一次调用里绝不实现生产代码。' },
+        { q: '我已经写了草案，也能用吗？', a: '能，这就是"完善"模式。它会找出缺失行为、矛盾、归属不清、不可行假设，以及缺乏证据的决定。' },
+        { q: '我提的抽象为什么被拒绝了？', a: '因为没有观察到真实设计压力。没有压力的抽象只会增加间接层，所以它会写明拒绝理由，而不是默默照做。' },
+      ],
+    },
+  },
+
+  review: {
+    purpose: {
+      en: 'Perform an evidence-backed, strictly read-only review from a fixed comparison point, and report findings ordered by impact.',
+      'zh-CN': '从一个固定的比较点出发，做有证据、严格只读的评审，并按影响排序输出发现。',
+    },
+    why: {
+      en: 'A review is only as good as two things: whether the target is pinned, and whether every finding carries evidence. Review freezes the comparison point first — a diff, a branch merge-base, or uncommitted work — then checks eight independent axes one by one. Every finding cites its location, its evidence, and the smallest credible correction. Finding a defect never grants permission to fix it.',
+      'zh-CN': '一次评审的价值取决于两件事：评审对象是否被钉死，以及每条结论是否带证据。Review 先把比较点冻结——某个 diff、分支合并基，或当前未提交的改动——再从八个独立维度逐轴检查。每条发现都给出位置、证据和最小可信的修正方向。发现缺陷不等于获得修复权限。',
+    },
+    stages: {
+      en: [
+        {
+          name: 'Define the comparison',
+          summary: 'Pin the target first — a moving target cannot be reviewed.',
+          rules: [
+            'Use the supplied fixed point when one is present.',
+            'For a branch comparison, resolve the merge base and inspect the commits plus the three-dot diff.',
+            'For current uncommitted work, inspect staged, unstaged, and relevant untracked files against `HEAD`.',
+            'Fail clearly on a bad reference or empty scope instead of reviewing the wrong change.',
+          ],
+        },
+        {
+          name: 'Recover intent',
+          summary: 'Learn what the change was supposed to do before judging what it does.',
+          rules: [
+            'Read in priority order: your current review request, then project instructions, then the originating requirement, issue, design, or acceptance criteria, then relevant tests and documentation.',
+            'If no specification exists, state that the review can assess correctness risk and maintainability but not complete requirement fidelity.',
+          ],
+        },
+        {
+          name: 'Review eight independent axes',
+          summary: 'Each axis is checked on its own — never blurred into a general impression.',
+          rules: [
+            'Requirements: missing, partial, incorrect, or unrequested behavior.',
+            'Correctness: edge cases, failure handling, concurrency, state, and call-site impact.',
+            'Safety: permissions, trust boundaries, data integrity, destructive effects, compatibility, and accessibility.',
+            'Design: ownership, semantic reuse, false deduplication, abstraction cost, and unnecessary dependencies.',
+            'Readability: explicit flow and effects, meaningful names, local reasoning, debuggability, and unjustified novelty.',
+            'Tests: whether tests exercise stable public behavior and can actually detect the defect.',
+            'Documentation: stale or contradictory facts, and requirements rewritten to fit the implementation.',
+            'Scope: unrelated edits, temporary diagnostics, generated artifacts, and unauthorized operations.',
+            'Do not flag preferences already enforced by tooling, or purely subjective alternatives with no maintenance impact.',
+          ],
+        },
+        {
+          name: 'Report findings',
+          summary: 'Impact first, evidence always, and not a single file edited.',
+          rules: [
+            'Order findings by impact.',
+            'Each finding includes severity, file and precise location, evidence from the diff plus the relevant requirement or invariant, user-visible or maintenance impact, and the smallest credible correction direction.',
+            'Do not hide important findings inside a summary.',
+            'If no material findings exist, say so and note any verification gap.',
+            'Do not edit files, commit, or push at any point.',
+          ],
+        },
+      ],
+      'zh-CN': [
+        {
+          name: '定义比较点',
+          summary: '先把评审对象钉死——移动的目标没法评审。',
+          rules: [
+            '你给了固定参照就用你给的。',
+            '分支比较时，解析合并基，并检查提交记录和三点 diff。',
+            '评审当前未提交的工作时，把已暂存、未暂存和相关未跟踪文件与 `HEAD` 比较。',
+            '参照无效或范围为空时明确失败，绝不改去评审另一份改动。',
+          ],
+        },
+        {
+          name: '还原意图',
+          summary: '先弄清这次改动"应该做什么"，再判断它"做了什么"。',
+          rules: [
+            '按优先级读：你这次的评审请求 → 项目指令 → 原始需求、问题、设计或验收标准 → 相关测试和文档。',
+            '完全没有规格时，明确说明：这次评审能评估正确性风险和可维护性，但无法完整判断需求符合度。',
+          ],
+        },
+        {
+          name: '八轴独立审查',
+          summary: '每一轴单独检查，绝不混成一句笼统印象。',
+          rules: [
+            '需求：缺失、部分实现、实现错误，或者根本没人要求的行为。',
+            '正确性：边界情况、失败处理、并发、状态，以及对调用点的影响。',
+            '安全：权限、信任边界、数据完整性、破坏性影响、兼容性和可访问性。',
+            '设计：归属、语义复用、错误的去重、抽象成本和不必要的依赖。',
+            '可读性：显式的流程与副作用、有意义的命名、局部可推理、可调试性，以及没有正当理由的新奇写法。',
+            '测试：测试是否针对稳定的公共行为，以及它到底能不能发现这个缺陷。',
+            '文档：过时或矛盾的事实，以及为迁就实现而被改写的需求。',
+            '范围：无关改动、临时诊断代码、生成产物和未授权操作。',
+            '不挑工具已经强制的偏好，也不提没有维护影响的纯主观替代写法。',
+          ],
+        },
+        {
+          name: '报告发现',
+          summary: '按影响排序，每条都有证据，一个文件也不改。',
+          rules: [
+            '按影响排序输出发现。',
+            '每条包含：严重程度、文件与精确位置、来自 diff 的证据和相关需求或不变式、对用户或维护的影响、最小可信的修正方向。',
+            '重要发现不藏在总结段落里。',
+            '确实没有实质发现时就直说，并写明验证缺口在哪里。',
+            '全程不编辑文件、不提交、不推送。',
+          ],
+        },
+      ],
+    },
+    hardRules: {
+      en: [
+        { icon: 'flag', title: 'Fixed comparison point', detail: 'The target is frozen at an explicit reference. A missing reference or empty scope fails loudly — no reviewing a moving target.' },
+        { icon: 'grid', title: 'Eight independent axes', detail: 'Requirements, correctness, safety, design, readability, tests, documentation, and scope are checked one by one.' },
+        { icon: 'shield', title: 'Strictly read-only', detail: 'No edits, no commits, no pushes. Finding a defect does not grant permission to repair it.' },
+        { icon: 'check', title: 'Evidence per finding', detail: 'Every finding cites diff evidence and the requirement or invariant it violates, plus the smallest credible correction.' },
+      ],
+      'zh-CN': [
+        { icon: 'flag', title: '固定比较点', detail: '评审对象冻结在明确参照上。参照缺失或范围为空时明确报错，不追移动目标。' },
+        { icon: 'grid', title: '八轴独立审查', detail: '需求、正确性、安全、设计、可读性、测试、文档、范围，逐轴检查。' },
+        { icon: 'shield', title: '严格只读', detail: '不编辑、不提交、不推送。发现缺陷不等于获得修复权限。' },
+        { icon: 'check', title: '每条都有证据', detail: '每条发现都引用 diff 证据和被违反的需求或不变式，并给出最小可信的修正方向。' },
+      ],
+    },
+    example: {
+      en: {
+        prompt: '$engineering-flow:review\nReview the current access-control changes against docs/access-policy.md. Report findings by severity with files and lines. Do not edit anything.',
+        turns: [
+          { who: 'agent', text: 'Resolves the scope: staged, unstaged, and relevant untracked files compared against `HEAD`.' },
+          { who: 'agent', text: 'Reads docs/access-policy.md and the project instructions to recover what the change was supposed to do.' },
+          { who: 'agent', text: 'Walks the eight axes one at a time, flagging a permission check that runs after the mutation as the highest-impact finding.' },
+          { who: 'agent', text: 'Reports findings ordered by severity — each with file, line, diff evidence, impact, and the smallest credible correction — and edits nothing.' },
+        ],
+      },
+      'zh-CN': {
+        prompt: '$engineering-flow:review\n依据 docs/access-policy.md 评审当前权限改动。按严重程度报告问题并给出文件和行号，不要修改文件。',
+        turns: [
+          { who: 'agent', text: '先确定范围：已暂存、未暂存和相关未跟踪文件，与 `HEAD` 比较。' },
+          { who: 'agent', text: '读 docs/access-policy.md 和项目指令，还原这次改动"应该做什么"。' },
+          { who: 'agent', text: '逐轴走完八个维度，把"权限校验发生在写操作之后"标为影响最大的发现。' },
+          { who: 'agent', text: '按严重程度输出发现，每条附文件、行号、diff 证据、影响和最小修正方向——一个文件也没改。' },
+        ],
+      },
+    },
+    useWhen: {
+      en: [
+        'You want an independent check before merging.',
+        'The target is a diff, a branch, a pull request, or uncommitted work.',
+        'You want a findings report rather than silent edits.',
+        'You need severity-ordered findings you can hand to whoever will fix them.',
+      ],
+      'zh-CN': [
+        '合并前想要一次独立检查。',
+        '评审对象是某个 diff、分支、PR 或未提交的改动。',
+        '你要的是问题报告，而不是被人默默改掉。',
+        '需要一份按严重程度排序、可以直接交给修复者的清单。',
+      ],
+    },
+    avoidWhen: {
+      en: [
+        { situation: 'You want the findings fixed as well', instead: 'Develop (new behavior) or Diagnose (broken behavior)' },
+        { situation: 'The code does not exist yet', instead: 'Code Design' },
+        { situation: 'A test is failing and you need the cause', instead: 'Diagnose' },
+      ],
+      'zh-CN': [
+        { situation: '你还希望顺手把问题修掉', instead: 'Develop（新行为）或 Diagnose（坏行为）' },
+        { situation: '代码还不存在', instead: 'Code Design' },
+        { situation: '测试挂了，你要的是原因', instead: 'Diagnose' },
+      ],
+    },
+    faq: {
+      en: [
+        { q: 'Can it fix what it finds?', a: 'No. Review is strictly read-only. When you decide to act, use Develop for new behavior or Diagnose for broken behavior.' },
+        { q: 'Can it review without a requirement document?', a: 'Yes, but it will say up front that it can assess correctness risk and maintainability without being able to judge complete requirement fidelity.' },
+        { q: 'What if I give it a bad reference?', a: 'It fails clearly and tells you the reference is invalid, instead of silently reviewing a different change.' },
+        { q: 'Will it flag style preferences?', a: 'No. Preferences already enforced by tooling and subjective alternatives with no maintenance impact are deliberately left out.' },
+      ],
+      'zh-CN': [
+        { q: '它能顺手把发现的问题改掉吗？', a: '不能。Review 严格只读。你决定动手时，新行为用 Develop，坏行为用 Diagnose。' },
+        { q: '没有需求文档也能评审吗？', a: '能，但它会先说明：这次只能评估正确性风险和可维护性，无法完整判断需求符合度。' },
+        { q: '我给的比较点是错的会怎样？', a: '它会明确报错并告诉你参照无效，而不是默默去评审另一份改动。' },
+        { q: '它会挑代码风格吗？', a: '不会。工具已经强制的偏好，以及没有维护影响的主观替代写法，都被刻意排除。' },
+      ],
+    },
+  },
+
+  handoff: {
+    purpose: {
+      en: 'Capture the minimum durable state another session or agent needs to continue safely — nothing missing, nothing extra.',
+      'zh-CN': '把另一个会话或 agent 安全继续所需的最小状态记录下来——一项不缺，一字不多。',
+    },
+    why: {
+      en: 'Handoff is information compression. The next session does not need the transcript; it needs the smallest complete set of facts required to continue safely. An eight-item checklist guarantees completeness, and an empty category must say “None” rather than quietly disappearing — because omission and absence look identical to whoever reads it next.',
+      'zh-CN': '交接的本质是信息压缩。下一个会话需要的不是对话全文，而是能安全继续的最小事实集。八项清单保证完整性，空的类别必须写"无"而不是悄悄消失——因为在下一个读者眼里，"漏写"和"确实没有"长得一模一样。',
+    },
+    stages: {
+      en: [
+        {
+          name: 'Gather current facts',
+          summary: 'Re-read the real state instead of trusting memory.',
+          rules: [
+            'Re-read version-control status and the relevant diff.',
+            'Read the authoritative requirement and design documents.',
+            'Check the latest verification output rather than relying on memory.',
+            'Identify blockers, unresolved decisions, and unrelated work that must be preserved.',
+          ],
+        },
+        {
+          name: 'Produce the handoff',
+          summary: 'Eight items, every one explicit, empty categories written as “None”.',
+          rules: [
+            'Objective and accepted behavior.',
+            'Current implementation state.',
+            'Key files and authoritative documents.',
+            'Decisions already made and their reasons.',
+            'Commands run and their latest results.',
+            'Remaining tasks in dependency order.',
+            'Known risks, blockers, and unverified areas.',
+            'Version-control state and unrelated changes to preserve.',
+            'References support the facts; they do not replace them. Summarize each decision and its reason even when linking the source, and reference documents, commits, diffs, and test output instead of copying their full contents.',
+            'Write to the requested path when one is provided; otherwise return the handoff in the response without silently creating a repository file.',
+          ],
+        },
+      ],
+      'zh-CN': [
+        {
+          name: '收集当前事实',
+          summary: '重新读真实状态，而不是凭记忆写。',
+          rules: [
+            '重新读版本控制状态和相关 diff。',
+            '读权威的需求和设计文档。',
+            '查最新一次验证输出，而不是依赖记忆。',
+            '找出阻塞、未决决定，以及必须保留的无关改动。',
+          ],
+        },
+        {
+          name: '产出交接记录',
+          summary: '八项，逐项写明，空类别写"无"。',
+          rules: [
+            '目标与验收行为。',
+            '当前实现状态。',
+            '关键文件与权威文档。',
+            '已经做出的决定及其原因。',
+            '跑过的命令与最新结果。',
+            '剩余任务，按依赖顺序排列。',
+            '已知风险、阻塞和未验证区域。',
+            '版本控制状态，以及需要保留的无关改动。',
+            '引用只是支撑事实，不能替代事实：即使给了链接，也要简述每个决定和它的原因；文档、提交、diff 和测试输出用引用而不是整段复制。',
+            '你给出了输出路径就写到那里；没有给路径就只在回复里返回，不静默创建仓库文件。',
+          ],
+        },
+      ],
+    },
+    hardRules: {
+      en: [
+        { icon: 'document', title: 'The eight-item checklist', detail: 'Objective, state, key files, decisions, command results, remaining tasks, risks, and version state. An empty category says “None” — it is never omitted.' },
+        { icon: 'check', title: 'Facts, not transcripts', detail: 'Conclusions and their reasons are recorded; documents and test output are referenced. The conversation is never copied wholesale.' },
+        { icon: 'lock', title: 'No silent files', detail: 'A file is written only when you give an explicit path; otherwise the handoff comes back in the reply.' },
+        { icon: 'refresh', title: 'Fresh state only', detail: 'Version-control status, diffs, and verification output are re-read at handoff time rather than recalled from earlier in the session.' },
+      ],
+      'zh-CN': [
+        { icon: 'document', title: '八项清单', detail: '目标、状态、关键文件、决定、命令结果、剩余任务、风险、版本状态。空的类别写"无"，绝不省略。' },
+        { icon: 'check', title: '事实而非流水账', detail: '记录结论和原因，文档与测试结果用引用。绝不整段复制对话内容。' },
+        { icon: 'lock', title: '默认不落盘', detail: '只有你明确给出路径时才写文件，否则交接内容直接返回在回复里。' },
+        { icon: 'refresh', title: '只用新鲜状态', detail: '版本状态、diff 和验证输出都在交接时重新读取，而不是回忆会话早些时候的内容。' },
+      ],
+    },
+    example: {
+      en: {
+        prompt: '$engineering-flow:handoff\nCreate a continuation record with the objective, completed state, key files, decisions, latest verification, remaining work, risks, and Git status.',
+        turns: [
+          { who: 'agent', text: 'Re-reads Git status and the diff, the authoritative requirement record, and the most recent test output.' },
+          { who: 'agent', text: 'Organizes the facts into the eight items, writing “None” for blockers rather than dropping the category.' },
+          { who: 'agent', text: 'Summarizes each decision with its reason, and references the requirement document and test results instead of pasting them.' },
+          { who: 'agent', text: 'Returns the record in the response — no path was given, so no file is created.' },
+        ],
+      },
+      'zh-CN': {
+        prompt: '$engineering-flow:handoff\n生成当前任务的续接记录，包含目标、已完成状态、关键文件、决定、最新验证、剩余任务、风险和 Git 状态。',
+        turns: [
+          { who: 'agent', text: '重新读取 Git 状态和 diff、权威需求记录，以及最近一次测试输出。' },
+          { who: 'agent', text: '把事实组织成八项，"阻塞"这一项写"无"，而不是直接省略掉。' },
+          { who: 'agent', text: '逐条简述决定和它的原因，需求文档和测试结果用引用而不是粘贴全文。' },
+          { who: 'agent', text: '把记录直接返回在回复里——因为没有给路径，所以没有创建任何文件。' },
+        ],
+      },
+    },
+    useWhen: {
+      en: [
+        'The session is ending and work passes to another session or teammate.',
+        'The context window is nearly full and state must be saved before compaction.',
+        'You need an executable record of exactly where the task stands.',
+        'Someone else will continue and must not repeat decisions you already made.',
+      ],
+      'zh-CN': [
+        '会话即将结束，工作要交给下一个会话或同事。',
+        '上下文窗口快满了，压缩之前需要把状态保存下来。',
+        '需要一份可执行的记录，说清任务到底停在哪里。',
+        '别人要接着做，不能让他重复你已经做过的决定。',
+      ],
+    },
+    avoidWhen: {
+      en: [
+        { situation: 'You want a summary for a human reader, not a continuation record', instead: 'Just ask for a summary' },
+        { situation: 'The work itself is unfinished and you want it finished', instead: 'Develop' },
+        { situation: 'You want an assessment of the change quality', instead: 'Review' },
+      ],
+      'zh-CN': [
+        { situation: '你要的是给人看的总结，不是续接记录', instead: '直接要一份总结即可' },
+        { situation: '工作本身没做完，你希望把它做完', instead: 'Develop' },
+        { situation: '你想要的是对改动质量的评估', instead: 'Review' },
+      ],
+    },
+    faq: {
+      en: [
+        { q: 'Will it write the handoff to a file?', a: 'Only when you give an explicit output path. Otherwise the record is returned in the reply and no repository file is created.' },
+        { q: 'Why does it write “None” instead of skipping a section?', a: 'Because omission and genuine absence look the same to the next reader. Writing “None” proves the category was actually checked.' },
+        { q: 'Does it paste the whole conversation?', a: 'No. It records conclusions and reasons, and references documents, commits, diffs, and test output rather than copying them.' },
+        { q: 'Can I use it mid-task?', a: 'Yes. It captures the current state at any point — including unresolved decisions and unrelated work that must be preserved.' },
+      ],
+      'zh-CN': [
+        { q: '它会把交接写成文件吗？', a: '只有你明确给出输出路径时才会。否则记录直接返回在回复里，不创建任何仓库文件。' },
+        { q: '为什么空的部分要写"无"而不是跳过？', a: '因为在下一个读者眼里，"漏写"和"确实没有"看不出区别。写"无"才能证明这一类真的被检查过。' },
+        { q: '它会把整段对话粘进去吗？', a: '不会。它记录结论和原因，文档、提交、diff 和测试输出都用引用而不是复制。' },
+        { q: '任务做到一半也能用吗？', a: '可以。它会记录当前时刻的真实状态，包括未决决定和必须保留的无关改动。' },
+      ],
+    },
+  },
+};

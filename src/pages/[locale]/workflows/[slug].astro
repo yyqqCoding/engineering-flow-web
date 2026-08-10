@@ -1,6 +1,6 @@
 ---
 import Icon from '../../../components/Icon.astro';
-import Lifecycle from '../../../components/Lifecycle.astro';
+import WorkflowIcon from '../../../components/WorkflowIcon.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
 import { copy, snapshotMeta, workflows, type Locale, type WorkflowSlug } from '../../../data/site';
 import { locales, localizePath } from '../../../lib/routes.mjs';
@@ -18,70 +18,85 @@ const workflowIndex = workflows.findIndex((item) => item.slug === slug) + 1;
 const t = copy[locale];
 const codexCommand = `$engineering-flow:${slug}`;
 const claudeCommand = `/engineering-flow:${slug}`;
+const steps = workflow.process[locale];
+const hasGate = steps.some((step) => step.gate);
 ---
 
 <SiteLayout locale={locale} title={workflow.title[locale]} description={workflow.summary[locale]} active="workflows">
-  <div class="detail-page" data-copied-label={t.detail.copied}>
+  <div class:list={['detail-page', `tone-${workflow.tone}`]} data-copied-label={t.detail.copied}>
   <a class="back-link" href={localizePath(locale, 'workflows')}>← {t.detail.back}</a>
   <header class="detail-heading">
     <div>
-      <span class:list={['workflow-icon', workflow.tone]}><Icon name={workflow.icon} size={25} /></span>
-      <p class="eyebrow">WORKFLOW {String(workflowIndex).padStart(2, '0')} / 05</p>
+      <span class="workflow-icon"><WorkflowIcon slug={workflow.slug} size={28} /></span>
+      <p class="eyebrow">{t.detail.eyebrow} {String(workflowIndex).padStart(2, '0')} / 05</p>
       <h1>{workflow.title[locale]}</h1>
       <p class="lede">{workflow.summary[locale]}</p>
     </div>
-    <span class:list={['badge', workflow.tone]}>{workflow.mode}</span>
+    <span class:list={['badge', workflow.tone]}>{workflow.mode[locale]}</span>
   </header>
+
+  <section class="idea-banner panel">
+    <p class="eyebrow">{t.detail.idea}</p>
+    <p class="idea-text">{workflow.idea[locale]}</p>
+  </section>
 
   <div class="detail-layout">
     <div class="detail-main">
-      <section class="workflow-visual panel">
-        {slug === 'develop' ? (
-          <Lifecycle locale={locale} />
-        ) : (
-          <div class="principle-flow">
-            {workflow.principles[locale].map((principle, index) => (
-              <div class="principle-step">
-                <span>{String(index + 1).padStart(2, '0')}</span>
-                <Icon name={index === workflow.principles[locale].length - 1 ? 'check' : workflow.icon} size={25} />
-                <strong>{principle}</strong>
-                {index < workflow.principles[locale].length - 1 && <i aria-hidden="true">→</i>}
+      <section class="panel process-panel">
+        <header class="panel-heading">
+          <h2>{t.detail.process}</h2>
+          {hasGate && <span class="badge orange"><Icon name="lock" size={13} />{t.detail.gate}</span>}
+        </header>
+        <ol class="process-rail">
+          {steps.map((step, index) => (
+            <li class:list={['process-step', { gate: step.gate }]}>
+              <span class="step-marker">
+                {String(index + 1).padStart(2, '0')}
+                {step.gate && <i class="gate-badge" aria-hidden="true"><Icon name="lock" size={10} /></i>}
+              </span>
+              <div class="step-body">
+                <strong>{step.name}{step.gate && <em class="gate-pill">{t.detail.gate}</em>}</strong>
+                <p>{step.detail}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </li>
+          ))}
+        </ol>
       </section>
 
-      <section class="definition-grid">
-        <article class="panel-flat">
-          <span class="definition-icon"><Icon name="document" /></span>
-          <h2>{t.detail.principles}</h2>
-          <ul>{workflow.principles[locale].map((item) => <li><Icon name="check" size={16} />{item}</li>)}</ul>
-        </article>
-        <article class="panel-flat">
-          <span class="definition-icon"><Icon name="shield" /></span>
-          <h2>{t.detail.outcomes}</h2>
-          <ul>{workflow.outcomes[locale].map((item) => <li><Icon name="check" size={16} />{item}</li>)}</ul>
-        </article>
+      <section class="mechanism-section">
+        <h2>{t.detail.mechanisms}</h2>
+        <div class="mechanism-grid">
+          {workflow.mechanisms[locale].map((mechanism) => (
+            <article class="panel-flat mechanism-card">
+              <span class="mechanism-icon"><Icon name={mechanism.icon} size={20} /></span>
+              <h3>{mechanism.title}</h3>
+              <p>{mechanism.detail}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </div>
 
     <aside class="detail-sidebar">
-      <section class="panel-flat sidebar-card">
-        <p class="eyebrow">{t.detail.about}</p>
-        <p>{workflow.about[locale]}</p>
-        <dl>
-          <div><dt>ID</dt><dd>{workflow.slug}.v1</dd></div>
-          <div><dt>{t.detail.version}</dt><dd>{snapshotMeta.sourceVersion}</dd></div>
-          <div><dt>{t.detail.mode}</dt><dd>{workflow.mode}</dd></div>
-        </dl>
-      </section>
       <section class="panel-flat sidebar-card invocation-card">
         <p class="eyebrow">{t.detail.invocation}</p>
         <label>{t.detail.codex}</label>
         <div class="code-block"><code>{codexCommand}</code><button class="copy-button" data-copy={codexCommand} aria-label={t.detail.copy}><Icon name="copy" size={16} /></button></div>
         <label>{t.detail.claude}</label>
         <div class="code-block"><code>{claudeCommand}</code><button class="copy-button" data-copy={claudeCommand} aria-label={t.detail.copy}><Icon name="copy" size={16} /></button></div>
+      </section>
+      <section class="panel-flat sidebar-card">
+        <p class="eyebrow">{t.detail.outcomes}</p>
+        <ul class="outcome-list">
+          {workflow.outcomes[locale].map((item) => <li><Icon name="check" size={16} />{item}</li>)}
+        </ul>
+      </section>
+      <section class="panel-flat sidebar-card meta-card">
+        <dl>
+          <div><dt>ID</dt><dd>{workflow.slug}.v1</dd></div>
+          <div><dt>{t.detail.version}</dt><dd>{snapshotMeta.sourceVersion}</dd></div>
+          <div><dt>{t.detail.mode}</dt><dd>{workflow.mode[locale]}</dd></div>
+        </dl>
       </section>
     </aside>
   </div>
@@ -102,20 +117,87 @@ const claudeCommand = `/engineering-flow:${slug}`;
 </script>
 
 <style>
-  .back-link { display: inline-block; margin-bottom: 28px; color: var(--muted); font-size: .83rem; }
-  .detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 25px; margin-bottom: 28px; }
+  .tone-green { --tone: var(--green); --tone-soft: var(--green-soft); }
+  .tone-orange { --tone: var(--orange); --tone-soft: var(--orange-soft); }
+  .tone-purple { --tone: var(--purple); --tone-soft: var(--purple-soft); }
+  .tone-blue { --tone: var(--blue); --tone-soft: var(--blue-soft); }
+  .tone-slate { --tone: var(--muted); --tone-soft: var(--panel-soft); }
+
+  .back-link { display: inline-block; margin-bottom: 28px; color: var(--muted); font-size: .92rem; transition: color .18s ease; }
+  .back-link:hover { color: var(--tone); }
+  .detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 25px; margin-bottom: 22px; }
   .detail-heading > div { display: grid; grid-template-columns: auto 1fr; column-gap: 15px; align-items: center; }
-  .detail-heading .workflow-icon { grid-row: 1 / 4; }.detail-heading .eyebrow { margin-bottom: 6px; }.detail-heading h1 { margin-bottom: 7px; font-size: clamp(2.5rem, 4vw, 4rem); }.detail-heading .lede { margin: 0; }
-  .workflow-icon { display: grid; width: 62px; height: 62px; place-items: center; border: 1.5px solid currentColor; border-radius: 50%; color: var(--green); }.workflow-icon.orange { color: var(--orange); }.workflow-icon.purple { color: var(--purple); }.workflow-icon.blue { color: var(--blue); }.workflow-icon.slate { color: var(--muted); }
-  .detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 22px; }
-  .detail-main { min-width: 0; }.workflow-visual { min-height: 280px; display: grid; align-items: center; padding: 35px 28px; }
-  .principle-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-  .principle-step { position: relative; display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
-  .principle-step > span { color: var(--green); font-family: var(--mono); font-size: .7rem; }.principle-step > .icon { width: 62px; height: 62px; padding: 17px; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--green); }.principle-step strong { max-width: 190px; font-size: .78rem; }.principle-step i { position: absolute; top: 46px; left: calc(50% + 48px); color: var(--muted); font-style: normal; }
-  .definition-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }.definition-grid article { padding: 24px; }.definition-grid h2 { margin-top: 16px; font-size: 1.15rem; }.definition-icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: var(--green-soft); color: var(--green); }
-  ul { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }li { display: flex; align-items: start; gap: 8px; color: var(--muted); font-size: .84rem; }li .icon { flex: 0 0 auto; margin-top: 2px; color: var(--green); }
-  .detail-sidebar { display: flex; flex-direction: column; gap: 18px; }.sidebar-card { padding: 22px; }.sidebar-card > p:not(.eyebrow) { color: var(--muted); font-size: .85rem; }.sidebar-card dl { margin: 20px 0 0; }.sidebar-card dl > div { display: flex; justify-content: space-between; gap: 15px; padding: 9px 0; border-top: 1px solid var(--line); }.sidebar-card dt { color: var(--muted); font-size: .72rem; }.sidebar-card dd { margin: 0; font-family: var(--mono); font-size: .68rem; text-align: right; }
-  .invocation-card label { display: block; margin-top: 12px; color: var(--muted); font-size: .72rem; }.invocation-card .code-block { margin-bottom: 12px; }.copy-button.copied { border-color: var(--green); color: var(--green); }
-  @media (max-width: 940px) { .detail-layout { grid-template-columns: 1fr; }.detail-sidebar { display: grid; grid-template-columns: 1fr 1fr; }.principle-flow { grid-template-columns: 1fr 1fr; row-gap: 30px; }.principle-step i { display: none; } }
-  @media (max-width: 620px) { .detail-heading { align-items: start; flex-direction: column; }.detail-heading > div { grid-template-columns: 1fr; }.detail-heading .workflow-icon { grid-row: auto; margin-bottom: 14px; }.definition-grid, .detail-sidebar { grid-template-columns: 1fr; }.principle-flow { grid-template-columns: 1fr; } }
+  .detail-heading .workflow-icon { grid-row: 1 / 4; }
+  .detail-heading .eyebrow { margin-bottom: 6px; }
+  .detail-heading h1 { margin-bottom: 7px; font-size: clamp(2.5rem, 4vw, 4rem); }
+  .detail-heading .lede { margin: 0; }
+  .workflow-icon { display: grid; width: 62px; height: 62px; place-items: center; border: 1.5px solid var(--tone); border-radius: 50%; color: var(--tone); }
+
+  .idea-banner { margin-bottom: 22px; padding: 24px 30px; border-left: 4px solid var(--tone); }
+  .idea-banner .eyebrow { margin-bottom: 10px; color: var(--tone); }
+  .idea-text { max-width: 1180px; margin: 0; font-size: clamp(1.08rem, 1.45vw, 1.3rem); font-weight: 620; line-height: 1.55; letter-spacing: -.01em; text-wrap: pretty; }
+
+  .detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 22px; align-items: start; }
+  .detail-main { min-width: 0; display: grid; gap: 22px; }
+
+  .process-panel { padding: 26px 28px; }
+  .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 24px; }
+  .panel-heading h2 { margin: 0; font-size: 1.3rem; }
+  .panel-heading .badge { display: inline-flex; align-items: center; gap: 5px; }
+
+  .process-rail { margin: 0; padding: 0; list-style: none; }
+  .process-step { position: relative; display: grid; grid-template-columns: 46px 1fr; gap: 18px; }
+  .process-step:not(:last-child) { padding-bottom: 24px; }
+  .process-step:not(:last-child)::before { content: ''; position: absolute; top: 46px; bottom: 0; left: 22px; width: 2px; background: var(--line); }
+  .step-marker { position: relative; z-index: 1; display: grid; width: 46px; height: 46px; place-items: center; border: 1.5px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--tone); font-family: var(--mono); font-size: .82rem; font-weight: 700; transition: border-color .2s ease, transform .2s ease; }
+  .process-step:hover .step-marker { border-color: var(--tone); transform: scale(1.06); }
+  .step-body { padding: 11px 16px 12px; border: 1px solid transparent; border-radius: 8px; transition: background-color .2s ease, border-color .2s ease; }
+  .process-step:hover .step-body { background: var(--panel-soft); }
+  .step-body strong { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 1.02rem; }
+  .step-body p { margin: 5px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+
+  .process-step.gate .step-marker { border-color: var(--orange); background: var(--orange-soft); color: var(--orange); }
+  .process-step.gate:hover .step-marker { border-color: var(--orange); }
+  .process-step.gate:not(:last-child)::before { background: color-mix(in srgb, var(--orange) 35%, var(--line)); }
+  .gate-badge { position: absolute; right: -4px; bottom: -4px; display: grid; width: 19px; height: 19px; place-items: center; border: 2px solid var(--panel); border-radius: 50%; background: var(--orange); color: #fff; }
+  .process-step.gate .step-body { border-color: color-mix(in srgb, var(--orange) 28%, var(--line)); background: color-mix(in srgb, var(--orange) 5%, var(--panel)); }
+  .gate-pill { padding: 2px 9px; border: 1px solid color-mix(in srgb, var(--orange) 35%, var(--line)); border-radius: 999px; background: var(--orange-soft); color: var(--orange); font-family: var(--mono); font-size: .68rem; font-weight: 700; font-style: normal; letter-spacing: .06em; text-transform: uppercase; }
+
+  .mechanism-section h2 { margin-bottom: 16px; font-size: 1.3rem; }
+  .mechanism-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .mechanism-card { padding: 20px; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  .mechanism-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--tone) 40%, var(--line)); box-shadow: var(--shadow); }
+  .mechanism-icon { display: grid; width: 42px; height: 42px; place-items: center; margin-bottom: 14px; border-radius: 10px; background: var(--tone-soft); color: var(--tone); }
+  .mechanism-card h3 { margin-bottom: 6px; font-size: 1rem; }
+  .mechanism-card p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+  .detail-sidebar { display: flex; flex-direction: column; gap: 18px; }
+  .sidebar-card { padding: 22px; }
+  .sidebar-card .eyebrow { margin-bottom: 12px; }
+  .invocation-card label { display: block; margin-top: 12px; color: var(--muted); font-size: .8rem; }
+  .invocation-card .code-block { margin-bottom: 12px; }
+  .copy-button.copied { border-color: var(--green); color: var(--green); }
+  .outcome-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+  .outcome-list li { display: flex; align-items: start; gap: 8px; color: var(--muted); font-size: .95rem; }
+  .outcome-list li .icon { flex: 0 0 auto; margin-top: 2px; color: var(--green); }
+  .meta-card dl { margin: 0; }
+  .meta-card dl > div { display: flex; justify-content: space-between; gap: 15px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .meta-card dl > div:last-child { border-bottom: 0; }
+  .meta-card dt { color: var(--muted); font-size: .8rem; }
+  .meta-card dd { margin: 0; font-family: var(--mono); font-size: .78rem; text-align: right; }
+
+  @media (max-width: 940px) {
+    .detail-layout { grid-template-columns: 1fr; }
+    .detail-sidebar { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+    .invocation-card { grid-column: 1 / -1; }
+    .mechanism-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px) {
+    .detail-heading { align-items: start; flex-direction: column; }
+    .detail-heading > div { grid-template-columns: 1fr; }
+    .detail-heading .workflow-icon { grid-row: auto; margin-bottom: 14px; }
+    .detail-sidebar { grid-template-columns: 1fr; }
+    .process-panel { padding: 20px 16px; }
+    .idea-banner { padding: 20px 18px; }
+  }
 </style>

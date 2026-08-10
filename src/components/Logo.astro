@@ -3,16 +3,36 @@ interface Props { compact?: boolean }
 const { compact = false } = Astro.props;
 ---
 
+{/* 品牌标识：一条向上推进的流水线，中途被橙色关卡截断，终点是绿色完成节点——
+    "推进 → 关卡 → 完成"就是产品本身；开屏时轨道会画出来，暗示"过程"而不是"图标" */}
 <span class="brand-mark" aria-hidden="true">
-  <i></i><i></i><b></b>
+  <svg viewBox="0 0 40 40" width="34" height="34" fill="none">
+    <path class="logo-track" d="M8 31h7.5V20h9V9H31" />
+    <circle class="logo-start" cx="8" cy="31" r="3.2" />
+    <rect class="logo-gate" x="18.4" y="14.4" width="3.2" height="11.2" rx="1.6" />
+    <circle class="logo-end" cx="31" cy="9" r="3.4" />
+  </svg>
 </span>
 {!compact && <span class="brand-name">Engineering Flow</span>}
 
 <style>
-  .brand-mark { position: relative; display: inline-block; width: 34px; height: 26px; flex: 0 0 auto; }
-  .brand-mark i { position: absolute; top: 4px; width: 15px; height: 15px; border: solid currentColor; border-width: 3px 3px 0 0; }
-  .brand-mark i:first-child { left: 3px; transform: rotate(-135deg); }
-  .brand-mark i:nth-child(2) { right: 3px; transform: rotate(45deg); }
-  .brand-mark b { position: absolute; right: 2px; bottom: 0; width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
-  .brand-name { font-size: 1.28rem; font-weight: 760; letter-spacing: -0.035em; white-space: nowrap; }
+  .brand-mark { display: inline-grid; place-items: center; flex: 0 0 auto; }
+  .brand-mark svg { overflow: visible; }
+  .logo-track { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 42; animation: logo-draw 1.05s var(--ease-out) both; }
+  .logo-start { fill: currentColor; animation: logo-pop .4s var(--ease-spring) both; }
+  .logo-gate { fill: var(--orange); transform-origin: 20px 20px; animation: logo-gate .45s var(--ease-spring) .5s both; }
+  .logo-end { fill: var(--green); transform-origin: 31px 9px; animation: logo-pop .45s var(--ease-spring) .85s both; }
+
+  @keyframes logo-draw { from { stroke-dashoffset: 42; } to { stroke-dashoffset: 0; } }
+  @keyframes logo-pop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+  @keyframes logo-gate { from { opacity: 0; transform: scaleY(.15); } to { opacity: 1; transform: scaleY(1); } }
+
+  :global(.brand:hover) .logo-end { animation: logo-breathe 1.6s ease-in-out infinite; }
+  @keyframes logo-breathe { 50% { transform: scale(1.22); } }
+
+  .brand-name { font-size: 1.26rem; font-weight: 760; letter-spacing: -0.035em; white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logo-track, .logo-start, .logo-gate, .logo-end, :global(.brand:hover) .logo-end { animation: none; stroke-dashoffset: 0; opacity: 1; transform: none; }
+  }
 </style>

@@ -1,0 +1,134 @@
+---
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import Lifecycle from '../../../components/Lifecycle.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { philosophyPage } from '../../../data/docs';
+import type { Locale } from '../../../data/site';
+import { locales } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = philosophyPage;
+const toc = [
+  { id: 'problems', label: d.problemTitle[locale] },
+  { id: 'layers', label: d.layerTitle[locale] },
+  { id: 'lifecycle', label: d.lifecycleTitle[locale] },
+  { id: 'explicit', label: d.explicitTitle[locale] },
+  { id: 'standard', label: d.standardTitle[locale] },
+  { id: 'non-goals', label: d.nonGoalsTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs/philosophy" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="problems">
+      <h2>{d.problemTitle[locale]}</h2>
+      <div class="problem-list">
+        {d.problems.map((problem, index) => (
+          <article>
+            <span class="problem-num">{String(index + 1).padStart(2, '0')}</span>
+            <div>
+              <h3>{problem.title[locale]}</h3>
+              <p>{problem.detail[locale]}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="layers">
+      <h2>{d.layerTitle[locale]}</h2>
+      <p>{d.layerIntro[locale]}</p>
+      <div class="doc-grid">
+        {d.layers.map((layer) => (
+          <article class:list={['layer-card', layer.kind]}>
+            <span class="layer-tag">{layer.label[locale]}</span>
+            <h3>{layer.title[locale]}</h3>
+            <p>{layer.detail[locale]}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="lifecycle">
+      <h2>{d.lifecycleTitle[locale]}</h2>
+      <p>{d.lifecycleBody[locale]}</p>
+      <div class="lifecycle-frame"><Lifecycle locale={locale} /></div>
+    </section>
+
+    <section id="explicit">
+      <h2>{d.explicitTitle[locale]}</h2>
+      <p>{d.explicitIntro[locale]}</p>
+      <div class="lesson-list">
+        {d.lessons.map((lesson) => (
+          <article>
+            <span class="lesson-icon"><Icon name={lesson.icon} size={18} /></span>
+            <div>
+              <h3>{lesson.title[locale]}</h3>
+              <p>{lesson.detail[locale]}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div class="doc-note">
+        <Icon name="flag" size={17} />
+        <span>{d.lessonsConclusion[locale]}</span>
+      </div>
+    </section>
+
+    <section id="standard">
+      <h2>{d.standardTitle[locale]}</h2>
+      <p>{d.standardIntro[locale]}</p>
+      <dl class="standard-list">
+        {d.standards.map((item) => (
+          <div>
+            <dt>{item.title[locale]}</dt>
+            <dd>{item.detail[locale]}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <section id="non-goals">
+      <h2>{d.nonGoalsTitle[locale]}</h2>
+      <ul class="doc-list non-goals">
+        {d.nonGoals.map((item) => <li>{item[locale]}</li>)}
+      </ul>
+    </section>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .problem-list, .lesson-list { display: grid; gap: 16px; margin-top: 20px; }
+  .problem-list article, .lesson-list article { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 20px 22px; border: 1px solid var(--line); border-left: 3px solid var(--orange); border-radius: var(--radius); background: var(--panel); }
+  .problem-num { color: var(--orange); font-family: var(--mono); font-size: 1.1rem; font-weight: 700; }
+  .lesson-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 9px; background: var(--orange-soft); color: var(--orange); }
+  .problem-list h3, .lesson-list h3 { margin: 0 0 7px; font-size: 1.05rem; }
+  .problem-list p, .lesson-list p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+  .layer-card { padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  .layer-card.explicit { border-color: color-mix(in srgb, var(--green) 38%, var(--line)); background: color-mix(in srgb, var(--green) 4%, var(--panel)); }
+  .layer-tag { display: inline-flex; padding: 3px 9px; border-radius: 5px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .layer-card.explicit .layer-tag { background: var(--green-soft); color: var(--green); }
+  .layer-card h3 { margin: 12px 0 7px; font-size: 1.08rem; }
+  .layer-card p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+  .lifecycle-frame { margin: 22px 0 6px; padding: 26px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+
+  .standard-list { display: grid; gap: 0; margin: 20px 0 0; }
+  .standard-list > div { display: grid; grid-template-columns: 150px 1fr; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .standard-list > div:last-child { border-bottom: 0; }
+  .standard-list dt { font-weight: 680; }
+  .standard-list dd { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.65; }
+
+  .non-goals li::before { background: var(--line-strong) !important; }
+
+  @media (max-width: 640px) {
+    .standard-list > div { grid-template-columns: 1fr; gap: 4px; }
+    .lifecycle-frame { padding: 20px 14px; }
+  }
+</style>

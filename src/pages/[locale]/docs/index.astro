@@ -1,0 +1,112 @@
+---
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import WorkflowIcon from '../../../components/WorkflowIcon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { overviewPage } from '../../../data/docs';
+import { workflows, type Locale } from '../../../data/site';
+import { locales, localizePath } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = overviewPage;
+const toc = [
+  { id: 'what', label: d.whatTitle[locale] },
+  { id: 'model', label: d.modelTitle[locale] },
+  { id: 'choose', label: d.chooseTitle[locale] },
+  { id: 'boundaries', label: d.boundariesTitle[locale] },
+  { id: 'start', label: d.startTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="what">
+      <h2>{d.whatTitle[locale]}</h2>
+      <p>{d.whatBody[locale]}</p>
+    </section>
+
+    <section id="model">
+      <h2>{d.modelTitle[locale]}</h2>
+      <ol class="run-flow">
+        {d.modelSteps.map((step, index) => (
+          <li>
+            <span class="run-flow-num">{String(index + 1).padStart(2, '0')}</span>
+            <div>
+              <h4>{step.title[locale]}</h4>
+              <p>{step.detail[locale]}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section id="choose">
+      <h2>{d.chooseTitle[locale]}</h2>
+      <p>{d.chooseIntro[locale]}</p>
+      <table class="doc-table choose-table">
+        <thead>
+          <tr>{d.chooseColumns[locale].map((column) => <th>{column}</th>)}</tr>
+        </thead>
+        <tbody>
+          {d.chooseRows.map((row) => {
+            const workflow = workflows.find((item) => item.slug === row.slug)!;
+            return (
+              <tr>
+                <td>{row.when[locale]}</td>
+                <td>
+                  <a class="choose-workflow" href={localizePath(locale, `docs/workflows/${row.slug}`)}>
+                    <span class:list={['choose-icon', workflow.tone]}><WorkflowIcon slug={workflow.slug} size={17} /></span>
+                    {workflow.title[locale]}
+                  </a>
+                </td>
+                <td class="subtle">{row.edits[locale]}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+
+    <section id="boundaries">
+      <h2>{d.boundariesTitle[locale]}</h2>
+      <ul class="doc-list">
+        {d.boundaries.map((item) => <li>{item[locale]}</li>)}
+      </ul>
+    </section>
+
+    <section id="start">
+      <h2>{d.startTitle[locale]}</h2>
+      <div class="doc-grid" style="--cols: 2">
+        {d.startCards.map((card) => (
+          <a class="doc-card" href={localizePath(locale, card.path)}>
+            <span class="doc-card-icon"><Icon name={card.icon} size={19} /></span>
+            <h3>{card.title[locale]}</h3>
+            <p>{card.detail[locale]}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .run-flow { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  .run-flow li { position: relative; display: grid; grid-template-columns: 42px 1fr; gap: 16px; padding-bottom: 20px; }
+  .run-flow li:not(:last-child)::before { content: ''; position: absolute; top: 42px; bottom: 0; left: 20px; width: 2px; background: var(--line); }
+  .run-flow-num { position: relative; z-index: 1; display: grid; width: 42px; height: 42px; place-items: center; border: 1.5px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--green); font-family: var(--mono); font-size: .8rem; font-weight: 700; }
+  .run-flow h4 { margin: 10px 0 5px; font-size: 1.02rem; }
+  .run-flow p { margin: 0; color: var(--muted); font-size: .94rem; }
+
+  .choose-table td:first-child { width: 45%; }
+  .choose-workflow { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; text-decoration: none !important; }
+  .choose-workflow:hover { color: var(--green); }
+  .choose-icon { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 7px; background: var(--green-soft); color: var(--green); }
+  .choose-icon.orange { background: var(--orange-soft); color: var(--orange); }
+  .choose-icon.purple { background: var(--purple-soft); color: var(--purple); }
+  .choose-icon.blue { background: var(--blue-soft); color: var(--blue); }
+  .choose-icon.slate { background: var(--panel-soft); color: var(--muted); }
+</style>

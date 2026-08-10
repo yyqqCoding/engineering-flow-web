@@ -1,0 +1,81 @@
+---
+import CodeBlock from '../../../components/CodeBlock.astro';
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { installPage } from '../../../data/docs';
+import type { Locale } from '../../../data/site';
+import { locales } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = installPage;
+const toc = [
+  { id: 'codex', label: d.codexTitle[locale] },
+  { id: 'claude', label: d.claudeTitle[locale] },
+  { id: 'update', label: d.updateTitle[locale] },
+  { id: 'remove', label: d.removeTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs/install" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="codex">
+      <h2>{d.codexTitle[locale]}</h2>
+      <p>{d.requirement[locale]}</p>
+      <ol class="install-steps">
+        {d.codexSteps.map((step, index) => (
+          <li>
+            <span class="install-num">{index + 1}</span>
+            <div>
+              <h4>{step.title[locale]}</h4>
+              <p class="subtle">{step.note[locale]}</p>
+              <CodeBlock locale={locale} code={step.code} />
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <h3>{d.codexLocalTitle[locale]}</h3>
+      <p>{d.codexLocalNote[locale]}</p>
+      <CodeBlock locale={locale} code={d.codexLocalCode} />
+    </section>
+
+    <section id="claude">
+      <h2>{d.claudeTitle[locale]}</h2>
+      <p>{d.claudeNote[locale]}</p>
+      <CodeBlock locale={locale} code={d.claudeCode} />
+      <div class="doc-note warn">
+        <Icon name="lock" size={17} />
+        <span>{d.tip[locale]}</span>
+      </div>
+    </section>
+
+    <section id="update">
+      <h2>{d.updateTitle[locale]}</h2>
+      <h3>Codex CLI</h3>
+      <p>{d.updateCodexNote[locale]}</p>
+      <CodeBlock locale={locale} code={d.updateCodexCode} />
+      <h3>Claude Code</h3>
+      <p>{d.updateClaudeNote[locale]}</p>
+      <CodeBlock locale={locale} code={d.updateClaudeCode} />
+    </section>
+
+    <section id="remove">
+      <h2>{d.removeTitle[locale]}</h2>
+      <p>{d.removeNote[locale]}</p>
+      <CodeBlock locale={locale} code={d.removeCode} />
+    </section>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .install-steps { display: grid; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .install-steps li { display: grid; grid-template-columns: 30px 1fr; gap: 15px; }
+  .install-num { display: grid; width: 30px; height: 30px; place-items: center; border: 1.5px solid var(--green); border-radius: 50%; color: var(--green); font-family: var(--mono); font-size: .82rem; font-weight: 700; }
+  .install-steps h4 { margin: 4px 0 4px; font-size: 1.02rem; }
+  .install-steps p { margin: 0; font-size: .93rem; }
+</style>

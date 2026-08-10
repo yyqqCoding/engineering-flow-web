@@ -1,0 +1,67 @@
+---
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { practicesPage } from '../../../data/docs';
+import type { Locale } from '../../../data/site';
+import { locales } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = practicesPage;
+const toc = [
+  { id: 'advantages', label: d.advantagesTitle[locale] },
+  { id: 'practices', label: d.practicesTitle[locale] },
+  { id: 'faq', label: d.faqTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs/practices" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="advantages">
+      <h2>{d.advantagesTitle[locale]}</h2>
+      <div class="doc-grid">
+        {d.advantages.map((item) => (
+          <article class="doc-card">
+            <h3>{item.title[locale]}</h3>
+            <p>{item.detail[locale]}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="practices">
+      <h2>{d.practicesTitle[locale]}</h2>
+      <ul class="doc-check">
+        {d.practices.map((item) => <li><Icon name="check" size={16} />{item[locale]}</li>)}
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>{d.faqTitle[locale]}</h2>
+      <div class="faq-list">
+        {d.faq.map((item) => (
+          <details>
+            <summary>{item.q[locale]}<Icon name="arrow" size={16} /></summary>
+            <p>{item.a[locale]}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .faq-list { display: grid; gap: 10px; margin-top: 20px; }
+  .faq-list details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); transition: border-color .18s ease; }
+  .faq-list details[open] { border-color: color-mix(in srgb, var(--green) 34%, var(--line)); }
+  .faq-list summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 19px; cursor: pointer; font-weight: 650; list-style: none; }
+  .faq-list summary::-webkit-details-marker { display: none; }
+  .faq-list summary:hover { color: var(--green); }
+  .faq-list summary .icon { flex: 0 0 auto; color: var(--muted); transform: rotate(90deg); transition: transform .2s ease, color .2s ease; }
+  .faq-list details[open] summary .icon { color: var(--green); transform: rotate(-90deg); }
+  .faq-list p { margin: 0; padding: 0 19px 18px; color: var(--muted); font-size: .96rem; }
+</style>

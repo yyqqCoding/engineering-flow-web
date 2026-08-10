@@ -17,7 +17,7 @@ const t = copy[locale];
   <section class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">{t.home.eyebrow}</p>
-      <h1>{t.home.title}</h1>
+      <h1>{t.home.title}<span class="title-accent">{t.home.titleAccent}</span></h1>
       <p class="lede">{t.home.intro}</p>
       <div class="hero-actions">
         <a class="button primary" href={localizePath(locale, 'workflows')}>
@@ -50,7 +50,7 @@ const t = copy[locale];
 
   <section class="stat-grid">
     {t.home.stats.map((stat: string[], index: number) => (
-      <article class="stat-card panel-flat">
+      <article class="stat-card panel-flat reveal grow" data-reveal-step={index}>
         <span class="stat-icon"><Icon name={['grid', 'shield', 'refresh', 'check'][index]} size={26} /></span>
         <Icon name="arrow" />
         <strong>{stat[0]}</strong>
@@ -62,27 +62,41 @@ const t = copy[locale];
 </SiteLayout>
 
 <style>
-  .hero-grid { display: grid; grid-template-columns: minmax(370px, .78fr) minmax(660px, 1.5fr); gap: clamp(35px, 5vw, 82px); align-items: center; min-height: 470px; }
+  .hero-grid { position: relative; display: grid; grid-template-columns: minmax(370px, .78fr) minmax(660px, 1.5fr); gap: clamp(35px, 5vw, 82px); align-items: center; min-height: 470px; }
+  .hero-grid::before { content: ''; position: absolute; inset: -70px -50px; z-index: -1; pointer-events: none; background: radial-gradient(540px 330px at 76% 10%, color-mix(in srgb, var(--green) 8%, transparent), transparent 72%), radial-gradient(430px 280px at 6% 92%, color-mix(in srgb, var(--green) 5%, transparent), transparent 72%); animation: glow-drift 16s ease-in-out infinite alternate; }
+  @keyframes glow-drift { to { transform: translate3d(2.2%, -1.4%, 0) scale(1.05); } }
   .hero-copy h1 { max-width: 650px; }
+  .title-accent { color: var(--green); }
   .hero-copy .lede { max-width: 610px; }
   .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
-  .hero-flow { min-width: 0; padding: 28px 26px 23px; }
+  .hero-flow { position: relative; min-width: 0; padding: 28px 26px 23px; }
+  .hero-flow::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: radial-gradient(circle, var(--line) 1px, transparent 1px); background-size: 18px 18px; opacity: .3; pointer-events: none; }
+  .hero-flow > * { position: relative; }
   .flow-heading { display: flex; min-height: 50px; align-items: start; justify-content: space-between; gap: 18px; }
-  .gate-note { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: .72rem; }
+  .gate-note { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: .85rem; transition: border-color .22s var(--ease-out), color .22s var(--ease-out); }
+  .hero-flow:hover .gate-note { border-color: color-mix(in srgb, var(--orange) 40%, var(--line)); color: var(--orange); }
   .feedback-line { display: flex; align-items: center; width: 85%; margin: 25px auto 0; color: var(--muted); }
-  .feedback-line i { width: 100%; border-top: 1px dashed var(--line-strong); }
-  .status-strip { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 36px; padding: 18px 22px; }
-  .status-strip > span { display: flex; min-width: 0; align-items: center; justify-content: center; gap: 9px; border-right: 1px solid var(--line); font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; }
+  .feedback-line i { height: 1px; width: 100%; background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px); background-size: 12px 1px; animation: dash-march 1.4s linear infinite; }
+  @keyframes dash-march { to { background-position: -12px 0; } }
+  .feedback-line span { transition: color .25s var(--ease-out), transform .25s var(--ease-out); }
+  .hero-flow:hover .feedback-line span { color: var(--green); }
+  .hero-flow:hover .feedback-line span:first-child { transform: translateX(-2px); }
+  .hero-flow:hover .feedback-line span:last-child { transform: translateX(2px); }
+  .status-strip { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 36px; padding: 18px 22px; border-left: 3px solid var(--green); }
+  .status-strip > span { display: flex; min-width: 0; align-items: center; justify-content: center; gap: 9px; border-right: 1px solid var(--line); font-family: var(--mono); font-size: .8rem; letter-spacing: .04em; }
   .status-strip > span:last-child { border-right: 0; }
   .status-strip b { font-weight: 520; }
   .status-strip em { color: var(--green); font-style: normal; }
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 20px; }
-  .stat-card { position: relative; min-height: 190px; padding: 22px; }
-  .stat-card > .icon:last-of-type { position: absolute; top: 24px; right: 21px; }
-  .stat-icon { display: block; margin-bottom: 16px; color: var(--green); }
+  .stat-card { position: relative; min-height: 190px; padding: 22px; border-top: 2px solid transparent; transition: transform .26s var(--ease-out), border-color .26s var(--ease-out), box-shadow .26s var(--ease-out); }
+  .stat-card:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); border-top-color: var(--green); box-shadow: var(--shadow); }
+  .stat-card > .icon:last-of-type { position: absolute; top: 24px; right: 21px; transition: transform .26s var(--ease-out), color .26s var(--ease-out); }
+  .stat-card:hover > .icon:last-of-type { transform: translateX(5px); color: var(--green); }
+  .stat-icon { display: block; margin-bottom: 16px; color: var(--green); transition: transform .32s var(--ease-spring); }
+  .stat-card:hover .stat-icon { transform: scale(1.1) rotate(-3deg); }
   .stat-card strong { display: block; font-size: 2.5rem; line-height: 1; letter-spacing: -.06em; }
   .stat-card h2 { margin: 7px 0 2px; font-size: 1rem; }
-  .stat-card p { margin: 0; color: var(--muted); font-size: .82rem; }
+  .stat-card p { margin: 0; color: var(--muted); font-size: .92rem; }
   @media (max-width: 1180px) { .hero-grid { grid-template-columns: 1fr; } .hero-flow { order: 2; } }
   @media (max-width: 850px) { .status-strip { grid-template-columns: 1fr 1fr; gap: 14px; } .status-strip > span { justify-content: start; border: 0; } .stat-grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 540px) { .hero-grid { min-height: 0; } .hero-flow { padding: 22px 18px; } .flow-heading { flex-direction: column; margin-bottom: 15px; } .stat-grid { grid-template-columns: 1fr; } }

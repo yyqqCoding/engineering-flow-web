@@ -1,0 +1,74 @@
+---
+import type { WorkflowSlug } from '../data/site';
+
+interface Props {
+  slug: WorkflowSlug;
+  size?: number;
+  label?: string;
+}
+
+const { slug, size = 24, label } = Astro.props;
+---
+
+{/* 每个标识画的是该工作流的核心动作本身，悬停时对应部件会动起来 */}
+<svg
+  class:list={['wf-icon', `wf-${slug}`]}
+  width={size}
+  height={size}
+  viewBox="0 0 32 32"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden={label ? undefined : 'true'}
+  role={label ? 'img' : undefined}
+>
+  {label && <title>{label}</title>}
+
+  {slug === 'develop' && (
+    <>
+      <path class="wf-rail wf-rail-a" d="M2.5 16h6" />
+      <path class="wf-rail wf-rail-b" d="M23.5 16h6" />
+      <circle class="wf-ring" cx="16" cy="16" r="7" />
+      <path class="wf-check" d="m12.8 16.2 2.2 2.2 4.2-4.8" />
+    </>
+  )}
+
+  {slug === 'diagnose' && (
+    <>
+      <path class="wf-wave" d="M2.5 22h4.2l2.6-8.5 3.4 13 2.6-6H21" />
+      <circle class="wf-lens" cx="23" cy="10.5" r="5.5" />
+      <path class="wf-lens-handle" d="m27 14.5 3 3.2" />
+    </>
+  )}
+
+  {slug === 'code-design' && (
+    <>
+      <path class="wf-branch wf-branch-up" d="M8 15.2c6.5 0 8.5-8 15-8" />
+      <path class="wf-branch wf-branch-down" d="M8 16.8c6.5 0 8.5 8 15 8" />
+      <path class="wf-branch-main" d="M8 16h15" />
+      <circle class="wf-origin" cx="4.5" cy="16" r="2.6" />
+      <circle class="wf-pick" cx="25.8" cy="16" r="3.2" />
+    </>
+  )}
+
+  {slug === 'review' && (
+    <>
+      <path class="wf-doc" d="M7 3.6h11l7 7v18H7z" />
+      <path class="wf-doc-fold" d="M18 3.6v7.4h7" />
+      <path class="wf-doc-line" d="M11.5 17.5h9" />
+      <path class="wf-doc-line" d="M11.5 22.5h6" />
+      <rect class="wf-scan" x="9.5" y="13" width="13" height="2" rx="1" stroke="none" />
+    </>
+  )}
+
+  {slug === 'handoff' && (
+    <>
+      <path class="wf-hand-rail" d="M9 16h14" />
+      <rect class="wf-parcel" x="11" y="12.5" width="7" height="7" rx="2" />
+      <circle class="wf-hand-node" cx="4.5" cy="16" r="3" />
+      <circle class="wf-hand-node wf-hand-target" cx="27.5" cy="16" r="3" />
+    </>
+  )}
+</svg>

@@ -1,6 +1,7 @@
 ---
 import Icon from '../../../components/Icon.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
+import WorkflowIcon from '../../../components/WorkflowIcon.astro';
 import { copy, workflows, type Locale } from '../../../data/site';
 import { locales, localizePath } from '../../../lib/routes.mjs';
 
@@ -10,12 +11,32 @@ export function getStaticPaths() {
 
 const locale = Astro.params.locale as Locale;
 const t = copy[locale];
+const e = t.workflowsPage.mapEdges;
+const bySlug = Object.fromEntries(workflows.map((workflow) => [workflow.slug, workflow]));
+
+const mapNodes = [
+  { slug: 'diagnose', x: 150, y: 96, r: 40, icon: 28 },
+  { slug: 'handoff', x: 812, y: 96, r: 38, icon: 26 },
+  { slug: 'code-design', x: 150, y: 300, r: 40, icon: 28 },
+  { slug: 'develop', x: 470, y: 300, r: 58, icon: 38 },
+  { slug: 'review', x: 762, y: 300, r: 40, icon: 28 },
+] as const;
+
+// 每条连线都对应源仓库里一条明确的流转规则，虚线表示只在特定条件下发生
+const mapEdges = [
+  { d: 'M 196 288 H 404', label: e.proposal, x: 300, y: 270, flow: true },
+  { d: 'M 404 314 H 198', label: e.deeper, x: 300, y: 338, flow: false },
+  { d: 'M 530 300 H 716', label: e.changed, x: 623, y: 282, flow: true },
+  { d: 'M 752 340 C 706 402, 566 404, 500 354', label: e.findings, x: 626, y: 420, flow: false },
+  { d: 'M 184 132 C 268 200, 350 236, 420 268', label: e.undefined, x: 296, y: 176, flow: false },
+  { d: 'M 512 262 C 606 186, 700 124, 774 104', label: e.session, x: 664, y: 172, flow: false },
+];
 ---
 
 <SiteLayout locale={locale} title={t.workflowsPage.title} description={t.workflowsPage.intro} active="workflows" wide>
   <header class="page-heading">
     <div>
-      <p class="eyebrow">ENGINEERING FLOW / 05</p>
+      <p class="eyebrow">{t.workflowsPage.eyebrow}</p>
       <h1>{t.workflowsPage.title}</h1>
       <p class="lede">{t.workflowsPage.intro}</p>
     </div>
@@ -24,12 +45,16 @@ const t = copy[locale];
   <div class="workflow-layout">
     <section class="workflow-list panel-flat" aria-label={t.workflowsPage.title}>
       {workflows.map((workflow) => (
-        <a href={localizePath(locale, `workflows/${workflow.slug}`)} class="workflow-row">
-          <span class:list={['workflow-icon', workflow.tone]}><Icon name={workflow.icon} size={23} /></span>
+        <a
+          href={localizePath(locale, `workflows/${workflow.slug}`)}
+          class:list={['workflow-row', workflow.tone]}
+          data-link-slug={workflow.slug}
+        >
+          <span class="workflow-icon"><WorkflowIcon slug={workflow.slug} size={26} /></span>
           <span class="workflow-copy">
             <strong>{workflow.title[locale]}</strong>
             <small>{workflow.summary[locale]}</small>
-            <em class:list={['badge', workflow.tone]}>{workflow.mode}</em>
+            <em class:list={['badge', workflow.tone]}>{workflow.mode[locale]}</em>
           </span>
           <Icon name="arrow" />
         </a>
@@ -38,29 +63,62 @@ const t = copy[locale];
 
     <section class="workflow-map panel">
       <header>
-        <div><p class="eyebrow">{t.workflowsPage.map}</p><p>{t.workflowsPage.mapHelp}</p></div>
-        <span class="badge">EXPLICIT</span>
+        <p class="eyebrow">{t.workflowsPage.map}</p>
+        <p class="map-hint">{t.workflowsPage.mapHint}</p>
       </header>
-      <div class="map-canvas" aria-label={t.workflowsPage.map}>
-        <span class="map-line line-a"></span><span class="map-line line-b"></span>
-        <span class="map-line line-c"></span><span class="map-line line-d"></span>
-        {workflows.map((workflow, index) => (
-          <a
-            href={localizePath(locale, `workflows/${workflow.slug}`)}
-            class:list={['map-node', `node-${index + 1}`, workflow.tone]}
-          >
-            <span><Icon name={workflow.icon} size={26} /></span>
-            <strong>{workflow.title[locale]}</strong>
-            <small>{workflow.mode.split(' · ')[0]}</small>
-          </a>
-        ))}
+
+      <div class="map-canvas">
+        <svg class="map-svg" viewBox="0 0 960 452" role="img" aria-label={t.workflowsPage.map}>
+          <defs>
+            <marker id="map-arrow" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M 0 0 L 8 4.5 L 0 9 Z" class="map-arrowhead" />
+            </marker>
+          </defs>
+
+          {mapEdges.map((edge, index) => (
+            <g class:list={['map-edge-group', { dashed: !edge.flow }]} data-edge={index}>
+              <path class="map-edge" d={edge.d} marker-end="url(#map-arrow)" />
+              {edge.flow && <path class="map-pulse" d={edge.d} />}
+              <text class="map-edge-label" x={edge.x} y={edge.y} text-anchor="middle">{edge.label}</text>
+            </g>
+          ))}
+
+          {mapNodes.map((node) => {
+            const workflow = bySlug[node.slug];
+            const gated = node.slug === 'develop' || node.slug === 'diagnose';
+            return (
+              <g
+                class:list={['map-node', workflow.tone, { hub: node.slug === 'develop' }]}
+                transform={`translate(${node.x} ${node.y})`}
+                data-node-slug={node.slug}
+              >
+                <a href={localizePath(locale, `workflows/${workflow.slug}`)} aria-label={workflow.title[locale]}>
+                  <g class="node-inner">
+                    <circle class="node-halo" r={node.r + 14} />
+                    {node.slug === 'develop' && <circle class="node-pulse" r={node.r} />}
+                    <circle class="node-circle" r={node.r} />
+                    <g transform={`translate(${-node.icon / 2} ${-node.icon / 2})`}>
+                      <WorkflowIcon slug={workflow.slug} size={node.icon} />
+                    </g>
+                    {gated && (
+                      <g class="node-gate" transform={`translate(${node.r * 0.66} ${-node.r * 0.9})`}>
+                        <circle r="12" />
+                        <g transform="translate(-7 -7)"><Icon name="lock" size={14} /></g>
+                      </g>
+                    )}
+                    <text class="node-title" y={node.r + 30} text-anchor="middle">{workflow.title[locale]}</text>
+                  </g>
+                </a>
+              </g>
+            );
+          })}
+        </svg>
       </div>
+
       <footer class="map-legend">
-        <span><i class="solid"></i>{locale === 'en' ? 'Task progression' : '任务推进'}</span>
-        <span><i class="dashed"></i>{locale === 'en' ? 'Optional transition' : '可选转换'}</span>
-        <span class="badge">GATED</span>
-        <span class="badge orange">READ-ONLY</span>
-        <span class="badge purple">EXPLICIT</span>
+        <span><i class="solid"></i>{t.workflowsPage.mapLegendProgress}</span>
+        <span><i class="dashed"></i>{t.workflowsPage.mapLegendOptional}</span>
+        <span class="legend-gate"><i class="gate"><Icon name="lock" size={11} /></i>{t.detail.gate}</span>
       </footer>
     </section>
 
@@ -68,52 +126,120 @@ const t = copy[locale];
       <section class="panel-flat summary-card">
         <p class="eyebrow">{t.workflowsPage.summary}</p>
         <dl>
-          <div><dt><Icon name="grid" />{t.workflowsPage.active}</dt><dd>5</dd></div>
-          <div><dt><Icon name="terminal" />{t.workflowsPage.explicit}</dt><dd>5</dd></div>
-          <div><dt><Icon name="shield" />{t.workflowsPage.readOnly}</dt><dd>2</dd></div>
-          <div><dt><Icon name="lock" />{t.workflowsPage.gated}</dt><dd>2</dd></div>
+          <div><dt><Icon name="grid" size={18} />{t.workflowsPage.active}</dt><dd>5</dd></div>
+          <div><dt><Icon name="terminal" size={18} />{t.workflowsPage.explicit}</dt><dd>5</dd></div>
+          <div><dt><Icon name="shield" size={18} />{t.workflowsPage.readOnly}</dt><dd>2</dd></div>
+          <div><dt><Icon name="lock" size={18} />{t.workflowsPage.gated}</dt><dd>2</dd></div>
         </dl>
       </section>
       <section class="panel-flat about-card">
-        <p class="eyebrow">{locale === 'en' ? 'WHY EXPLICIT?' : '为什么显式调用？'}</p>
-        <p>{locale === 'en' ? 'Full workflows add useful depth when requested, but ordinary tasks keep the compact Engineering Core.' : '完整工作流在需要时提供更深流程，普通任务则只保留紧凑的 Engineering Core。'}</p>
+        <p class="eyebrow">{t.workflowsPage.whyTitle}</p>
+        <p>{t.workflowsPage.whyBody}</p>
         <a href={localizePath(locale, 'docs')}>{t.workflowsPage.details} <Icon name="arrow" size={16} /></a>
       </section>
     </aside>
   </div>
 </SiteLayout>
 
+<script>
+  const rows = [...document.querySelectorAll('[data-link-slug]')];
+  const nodes = [...document.querySelectorAll('[data-node-slug]')];
+  const pair = (slug: string, on: boolean) => {
+    rows.forEach((row) => row.classList.toggle('wf-live', on && row.getAttribute('data-link-slug') === slug));
+    nodes.forEach((node) => node.classList.toggle('wf-live', on && node.getAttribute('data-node-slug') === slug));
+  };
+  [...rows, ...nodes].forEach((element) => {
+    const slug = element.getAttribute('data-link-slug') ?? element.getAttribute('data-node-slug') ?? '';
+    element.addEventListener('pointerenter', () => pair(slug, true));
+    element.addEventListener('pointerleave', () => pair(slug, false));
+  });
+</script>
+
 <style>
-  .workflow-layout { display: grid; grid-template-columns: minmax(300px, .78fr) minmax(520px, 1.5fr) minmax(250px, .65fr); gap: 20px; }
+  .workflow-layout { display: grid; grid-template-columns: minmax(300px, .78fr) minmax(520px, 1.6fr) minmax(240px, .6fr); gap: 20px; }
+
   .workflow-list { overflow: hidden; }
-  .workflow-row { display: grid; grid-template-columns: 48px 1fr 20px; gap: 14px; align-items: start; min-height: 122px; padding: 20px 18px; border-bottom: 1px solid var(--line); }
+  .workflow-row.green { --row-accent: var(--green); --row-soft: var(--green-soft); }
+  .workflow-row.orange { --row-accent: var(--orange); --row-soft: var(--orange-soft); }
+  .workflow-row.purple { --row-accent: var(--purple); --row-soft: var(--purple-soft); }
+  .workflow-row.blue { --row-accent: var(--blue); --row-soft: var(--blue-soft); }
+  .workflow-row.slate { --row-accent: var(--muted); --row-soft: var(--panel-soft); }
+  .workflow-row { position: relative; display: grid; grid-template-columns: 50px 1fr 20px; gap: 14px; align-items: start; min-height: 122px; padding: 20px 18px; border-bottom: 1px solid var(--line); transition: background-color .22s var(--ease-out); }
+  .workflow-row::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: var(--row-accent); transform: scaleY(0); transform-origin: top; transition: transform .3s var(--ease-out); }
   .workflow-row:last-child { border: 0; }
-  .workflow-row:hover { background: var(--panel-soft); }
-  .workflow-icon { display: grid; width: 48px; height: 48px; place-items: center; border: 1px solid currentColor; border-radius: 50%; color: var(--green); }
-  .workflow-icon.orange { color: var(--orange); }.workflow-icon.purple { color: var(--purple); }.workflow-icon.blue { color: var(--blue); }.workflow-icon.slate { color: var(--muted); }
+  .workflow-row:hover, .workflow-row.wf-live { background: var(--panel-soft); }
+  .workflow-row:hover::before, .workflow-row.wf-live::before { transform: scaleY(1); }
+  .workflow-row > .icon:last-child { margin-top: 3px; transition: transform .22s var(--ease-out), color .22s var(--ease-out); }
+  .workflow-row:hover > .icon:last-child { transform: translateX(5px); color: var(--row-accent); }
+  .workflow-icon { display: grid; width: 50px; height: 50px; place-items: center; border: 1px solid color-mix(in srgb, var(--row-accent) 45%, transparent); border-radius: 14px; background: var(--row-soft); color: var(--row-accent); transition: transform .3s var(--ease-spring), border-radius .3s var(--ease-out); }
+  .workflow-row:hover .workflow-icon, .workflow-row.wf-live .workflow-icon { transform: scale(1.06); border-radius: 50%; }
   .workflow-copy strong, .workflow-copy small, .workflow-copy em { display: block; }
   .workflow-copy strong { margin-bottom: 4px; font-size: 1.05rem; }
-  .workflow-copy small { margin-bottom: 8px; color: var(--muted); font-size: .78rem; line-height: 1.35; }
+  .workflow-copy small { margin-bottom: 8px; color: var(--muted); font-size: .85rem; line-height: 1.45; }
   .workflow-copy em { width: max-content; font-style: normal; }
-  .workflow-map { display: flex; min-height: 615px; flex-direction: column; padding: 24px; }
-  .workflow-map > header { display: flex; justify-content: space-between; gap: 20px; }
-  .workflow-map header p:last-child { color: var(--muted); font-size: .85rem; }
-  .map-canvas { position: relative; min-height: 455px; flex: 1; }
-  .map-node { position: absolute; z-index: 2; display: flex; width: 120px; flex-direction: column; align-items: center; gap: 6px; text-align: center; transform: translate(-50%, -50%); }
-  .map-node > span { display: grid; width: 68px; height: 68px; place-items: center; border: 1.5px solid currentColor; border-radius: 50%; background: var(--panel); }
-  .map-node strong { font-size: .82rem; }.map-node small { padding: 2px 5px; background: var(--green-soft); color: var(--green); font-family: var(--mono); font-size: .58rem; }
-  .map-node.orange { color: var(--orange); }.map-node.purple { color: var(--purple); }.map-node.blue { color: var(--blue); }.map-node.slate { color: var(--muted); }
-  .node-1 { top: 16%; left: 50%; }.node-2 { top: 54%; left: 20%; }.node-3 { top: 54%; left: 50%; }.node-4 { top: 88%; left: 50%; }.node-5 { top: 54%; left: 80%; }
-  .map-line { position: absolute; z-index: 1; height: 1px; background: var(--line-strong); transform-origin: left; }
-  .line-a { top: 25%; left: 47%; width: 34%; transform: rotate(145deg); }.line-b { top: 25%; left: 53%; width: 34%; transform: rotate(35deg); }
-  .line-c { top: 54%; left: 24%; width: 52%; border-top: 1px dashed var(--line-strong); background: none; }.line-d { top: 61%; left: 50%; width: 27%; transform: rotate(90deg); }
-  .map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .65rem; }
-  .map-legend > span { display: inline-flex; align-items: center; gap: 6px; }.map-legend i { width: 28px; border-top: 1px solid var(--text); }.map-legend i.dashed { border-style: dashed; }
+
+  .workflow-map { display: flex; flex-direction: column; padding: 24px; }
+  .workflow-map > header { margin-bottom: 6px; }
+  .map-hint { margin: 0; color: var(--muted); font-size: .86rem; }
+  .map-canvas { position: relative; display: grid; flex: 1; align-items: center; padding: 8px 0; }
+  .map-canvas::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, var(--line) 1px, transparent 1px); background-size: 22px 22px; opacity: .35; pointer-events: none; }
+  .map-svg { position: relative; display: block; width: 100%; height: auto; }
+
+  .map-edge { fill: none; stroke: var(--line-strong); stroke-width: 2; stroke-linecap: round; transition: stroke .25s var(--ease-out); }
+  .map-edge-group.dashed .map-edge { stroke-dasharray: 7 7; }
+  .map-arrowhead { fill: var(--line-strong); }
+  .map-pulse { fill: none; stroke: var(--green); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 16 260; animation: edge-pulse 3.6s linear infinite; }
+  .map-edge-group:nth-of-type(3) .map-pulse { animation-delay: 1.2s; }
+  @keyframes edge-pulse { from { stroke-dashoffset: 276; } to { stroke-dashoffset: 0; } }
+  .map-edge-label { fill: var(--muted); font-size: 15px; letter-spacing: .01em; paint-order: stroke; stroke: var(--panel); stroke-width: 6px; stroke-linejoin: round; }
+
+  .map-node { color: var(--green); cursor: pointer; }
+  .map-node.orange { color: var(--orange); }
+  .map-node.purple { color: var(--purple); }
+  .map-node.blue { color: var(--blue); }
+  .map-node.slate { color: var(--muted); }
+  .node-inner { transform-box: fill-box; transform-origin: center; transition: transform .34s var(--ease-spring); }
+  .map-node:hover .node-inner, .map-node.wf-live .node-inner { transform: scale(1.08); }
+  .node-halo { fill: currentColor; opacity: 0; transition: opacity .3s var(--ease-out); }
+  .map-node:hover .node-halo, .map-node.wf-live .node-halo { opacity: .09; }
+  .node-circle { fill: var(--panel); stroke: currentColor; stroke-width: 1.8; }
+  .map-node.hub .node-circle { fill: var(--green-soft); stroke-width: 2.4; }
+  .map-node.orange .node-circle { fill: var(--orange-soft); }
+  .map-node.purple .node-circle { fill: var(--purple-soft); }
+  .map-node.blue .node-circle { fill: var(--blue-soft); }
+  .map-node.slate .node-circle { fill: var(--panel-soft); }
+  .node-pulse { fill: none; stroke: var(--green); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: node-pulse 3s ease-out infinite; }
+  @keyframes node-pulse { from { transform: scale(1); opacity: .55; } to { transform: scale(1.5); opacity: 0; } }
+  .node-title { fill: var(--text); font-size: 17px; font-weight: 700; }
+  .node-gate circle { fill: var(--orange); stroke: var(--panel); stroke-width: 2.5; }
+  .node-gate .icon { color: #fff; }
+
+  .map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; }
+  .map-legend > span { display: inline-flex; align-items: center; gap: 7px; }
+  .map-legend i { width: 26px; border-top: 2px solid var(--line-strong); }
+  .map-legend i.dashed { border-style: dashed; }
+  .map-legend i.gate { display: grid; width: 17px; height: 17px; place-items: center; border: 0; border-radius: 50%; background: var(--orange); color: #fff; }
+
   .workflow-summary { display: flex; flex-direction: column; gap: 18px; }
-  .summary-card, .about-card { padding: 20px; }.summary-card dl { margin: 0; }.summary-card dl > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--line); }
-  .summary-card dl > div:last-child { border: 0; }.summary-card dt { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .78rem; }.summary-card dd { margin: 0; font-size: 1.4rem; font-weight: 750; }
-  .about-card p:not(.eyebrow) { color: var(--muted); font-size: .8rem; }.about-card a { display: flex; align-items: center; justify-content: space-between; color: var(--green); font-size: .78rem; font-weight: 700; }
-  @media (max-width: 1240px) { .workflow-layout { grid-template-columns: 330px 1fr; }.workflow-summary { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 840px) { .workflow-layout { grid-template-columns: 1fr; }.workflow-summary { grid-column: auto; }.workflow-map { min-height: 580px; } }
-  @media (max-width: 560px) { .workflow-summary { grid-template-columns: 1fr; }.workflow-map { min-height: 720px; }.map-canvas { min-height: 570px; }.node-1 { top: 8%; }.node-2 { top: 31%; left: 25%; }.node-3 { top: 31%; left: 75%; }.node-4 { top: 56%; left: 25%; }.node-5 { top: 56%; left: 75%; }.map-line { display: none; } }
+  .summary-card, .about-card { padding: 20px; }
+  .summary-card dl { margin: 0; }
+  .summary-card dl > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .summary-card dl > div:last-child { border: 0; }
+  .summary-card dt { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .86rem; line-height: 1.35; }
+  .summary-card dt > .icon { flex: 0 0 auto; color: var(--green); }
+  .summary-card dd { margin: 0; font-size: 1.45rem; font-weight: 750; }
+  .about-card p:not(.eyebrow) { color: var(--muted); font-size: .89rem; line-height: 1.62; }
+  .about-card a { display: flex; align-items: center; justify-content: space-between; color: var(--green); font-size: .86rem; font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) { .node-pulse, .map-pulse { animation: none; opacity: 0; } }
+  @media (max-width: 1240px) {
+    .workflow-layout { grid-template-columns: 330px 1fr; }
+    .workflow-summary { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 840px) {
+    .workflow-layout { grid-template-columns: 1fr; }
+    .workflow-summary { grid-column: auto; }
+    .workflow-map { display: none; }
+  }
+  @media (max-width: 560px) { .workflow-summary { grid-template-columns: 1fr; } }
 </style>

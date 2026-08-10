@@ -1,0 +1,83 @@
+---
+import CodeBlock from '../../../components/CodeBlock.astro';
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { inlineCode, quickstartPage } from '../../../data/docs';
+import type { Locale } from '../../../data/site';
+import { locales } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = quickstartPage;
+const toc = [
+  { id: 'ordinary', label: d.step1Title[locale] },
+  { id: 'named', label: d.step2Title[locale] },
+  { id: 'approve', label: d.step3Title[locale] },
+  { id: 'continuity', label: d.continuityTitle[locale] },
+  { id: 'trouble', label: d.troubleTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs/quickstart" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="ordinary">
+      <h2>{d.step1Title[locale]}</h2>
+      <p>{d.step1Body[locale]}</p>
+      <CodeBlock locale={locale} code={d.step1Code[locale]} />
+    </section>
+
+    <section id="named">
+      <h2>{d.step2Title[locale]}</h2>
+      <p>{d.step2Body[locale]}</p>
+      <CodeBlock locale={locale} code={d.step2Code[locale]} />
+
+      <h3>{d.formatTitle[locale]}</h3>
+      <table class="doc-table">
+        <thead>
+          <tr>{d.formatColumns[locale].map((column) => <th>{column}</th>)}</tr>
+        </thead>
+        <tbody>
+          {d.formatRows.map((row) => (
+            <tr><td>{row.host}</td><td><code>{row.format}</code></td></tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section id="approve">
+      <h2>{d.step3Title[locale]}</h2>
+      <p>{d.step3Body[locale]}</p>
+      <CodeBlock locale={locale} code={d.step3Code[locale]} />
+      <div class="doc-note">
+        <Icon name="document" size={17} />
+        <span>{d.step3Note[locale]}</span>
+      </div>
+    </section>
+
+    <section id="continuity">
+      <h2>{d.continuityTitle[locale]}</h2>
+      <p>{d.continuityBody[locale]}</p>
+    </section>
+
+    <section id="trouble">
+      <h2>{d.troubleTitle[locale]}</h2>
+      <table class="doc-table">
+        <thead>
+          <tr>{d.troubleColumns[locale].map((column) => <th>{column}</th>)}</tr>
+        </thead>
+        <tbody>
+          {d.troubleRows.map((row) => (
+            <tr>
+              <td set:html={inlineCode(row.symptom[locale])}></td>
+              <td class="subtle">{row.fix[locale]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </DocsShell>
+</SiteLayout>

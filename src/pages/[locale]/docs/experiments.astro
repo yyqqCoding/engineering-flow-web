@@ -1,0 +1,108 @@
+---
+import DocsShell from '../../../components/DocsShell.astro';
+import Icon from '../../../components/Icon.astro';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { experimentsPage, philosophyPage } from '../../../data/docs';
+import { copy, type Locale } from '../../../data/site';
+import { locales, localizePath } from '../../../lib/routes.mjs';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const d = experimentsPage;
+const cards = copy[locale].evidencePage.cards;
+const toc = [
+  { id: 'method', label: d.methodTitle[locale] },
+  { id: 'results', label: d.resultsTitle[locale] },
+  { id: 'lessons', label: d.lessonsTitle[locale] },
+  { id: 'limits', label: d.limitsTitle[locale] },
+];
+---
+
+<SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
+  <DocsShell locale={locale} path="docs/experiments" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
+    <section id="method">
+      <h2>{d.methodTitle[locale]}</h2>
+      <div class="doc-grid">
+        {d.method.map((item) => (
+          <article class="doc-card">
+            <span class="doc-card-icon"><Icon name={item.icon} size={18} /></span>
+            <h3>{item.title[locale]}</h3>
+            <p>{item.detail[locale]}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="results">
+      <h2>{d.resultsTitle[locale]}</h2>
+      <p>{d.resultsNote[locale]}</p>
+      <div class="result-grid">
+        {cards.map((card) => (
+          <div class="result-cell">
+            <strong>{card[1]}</strong>
+            <span>{card[0]}</span>
+            <small>{card[2]}</small>
+          </div>
+        ))}
+      </div>
+      <a class="result-link" href={localizePath(locale, 'evidence')}>
+        {d.viewResults[locale]}<Icon name="arrow" size={15} />
+      </a>
+    </section>
+
+    <section id="lessons">
+      <h2>{d.lessonsTitle[locale]}</h2>
+      <p>{d.lessonsIntro[locale]}</p>
+      <div class="lesson-list">
+        {philosophyPage.lessons.map((lesson) => (
+          <article>
+            <span class="lesson-icon"><Icon name={lesson.icon} size={18} /></span>
+            <div>
+              <h3>{lesson.title[locale]}</h3>
+              <p>{lesson.detail[locale]}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div class="doc-note">
+        <Icon name="flag" size={17} />
+        <span>{philosophyPage.lessonsConclusion[locale]}</span>
+      </div>
+    </section>
+
+    <section id="limits">
+      <h2>{d.limitsTitle[locale]}</h2>
+      <ul class="doc-list">
+        {d.limits.map((item) => <li>{item[locale]}</li>)}
+      </ul>
+      <div class="doc-note warn">
+        <Icon name="shield" size={17} />
+        <span>{d.limitsWarning[locale]}</span>
+      </div>
+    </section>
+  </DocsShell>
+</SiteLayout>
+
+<style>
+  .result-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 18px 0 0; }
+  .result-cell { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  .result-cell strong { display: block; font-size: 1.65rem; letter-spacing: -.04em; }
+  .result-cell span { display: block; margin-top: 3px; font-size: .9rem; font-weight: 650; }
+  .result-cell small { display: block; margin-top: 5px; color: var(--muted); font-size: .76rem; line-height: 1.45; }
+  .result-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 18px; color: var(--green); font-size: .93rem; font-weight: 700; text-decoration: none !important; }
+  .result-link:hover .icon { transform: translateX(3px); }
+  .result-link .icon { transition: transform .18s ease; }
+
+  .lesson-list { display: grid; gap: 16px; margin-top: 20px; }
+  .lesson-list article { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 20px 22px; border: 1px solid var(--line); border-left: 3px solid var(--orange); border-radius: var(--radius); background: var(--panel); }
+  .lesson-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 9px; background: var(--orange-soft); color: var(--orange); }
+  .lesson-list h3 { margin: 0 0 7px; font-size: 1.05rem; }
+  .lesson-list p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+  @media (max-width: 900px) {
+    .result-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
