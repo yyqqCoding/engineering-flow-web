@@ -35,7 +35,7 @@ const hasGate = steps.some((step) => step.gate);
     <span class:list={['badge', workflow.tone]}>{workflow.mode[locale]}</span>
   </header>
 
-  <section class="idea-banner panel">
+  <section class="idea-banner panel" data-spot>
     <p class="eyebrow">{t.detail.idea}</p>
     <p class="idea-text">{workflow.idea[locale]}</p>
   </section>
@@ -49,7 +49,7 @@ const hasGate = steps.some((step) => step.gate);
         </header>
         <ol class="process-rail">
           {steps.map((step, index) => (
-            <li class:list={['process-step', { gate: step.gate }]}>
+            <li class:list={['process-step', 'reveal', { gate: step.gate }]} data-reveal-step={index}>
               <span class="step-marker">
                 {String(index + 1).padStart(2, '0')}
                 {step.gate && <i class="gate-badge" aria-hidden="true"><Icon name="lock" size={10} /></i>}
@@ -67,7 +67,7 @@ const hasGate = steps.some((step) => step.gate);
         <h2>{t.detail.mechanisms}</h2>
         <div class="mechanism-grid">
           {workflow.mechanisms[locale].map((mechanism) => (
-            <article class="panel-flat mechanism-card">
+            <article class="panel-flat mechanism-card" data-spot>
               <span class="mechanism-icon"><Icon name={mechanism.icon} size={20} /></span>
               <h3>{mechanism.title}</h3>
               <p>{mechanism.detail}</p>
@@ -78,20 +78,20 @@ const hasGate = steps.some((step) => step.gate);
     </div>
 
     <aside class="detail-sidebar">
-      <section class="panel-flat sidebar-card invocation-card">
+      <section class="panel-flat sidebar-card invocation-card" data-spot>
         <p class="eyebrow">{t.detail.invocation}</p>
         <label>{t.detail.codex}</label>
-        <div class="code-block"><code>{codexCommand}</code><button class="copy-button" data-copy={codexCommand} aria-label={t.detail.copy}><Icon name="copy" size={16} /></button></div>
+        <div class="code-block"><code>{codexCommand}</code><button class="copy-button" data-copy={codexCommand} aria-label={t.detail.copy}><span class="copy-ic"><Icon name="copy" size={16} /></span><span class="copy-ic check" aria-hidden="true"><Icon name="check" size={16} /></span></button></div>
         <label>{t.detail.claude}</label>
-        <div class="code-block"><code>{claudeCommand}</code><button class="copy-button" data-copy={claudeCommand} aria-label={t.detail.copy}><Icon name="copy" size={16} /></button></div>
+        <div class="code-block"><code>{claudeCommand}</code><button class="copy-button" data-copy={claudeCommand} aria-label={t.detail.copy}><span class="copy-ic"><Icon name="copy" size={16} /></span><span class="copy-ic check" aria-hidden="true"><Icon name="check" size={16} /></span></button></div>
       </section>
-      <section class="panel-flat sidebar-card">
+      <section class="panel-flat sidebar-card" data-spot>
         <p class="eyebrow">{t.detail.outcomes}</p>
         <ul class="outcome-list">
           {workflow.outcomes[locale].map((item) => <li><Icon name="check" size={16} />{item}</li>)}
         </ul>
       </section>
-      <section class="panel-flat sidebar-card meta-card">
+      <section class="panel-flat sidebar-card meta-card" data-spot>
         <dl>
           <div><dt>ID</dt><dd>{workflow.slug}.v1</dd></div>
           <div><dt>{t.detail.version}</dt><dd>{snapshotMeta.sourceVersion}</dd></div>
@@ -104,15 +104,23 @@ const hasGate = steps.some((step) => step.gate);
 </SiteLayout>
 
 <script>
-  const detailPage = document.querySelector('.detail-page');
-  const copiedLabel = detailPage instanceof HTMLElement ? detailPage.dataset.copiedLabel ?? 'Copied' : 'Copied';
-  document.querySelectorAll('[data-copy]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(button.getAttribute('data-copy') ?? '');
-      button.setAttribute('aria-label', copiedLabel);
-      button.classList.add('copied');
-      setTimeout(() => button.classList.remove('copied'), 1200);
+  import { onPageLife } from '../../../lib/motion.mjs';
+
+  onPageLife(() => {
+    const detailPage = document.querySelector('.detail-page');
+    const copiedLabel = detailPage instanceof HTMLElement ? detailPage.dataset.copiedLabel ?? 'Copied' : 'Copied';
+    const cleanups: Array<() => void> = [];
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      const handler = async () => {
+        await navigator.clipboard.writeText(button.getAttribute('data-copy') ?? '');
+        button.setAttribute('aria-label', copiedLabel);
+        button.classList.add('copied');
+        setTimeout(() => button.classList.remove('copied'), 1200);
+      };
+      button.addEventListener('click', handler);
+      cleanups.push(() => button.removeEventListener('click', handler));
     });
+    return () => cleanups.forEach((fn) => fn());
   });
 </script>
 
@@ -149,6 +157,9 @@ const hasGate = steps.some((step) => step.gate);
   .process-step { position: relative; display: grid; grid-template-columns: 46px 1fr; gap: 18px; }
   .process-step:not(:last-child) { padding-bottom: 24px; }
   .process-step:not(:last-child)::before { content: ''; position: absolute; top: 46px; bottom: 0; left: 22px; width: 2px; background: var(--line); }
+  /* 连接线随步骤揭示从顶部生长；无 JS 时保持完整可见 */
+  .reveal-on .process-step:not(:last-child)::before { transform: scaleY(0); transform-origin: top; transition: transform .7s var(--ease-out) calc(var(--reveal-delay, 0s) + .28s); }
+  .reveal-on .process-step.shown:not(:last-child)::before { transform: scaleY(1); }
   .step-marker { position: relative; z-index: 1; display: grid; width: 46px; height: 46px; place-items: center; border: 1.5px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--tone); font-family: var(--mono); font-size: .82rem; font-weight: 700; transition: border-color .2s ease, transform .2s ease; }
   .process-step:hover .step-marker { border-color: var(--tone); transform: scale(1.06); }
   .step-body { padding: 11px 16px 12px; border: 1px solid transparent; border-radius: 8px; transition: background-color .2s ease, border-color .2s ease; }
@@ -161,10 +172,12 @@ const hasGate = steps.some((step) => step.gate);
   .process-step.gate:not(:last-child)::before { background: color-mix(in srgb, var(--orange) 35%, var(--line)); }
   .gate-badge { position: absolute; right: -4px; bottom: -4px; display: grid; width: 19px; height: 19px; place-items: center; border: 2px solid var(--panel); border-radius: 50%; background: var(--orange); color: #fff; }
   .process-step.gate .step-body { border-color: color-mix(in srgb, var(--orange) 28%, var(--line)); background: color-mix(in srgb, var(--orange) 5%, var(--panel)); }
-  .gate-pill { padding: 2px 9px; border: 1px solid color-mix(in srgb, var(--orange) 35%, var(--line)); border-radius: 999px; background: var(--orange-soft); color: var(--orange); font-family: var(--mono); font-size: .68rem; font-weight: 700; font-style: normal; letter-spacing: .06em; text-transform: uppercase; }
+  .gate-pill { padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--orange) 35%, var(--line)); border-radius: 999px; background: var(--orange-soft); color: var(--orange); font-family: var(--mono); font-size: .78rem; font-weight: 700; font-style: normal; letter-spacing: .06em; text-transform: uppercase; }
 
   .mechanism-section h2 { margin-bottom: 16px; font-size: 1.3rem; }
   .mechanism-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  /* 光晕颜色跟随当前工作流的色调 */
+  .detail-page [data-spot] { --spot-color: var(--tone); }
   .mechanism-card { padding: 20px; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
   .mechanism-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--tone) 40%, var(--line)); box-shadow: var(--shadow); }
   .mechanism-icon { display: grid; width: 42px; height: 42px; place-items: center; margin-bottom: 14px; border-radius: 10px; background: var(--tone-soft); color: var(--tone); }
@@ -184,7 +197,7 @@ const hasGate = steps.some((step) => step.gate);
   .meta-card dl > div { display: flex; justify-content: space-between; gap: 15px; padding: 9px 0; border-bottom: 1px solid var(--line); }
   .meta-card dl > div:last-child { border-bottom: 0; }
   .meta-card dt { color: var(--muted); font-size: .8rem; }
-  .meta-card dd { margin: 0; font-family: var(--mono); font-size: .78rem; text-align: right; }
+  .meta-card dd { margin: 0; font-family: var(--mono); font-size: .82rem; text-align: right; }
 
   @media (max-width: 940px) {
     .detail-layout { grid-template-columns: 1fr; }

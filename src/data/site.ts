@@ -37,10 +37,10 @@ const en = {
     lifecycle: 'Develop lifecycle',
     humanGate: 'Approval is a gated human step',
     stats: [
-      ['5', 'Workflows', 'Purpose-built, explicit flows'],
-      ['51/51', 'Behavior', 'Tested on the current Codex release'],
-      ['12/12', 'Continuity', 'Paired follow-up tasks verified'],
-      ['50/50', 'Static tests', 'Deterministic checks, all green'],
+      ['5', 'Workflows'],
+      ['51/51', 'Behavior'],
+      ['12/12', 'Continuity'],
+      ['50/50', 'Static tests'],
     ],
   },
   workflowsPage: {
@@ -48,9 +48,9 @@ const en = {
     title: 'Workflows',
     intro: 'Five workflows, one engineering responsibility each: design, develop, diagnose, review, hand off.',
     map: 'How they connect',
-    mapHint: 'Solid edges are the normal progression. Dashed edges occur only under the stated condition.',
     mapLegendProgress: 'Normal progression',
     mapLegendOptional: 'Conditional transition',
+    mapReset: 'Reset layout',
     mapEdges: {
       proposal: 'Design accepted',
       deeper: 'Deeper design needed',
@@ -155,10 +155,10 @@ export const copy: Record<Locale, Copy> = {
       lifecycle: 'Develop 生命周期',
       humanGate: '批准是必须经过的人工关卡',
       stats: [
-        ['5', '工作流', '明确分工、按需调用'],
-        ['51/51', '工程行为', '当前 Codex 版本实测'],
-        ['12/12', '多轮连续性', '配对任务逐项验证'],
-        ['50/50', '静态测试', '确定性检查全绿'],
+        ['5', '工作流'],
+        ['51/51', '工程行为'],
+        ['12/12', '多轮连续性'],
+        ['50/50', '静态测试'],
       ],
     },
     workflowsPage: {
@@ -166,9 +166,9 @@ export const copy: Record<Locale, Copy> = {
       title: '工作流',
       intro: '五个工作流，各自负责一段工程职责：设计、开发、诊断、评审、交接。',
       map: '它们如何衔接',
-      mapHint: '实线是常规推进路径；虚线只在标注的条件成立时才发生。',
       mapLegendProgress: '常规推进',
       mapLegendOptional: '条件转换',
+      mapReset: '复位布局',
       mapEdges: {
         proposal: '方案确定',
         deeper: '需要深入设计',

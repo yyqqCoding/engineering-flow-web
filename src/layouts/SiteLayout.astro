@@ -1,7 +1,9 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { copy, type Locale } from '../data/site';
+import '@fontsource-variable/inter';
 import '../styles/global.css';
 
 interface Props {
@@ -27,18 +29,24 @@ const t = copy[locale];
     <meta name="theme-color" content="#fbfcfb" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><path d=%22M8 31h7.5V20h9V9H31%22 fill=%22none%22 stroke=%22%23087b32%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%228%22 cy=%2231%22 r=%223.4%22 fill=%22%23087b32%22/><circle cx=%2231%22 cy=%229%22 r=%223.6%22 fill=%22%23087b32%22/><rect x=%2218.4%22 y=%2214.4%22 width=%223.2%22 height=%2211.2%22 rx=%221.6%22 fill=%22%23df6c13%22/></svg>" />
     <title>{title} · Engineering Flow</title>
+    <ClientRouter />
     <script is:inline>
       (() => {
         // 主题优先级：本地保存 > 系统偏好；同步浏览器 UI 主题色，避免暗色下地址栏突兀
-        const saved = localStorage.getItem('engineering-flow-theme');
-        const theme = saved === 'dark' || saved === 'light'
-          ? saved
-          : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.dataset.theme = theme;
-        const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', theme === 'dark' ? '#0d120f' : '#fbfcfb');
-        // 只有脚本可用时才启用揭示动效，否则内容默认可见
-        document.documentElement.classList.add('reveal-on');
+        const applyTheme = () => {
+          const saved = localStorage.getItem('engineering-flow-theme');
+          const theme = saved === 'dark' || saved === 'light'
+            ? saved
+            : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.dataset.theme = theme;
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', theme === 'dark' ? '#0d120f' : '#fbfcfb');
+          // 只有脚本可用时才启用揭示动效，否则内容默认可见
+          document.documentElement.classList.add('reveal-on');
+        };
+        applyTheme();
+        // ClientRouter 换页会用服务端 HTML 重置 <html> 属性，交换后立刻恢复主题与动效标记（先于新页渲染，无闪烁）
+        document.addEventListener('astro:after-swap', applyTheme);
       })();
     </script>
   </head>
@@ -48,25 +56,33 @@ const t = copy[locale];
     <main id="main" class:list={['page-shell', { wide, docs }]}><slot /></main>
     <Footer locale={locale} />
     <script>
-      // 滚动揭示：元素进入视口后加 .shown，只触发一次；同组元素按 data-reveal-step 错峰
-      const targets = [...document.querySelectorAll('.reveal')];
-      if (targets.length > 0 && 'IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('shown');
-            observer.unobserve(entry.target);
+      import { initCountUps, initMagnets, initSpotlights, onPageLife } from '../lib/motion.mjs';
+
+      onPageLife(() => {
+        const cleanups: Array<() => void> = [];
+        // 滚动揭示：元素进入视口后加 .shown，只触发一次；同组元素按 data-reveal-step 错峰
+        const targets = [...document.querySelectorAll('.reveal')];
+        if (targets.length > 0 && 'IntersectionObserver' in window) {
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add('shown');
+              observer.unobserve(entry.target);
+            });
+          }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+          targets.forEach((target) => {
+            if (target instanceof HTMLElement && target.dataset.revealStep) {
+              target.style.setProperty('--reveal-delay', `${Number(target.dataset.revealStep) * 70}ms`);
+            }
+            observer.observe(target);
           });
-        }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
-        targets.forEach((target) => {
-          if (target instanceof HTMLElement && target.dataset.revealStep) {
-            target.style.setProperty('--reveal-delay', `${Number(target.dataset.revealStep) * 70}ms`);
-          }
-          observer.observe(target);
-        });
-      } else {
-        targets.forEach((target) => target.classList.add('shown'));
-      }
+          cleanups.push(() => observer.disconnect());
+        } else {
+          targets.forEach((target) => target.classList.add('shown'));
+        }
+        cleanups.push(initCountUps(), initSpotlights(), initMagnets());
+        return () => cleanups.forEach((fn) => fn());
+      });
     </script>
   </body>
 </html>

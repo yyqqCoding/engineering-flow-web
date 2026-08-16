@@ -35,3 +35,20 @@ export function approvePlayground(state, config) {
 export function resetPlayground() {
   return createPlaygroundState();
 }
+
+/**
+ * 键盘回退：退一步用于重看上一幕。退到关卡之前会撤销批准，
+ * 再次前进时仍需人工批准，保证「未经批准不得越过关卡」在回放中同样成立。
+ * @param {PlaygroundState} state @param {PlaygroundConfig} config @returns {PlaygroundState}
+ */
+export function retreatPlayground(state, config) {
+  if (state.stepIndex <= 0) {
+    return state;
+  }
+
+  const stepIndex = state.stepIndex - 1;
+  const approved = config.gateIndex === null
+    ? state.approved
+    : state.approved && stepIndex >= config.gateIndex;
+  return { ...state, stepIndex, approved };
+}

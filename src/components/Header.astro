@@ -26,6 +26,7 @@ const items = [
     <a class="github-nav" href={githubUrl} target="_blank" rel="noreferrer">
       {t.github}<Icon name="external" size={15} />
     </a>
+    <span class="nav-indicator" aria-hidden="true"></span>
   </nav>
   <div class="header-actions">
     <a class="locale-button" href={nextLocalePath} data-locale-switch data-locale={nextLocale} title={t.language}>
@@ -42,18 +43,75 @@ const items = [
 </header>
 
 <script>
-  const localeSwitch = document.querySelector('[data-locale-switch]');
-  localeSwitch?.addEventListener('click', () => {
-    const nextLocale = localeSwitch.getAttribute('data-locale');
-    if (nextLocale) localStorage.setItem('engineering-flow-locale', nextLocale);
-  });
+  import { onPageLife } from '../lib/motion.mjs';
 
-  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
-    const root = document.documentElement;
-    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    root.dataset.theme = next;
-    localStorage.setItem('engineering-flow-theme', next);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', next === 'dark' ? '#0d120f' : '#fbfcfb');
+  onPageLife(() => {
+    const cleanups: Array<() => void> = [];
+
+    // 记录语言偏好，供根路径重定向使用
+    const localeSwitch = document.querySelector('[data-locale-switch]');
+    const onLocale = () => {
+      const nextLocale = localeSwitch?.getAttribute('data-locale');
+      if (nextLocale) localStorage.setItem('engineering-flow-locale', nextLocale);
+    };
+    localeSwitch?.addEventListener('click', onLocale);
+    cleanups.push(() => localeSwitch?.removeEventListener('click', onLocale));
+
+    // 主题切换：支持 View Transitions 时从点击位置圆形扩散，否则瞬时切换
+    const toggle = document.querySelector('[data-theme-toggle]');
+    const onToggle = (event: Event) => {
+      const root = document.documentElement;
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      const apply = () => {
+        root.dataset.theme = next;
+        localStorage.setItem('engineering-flow-theme', next);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', next === 'dark' ? '#0d120f' : '#fbfcfb');
+      };
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce || typeof document.startViewTransition !== 'function') {
+        apply();
+        return;
+      }
+      // 键盘触发的 click 没有坐标，退回按钮中心
+      const rect = toggle?.getBoundingClientRect();
+      const x = event instanceof MouseEvent && event.clientX > 0 ? event.clientX : rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+      const y = event instanceof MouseEvent && event.clientY > 0 ? event.clientY : rect ? rect.top + rect.height / 2 : 40;
+      root.style.setProperty('--theme-x', `${x}px`);
+      root.style.setProperty('--theme-y', `${y}px`);
+      root.classList.add('theme-transition');
+      document.startViewTransition(apply).finished.finally(() => root.classList.remove('theme-transition'));
+    };
+    toggle?.addEventListener('click', onToggle);
+    cleanups.push(() => toggle?.removeEventListener('click', onToggle));
+
+    // 导航滑动指示条：停靠在 active 项，悬停时滑向指针所在项（仅桌面横向导航）
+    const nav = document.querySelector('.primary-nav');
+    if (nav instanceof HTMLElement && matchMedia('(min-width: 701px)').matches) {
+      const links = [...nav.querySelectorAll('a')];
+      const dock = nav.querySelector('a.active');
+      const move = (link: HTMLElement) => {
+        nav.style.setProperty('--nav-x', `${link.offsetLeft + 14}px`);
+        nav.style.setProperty('--nav-w', `${link.offsetWidth - 28}px`);
+        nav.style.setProperty('--nav-on', '1');
+      };
+      const park = () => {
+        if (dock instanceof HTMLElement) move(dock);
+        else nav.style.setProperty('--nav-on', '0');
+      };
+      links.forEach((link) => {
+        const enter = () => move(link);
+        link.addEventListener('pointerenter', enter);
+        cleanups.push(() => link.removeEventListener('pointerenter', enter));
+      });
+      nav.addEventListener('pointerleave', park);
+      cleanups.push(() => nav.removeEventListener('pointerleave', park));
+      const onResize = () => park();
+      window.addEventListener('resize', onResize);
+      cleanups.push(() => window.removeEventListener('resize', onResize));
+      park();
+    }
+
+    return () => cleanups.forEach((fn) => fn());
   });
 </script>

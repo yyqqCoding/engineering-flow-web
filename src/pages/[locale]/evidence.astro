@@ -65,10 +65,10 @@ const percent = (value: number, total: number) => `${Math.round((value / total) 
           </div>
           <div class="bars">
             <div class="bar without" style={`--pct:${percent(row.without, row.total)}`}>
-              <span></span><em>{row.without}/{row.total}</em>
+              <span></span><em data-countup>{row.without}/{row.total}</em>
             </div>
             <div class="bar with" style={`--pct:${percent(row.with, row.total)}`}>
-              <span></span><em>{row.with}/{row.total}</em>
+              <span></span><em data-countup>{row.with}/{row.total}</em>
             </div>
           </div>
         </div>
@@ -80,7 +80,7 @@ const percent = (value: number, total: number) => `${Math.round((value / total) 
       {d.routingFacts.map((fact, index) => (
         <article class="fact panel-flat reveal grow" data-reveal-step={index}>
           <span class="fact-icon"><Icon name={fact.icon} size={18} /></span>
-          <strong>{fact.value}</strong>
+          <strong data-countup>{fact.value}</strong>
           <span class="fact-label">{fact.label[locale]}</span>
         </article>
       ))}
@@ -180,7 +180,7 @@ const percent = (value: number, total: number) => `${Math.round((value / total) 
 
   .compare { padding: 24px 26px 10px; }
   .compare-legend { display: flex; gap: 20px; margin-bottom: 20px; }
-  .key { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-family: var(--mono); font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; }
+  .key { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-family: var(--mono); font-size: .8rem; letter-spacing: .05em; text-transform: uppercase; }
   .key i { width: 12px; height: 12px; border-radius: 3px; }
   .key.without i { background: var(--line-strong); }
   .key.with i { background: var(--green); }
@@ -188,14 +188,14 @@ const percent = (value: number, total: number) => `${Math.round((value / total) 
   .compare-name { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
   .compare-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: var(--panel-soft); color: var(--green); }
   .compare-name strong { display: block; font-size: 1rem; line-height: 1.35; }
-  .compare-name small { color: var(--muted); font-family: var(--mono); font-size: .76rem; }
+  .compare-name small { color: var(--muted); font-family: var(--mono); font-size: .8rem; }
   .bars { display: grid; gap: 9px; }
   .bar { position: relative; display: flex; align-items: center; gap: 12px; height: 26px; border-radius: 5px; background: var(--panel-soft); }
   .bar span { display: block; height: 100%; width: 0; border-radius: 5px; transition: width 1.1s var(--ease-out) .12s; }
   .compare-row.shown .bar span { width: var(--pct); }
   .bar.without span { background: var(--line-strong); }
   .bar.with span { background: linear-gradient(90deg, var(--green), var(--green-bright)); }
-  .bar em { flex: 0 0 auto; font-family: var(--mono); font-size: .84rem; font-style: normal; font-weight: 700; }
+  .bar em { flex: 0 0 auto; font-family: var(--mono); font-size: .84rem; font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
   .bar.without em { color: var(--muted); }
   .bar.with em { color: var(--green); }
 
@@ -220,7 +220,7 @@ const percent = (value: number, total: number) => `${Math.round((value / total) 
   .case-side { padding: 14px 16px; border-radius: 8px; background: var(--panel-soft); }
   .case-side.with { background: var(--green-soft); }
   .case-side header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
-  .case-tag { color: var(--muted); font-family: var(--mono); font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .case-tag { color: var(--muted); font-family: var(--mono); font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .case-side.with .case-tag { color: var(--green); }
   .case-side em { font-family: var(--mono); font-size: .82rem; font-style: normal; font-weight: 700; color: var(--muted); }
   .case-side.with em { color: var(--green); }
@@ -229,7 +229,7 @@ const percent = (value: number, total: number) => `${Math.round((value / total) 
 
   .scenario-panel { overflow: hidden; }
   .scenario-panel table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-  .scenario-panel th { padding: 13px 18px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .74rem; font-weight: 600; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
+  .scenario-panel th { padding: 13px 18px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
   .scenario-panel td { padding: 13px 18px; border-top: 1px solid var(--line); line-height: 1.55; }
   .scenario-panel tbody tr { transition: background-color .2s var(--ease-out); }
   .scenario-panel tbody tr:hover { background: var(--green-soft); }

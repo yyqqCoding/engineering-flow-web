@@ -95,7 +95,7 @@ const actorIcon = (actor: string) => ({
     </div>
 
     <div class="stage">
-      <aside class="steps-panel panel-flat">
+      <aside class="steps-panel panel-flat" data-spot>
         <header><h2>{t.playgroundPage.steps}</h2><span data-steps-total>{pad(firstDemo.steps.length)}</span></header>
         {playgroundDemos.map((demo, demoIndex) => (
           <ol data-demo-group={demo.slug} hidden={demoIndex > 0}>
@@ -110,7 +110,7 @@ const actorIcon = (actor: string) => ({
         ))}
       </aside>
 
-      <section class="trace-panel panel-flat">
+      <section class="trace-panel panel-flat" data-spot>
         <header>
           <h2>{t.playgroundPage.trace}</h2>
           <span class="live-tag"><i></i>{t.playgroundPage.demoTag}</span>
@@ -148,6 +148,7 @@ const actorIcon = (actor: string) => ({
 
         <footer class="controls">
           <p data-state-message>{t.playgroundPage.start}</p>
+          <p class="kbd-hint" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd><span>·</span><kbd>Space</kbd></p>
           <div class="control-buttons">
             <button type="button" class="button small ghost" data-reset><Icon name="refresh" size={16} />{t.playgroundPage.reset}</button>
             <button type="button" class="button small" data-play>
@@ -160,7 +161,7 @@ const actorIcon = (actor: string) => ({
       </section>
     </div>
 
-    <section class="evidence-strip panel-flat">
+    <section class="evidence-strip panel-flat" data-spot>
       <header>
         <h2><Icon name="check" size={17} />{t.playgroundPage.evidence}</h2>
         <span data-evidence-total>01 / {pad(firstDemo.evidence.length)}</span>
@@ -182,15 +183,19 @@ const actorIcon = (actor: string) => ({
 </SiteLayout>
 
 <script>
+  import { onPageLife } from '../../lib/motion.mjs';
   import {
     advancePlayground,
     approvePlayground,
     createPlaygroundState,
     resetPlayground,
+    retreatPlayground,
   } from '../../lib/playground.mjs';
 
-  const root = document.querySelector('[data-playground]');
-  if (root instanceof HTMLElement) {
+  onPageLife(() => {
+    const root = document.querySelector('[data-playground]');
+    if (!(root instanceof HTMLElement)) return;
+
     const tabs = [...root.querySelectorAll('[data-demo-tab]')];
     const currentState = root.querySelector('[data-current-state]');
     const stepCount = root.querySelector('[data-step-count]');
@@ -213,6 +218,18 @@ const actorIcon = (actor: string) => ({
     let mutationsAfter = 0;
     let state = createPlaygroundState();
     let timer = 0;
+    let booted = false;
+    const timeouts: number[] = [];
+    const later = (fn: () => void, ms: number) => { timeouts.push(window.setTimeout(fn, ms)); };
+
+    // 计数器跳字：值变化时重放一次上浮动画，让“变化”本身被看见
+    const setText = (el: Element | null, text: string) => {
+      if (!(el instanceof HTMLElement) || el.textContent === text) return;
+      el.textContent = text;
+      el.classList.remove('tick');
+      void el.offsetWidth;
+      el.classList.add('tick');
+    };
 
     const stopPlaying = () => {
       if (timer) window.clearInterval(timer);
@@ -238,14 +255,14 @@ const actorIcon = (actor: string) => ({
       if (waitingForApproval || isComplete) stopPlaying();
 
       if (currentState) currentState.textContent = stepTitle(state.stepIndex).toUpperCase();
-      if (stepCount) stepCount.textContent = `${pad(state.stepIndex + 1)}/${pad(config.steps)}`;
+      setText(stepCount, `${pad(state.stepIndex + 1)}/${pad(config.steps)}`);
       if (progressFill instanceof HTMLElement) progressFill.style.width = `${((state.stepIndex + 1) / config.steps) * 100}%`;
-      if (evidenceCount) evidenceCount.textContent = pad(visibleEvidence);
-      if (evidenceTotal) evidenceTotal.textContent = `${pad(visibleEvidence)} / ${pad(evidenceItems.length)}`;
+      setText(evidenceCount, pad(visibleEvidence));
+      setText(evidenceTotal, `${pad(visibleEvidence)} / ${pad(evidenceItems.length)}`);
       // 实施步骤（关卡后一步）完成后，变更计数更新为快照中的文件数；只读流程恒为 00
       const implemented = config.gateIndex !== null && state.stepIndex >= config.gateIndex + 2;
       if (mutationsCount) {
-        mutationsCount.textContent = implemented ? pad(mutationsAfter) : '00';
+        setText(mutationsCount, implemented ? pad(mutationsAfter) : '00');
         mutationsCount.classList.toggle('changed', implemented);
       }
 
@@ -297,8 +314,7 @@ const actorIcon = (actor: string) => ({
       advance();
     };
 
-    const selectDemo = (tab: Element) => {
-      stopPlaying();
+    const applyDemo = (tab: Element) => {
       activeSlug = tab.getAttribute('data-demo-tab') ?? '';
       const gate = tab.getAttribute('data-gate');
       config = { steps: Number(tab.getAttribute('data-steps') ?? 1), gateIndex: gate === null || gate === '' ? null : Number(gate) };
@@ -310,10 +326,26 @@ const actorIcon = (actor: string) => ({
         item.setAttribute('aria-selected', String(isActive));
       });
       query('[data-demo-group]').forEach((group) => group.toggleAttribute('hidden', group.getAttribute('data-demo-group') !== activeSlug));
-      if (stepsTotal) stepsTotal.textContent = pad(config.steps);
-      root.classList.add('switching');
-      window.setTimeout(() => root.classList.remove('switching'), 420);
+      setText(stepsTotal, pad(config.steps));
       render();
+    };
+
+    // 切换演示：先淡出当前组，再替换内容并错峰淡入；首次初始化不做过渡
+    const selectDemo = (tab: Element) => {
+      stopPlaying();
+      if (!booted) {
+        booted = true;
+        applyDemo(tab);
+        return;
+      }
+      if (tab.getAttribute('data-demo-tab') === activeSlug) return;
+      root.classList.add('leaving');
+      later(() => {
+        root.classList.remove('leaving');
+        applyDemo(tab);
+        root.classList.add('switching');
+        later(() => root.classList.remove('switching'), 420);
+      }, 170);
     };
 
     tabs.forEach((tab) => tab.addEventListener('click', () => selectDemo(tab)));
@@ -321,8 +353,37 @@ const actorIcon = (actor: string) => ({
     approveButton?.addEventListener('click', () => { state = approvePlayground(state, config); render(); });
     playButton?.addEventListener('click', () => { if (timer) stopPlaying(); else startPlaying(); });
     root.querySelector('[data-reset]')?.addEventListener('click', () => { stopPlaying(); state = resetPlayground(); render(); });
+
+    // 键盘步进：→ 下一步，← 回放一步，空格播放/暂停；焦点在控件上时交给原生行为。
+    // 关卡处 → 与空格均为空操作，批准只能由按钮显式触发。
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest('button, a, input, textarea, select')) return;
+      if (event.key === 'ArrowRight' && nextButton && !nextButton.hasAttribute('hidden')) {
+        event.preventDefault();
+        stopPlaying();
+        advance();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        stopPlaying();
+        state = retreatPlayground(state, config);
+        render();
+      } else if (event.key === ' ' && playButton && !playButton.hasAttribute('hidden')) {
+        event.preventDefault();
+        if (timer) stopPlaying();
+        else startPlaying();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+
     if (tabs[0]) selectDemo(tabs[0]);
-  }
+
+    return () => {
+      stopPlaying();
+      timeouts.forEach((id) => window.clearTimeout(id));
+      document.removeEventListener('keydown', onKey);
+    };
+  });
 </script>
 
 <style>
@@ -337,7 +398,7 @@ const actorIcon = (actor: string) => ({
   .tab-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 9px; background: var(--panel-soft); color: var(--muted); transition: background-color .22s var(--ease-out), color .22s var(--ease-out); }
   .tab-text { display: grid; min-width: 0; gap: 2px; }
   .tab-text strong { font-size: .96rem; }
-  .tab-text small { overflow: hidden; color: var(--muted); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+  .tab-text small { overflow: hidden; color: var(--muted); font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
   .tab-gate { position: absolute; top: 10px; right: 10px; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: var(--orange-soft); color: var(--orange); }
   .demo-tab.green.active { border-color: var(--green); } .demo-tab.green.active .tab-icon { background: var(--green-soft); color: var(--green); }
   .demo-tab.orange.active { border-color: var(--orange); } .demo-tab.orange.active .tab-icon { background: var(--orange-soft); color: var(--orange); }
@@ -348,12 +409,15 @@ const actorIcon = (actor: string) => ({
 
   .run-bar { position: relative; overflow: hidden; margin-bottom: 18px; }
   .run-progress { height: 3px; background: var(--line); }
-  .run-progress i { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--green), var(--green-bright)); transition: width .5s var(--ease-out); }
+  .run-progress i { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--green), var(--green-bright)); box-shadow: 0 0 10px color-mix(in srgb, var(--green) 55%, transparent); transition: width .5s var(--ease-out); }
   .run-facts { display: grid; grid-template-columns: repeat(5, 1fr); }
   .run-facts > span { display: flex; min-height: 58px; min-width: 0; align-items: center; justify-content: center; gap: 10px; padding: 10px 12px; border-right: 1px solid var(--line); font-family: var(--mono); font-size: .8rem; }
   .run-facts > span:last-child { border-right: 0; }
   .run-facts b { color: var(--muted); font-weight: 500; letter-spacing: .04em; }
-  .run-facts em { overflow: hidden; color: var(--green); font-style: normal; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .run-facts em { overflow: hidden; color: var(--green); font-style: normal; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* 计数器跳字：值更新时重放一次上浮 */
+  .tick { display: inline-block; animation: tick-up .3s var(--ease-out); }
+  @keyframes tick-up { from { opacity: 0; transform: translateY(45%); } }
   .run-facts .mutations em { color: var(--muted); transition: color .3s var(--ease-out); }
   .run-facts .mutations em.changed { color: var(--purple); }
 
@@ -361,8 +425,8 @@ const actorIcon = (actor: string) => ({
   .steps-panel, .trace-panel, .evidence-strip { overflow: hidden; }
   .steps-panel > header, .trace-panel > header, .evidence-strip > header { display: flex; min-height: 54px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 19px; border-bottom: 1px solid var(--line); }
   .steps-panel h2, .trace-panel h2, .evidence-strip h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1rem; }
-  .steps-panel > header span, .evidence-strip > header span { color: var(--green); font-family: var(--mono); font-size: .78rem; }
-  .live-tag { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-family: var(--mono); font-size: .75rem; }
+  .steps-panel > header span, .evidence-strip > header span { color: var(--green); font-family: var(--mono); font-size: .82rem; }
+  .live-tag { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-family: var(--mono); font-size: .8rem; }
   .live-tag i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blip 2.4s ease-in-out infinite; }
   @keyframes blip { 50% { opacity: .25; transform: scale(.8); } }
 
@@ -373,10 +437,11 @@ const actorIcon = (actor: string) => ({
   .step-dot { z-index: 1; display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--panel); color: var(--muted); transition: border-color .3s var(--ease-out), background-color .3s var(--ease-out), color .3s var(--ease-out), transform .35s var(--ease-spring); }
   .steps-panel strong, .steps-panel small { display: block; }
   .steps-panel strong { margin-bottom: 3px; font-size: .9rem; }
-  .steps-panel small { color: var(--muted); font-size: .78rem; line-height: 1.45; }
-  .steps-panel em { padding: 3px 7px; border-radius: 4px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .68rem; font-style: normal; letter-spacing: .03em; }
+  .steps-panel small { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+  .steps-panel em { padding: 3px 7px; border-radius: 4px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: .78rem; font-style: normal; letter-spacing: .03em; }
   .steps-panel li.running { background: var(--blue-soft); box-shadow: inset 2px 0 0 var(--blue); }
-  .steps-panel li.running .step-dot { border-color: var(--blue); color: var(--blue); transform: scale(1.08); }
+  .steps-panel li.running .step-dot { border-color: var(--blue); color: var(--blue); transform: scale(1.08); animation: run-pulse 2s ease-in-out infinite; }
+  @keyframes run-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--blue) 14%, transparent); } }
   .steps-panel li.running em { background: var(--panel); color: var(--blue); }
   .steps-panel li.gated { background: var(--orange-soft); box-shadow: inset 2px 0 0 var(--orange); }
   .steps-panel li.gated .step-dot { border-color: var(--orange); color: var(--orange); animation: gate-pulse 2s ease-in-out infinite; }
@@ -389,7 +454,7 @@ const actorIcon = (actor: string) => ({
   .request-card { display: grid; grid-template-columns: 34px 1fr; gap: 13px; margin: 17px 18px 4px; padding: 16px 18px; border: 1px dashed var(--line-strong); border-radius: 9px; }
   .request-icon { color: var(--green); }
   .request-card small, .request-card strong { display: block; }
-  .request-card small { color: var(--muted); font-family: var(--mono); font-size: .73rem; letter-spacing: .06em; }
+  .request-card small { color: var(--muted); font-family: var(--mono); font-size: .8rem; letter-spacing: .06em; }
   .request-card strong { margin: 5px 0 4px; font-size: 1.02rem; }
   .request-card p { margin: 0; color: var(--muted); font-size: .89rem; line-height: 1.6; }
 
@@ -405,13 +470,13 @@ const actorIcon = (actor: string) => ({
   .turn.orange .turn-avatar { color: var(--orange); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--orange) 50%, var(--line)); }
   .turn-body { min-width: 0; }
   .turn-body > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
-  .turn-actor { font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .07em; }
+  .turn-actor { font-family: var(--mono); font-size: .78rem; font-weight: 700; letter-spacing: .07em; }
   .turn.green .turn-actor { color: var(--green); }
   .turn.purple .turn-actor { color: var(--purple); }
   .turn.blue .turn-actor { color: var(--blue); }
   .turn.orange .turn-actor { color: var(--orange); }
   .turn.muted .turn-actor { color: var(--muted); }
-  .turn-body > header small { color: var(--muted); font-family: var(--mono); font-size: .72rem; }
+  .turn-body > header small { color: var(--muted); font-family: var(--mono); font-size: .78rem; }
   .turn h3 { margin: 0 0 5px; font-size: 1rem; }
   .turn p { margin: 0; color: var(--muted); font-size: .89rem; line-height: 1.62; }
   .turn.gate { border-color: var(--orange); background: var(--orange-soft); }
@@ -419,7 +484,9 @@ const actorIcon = (actor: string) => ({
   .turn-hint > .icon { flex: 0 0 auto; }
 
   .controls { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--line); background: var(--panel); }
-  .controls p { margin: 0; color: var(--muted); font-size: .82rem; }
+  .controls p { margin: 0; color: var(--muted); font-size: .86rem; }
+  .kbd-hint { display: flex; align-items: center; gap: 5px; font-size: .78rem; }
+  .kbd-hint kbd { padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--panel-soft); font-family: var(--mono); font-size: .78rem; }
   .control-buttons { display: flex; flex: 0 0 auto; gap: 8px; }
   .control-buttons .button { min-height: 40px; padding: 0 14px; font-size: .84rem; }
   .control-buttons .ghost { border-color: var(--line); color: var(--muted); }
@@ -433,10 +500,12 @@ const actorIcon = (actor: string) => ({
   .evidence-lists { padding: 16px 19px; }
   .evidence-lists ul { display: flex; flex-wrap: wrap; gap: 9px; margin: 0; padding: 0; list-style: none; }
   .evidence-lists li { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid color-mix(in srgb, var(--green) 26%, var(--line)); border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: .86rem; animation: turn-in .38s var(--ease-out) both; }
-  .evidence-strip footer { display: flex; justify-content: space-between; gap: 10px; padding: 12px 19px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: .72rem; }
+  .evidence-strip footer { display: flex; justify-content: space-between; gap: 10px; padding: 12px 19px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: .78rem; }
 
   .switching [data-demo-group]:not([hidden]) { animation: demo-in .38s var(--ease-out); }
   @keyframes demo-in { from { opacity: 0; transform: translateY(8px); } }
+  /* 切换演示的淡出半程；animation: none 先清掉 turn-in 的 forwards 填充，否则淡出会被覆盖 */
+  .leaving [data-demo-group]:not([hidden]) { animation: none; opacity: 0; transform: translateY(6px); transition: opacity .16s ease, transform .16s ease; }
   [hidden] { display: none !important; }
 
   @media (max-width: 1160px) {
@@ -455,6 +524,7 @@ const actorIcon = (actor: string) => ({
     .demo-tabs, .steps-panel ol { grid-template-columns: 1fr; }
     .run-facts { grid-template-columns: 1fr 1fr; }
     .controls { align-items: stretch; flex-direction: column; }
+    .kbd-hint { display: none; }
     .control-buttons { flex-wrap: wrap; }
   }
 </style>

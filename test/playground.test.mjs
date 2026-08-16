@@ -6,6 +6,7 @@ import {
   approvePlayground,
   createPlaygroundState,
   resetPlayground,
+  retreatPlayground,
 } from '../src/lib/playground.mjs';
 
 const gatedConfig = { steps: 7, gateIndex: 3 };
@@ -40,4 +41,25 @@ test('read-only flows have no gate and reject approval', () => {
 
 test('reset returns the initial state', () => {
   assert.deepEqual(resetPlayground(), { stepIndex: 0, approved: false });
+});
+
+test('retreat steps back and keeps approval while staying at or past the gate', () => {
+  const approved = { stepIndex: 4, approved: true };
+  assert.deepEqual(retreatPlayground(approved, gatedConfig), { stepIndex: 3, approved: true });
+});
+
+test('retreat behind the gate revokes approval so it must be granted again', () => {
+  const approved = { stepIndex: 3, approved: true };
+  const steppedBack = retreatPlayground(approved, gatedConfig);
+  assert.deepEqual(steppedBack, { stepIndex: 2, approved: false });
+  const replayed = advancePlayground(advancePlayground(steppedBack, gatedConfig), gatedConfig);
+  assert.deepEqual(replayed, { stepIndex: 3, approved: false }, 'gate blocks again until re-approved');
+});
+
+test('retreat never goes below the first step', () => {
+  assert.deepEqual(retreatPlayground(createPlaygroundState(), gatedConfig), createPlaygroundState());
+  assert.deepEqual(retreatPlayground({ stepIndex: 2, approved: false }, openConfig), {
+    stepIndex: 1,
+    approved: false,
+  });
 });

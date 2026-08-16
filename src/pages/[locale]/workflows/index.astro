@@ -3,6 +3,7 @@ import Icon from '../../../components/Icon.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
 import WorkflowIcon from '../../../components/WorkflowIcon.astro';
 import { copy, workflows, type Locale } from '../../../data/site';
+import { MAP_VIEWBOX, edgeGeometry } from '../../../lib/map-geometry.mjs';
 import { locales, localizePath } from '../../../lib/routes.mjs';
 
 export function getStaticPaths() {
@@ -14,23 +15,41 @@ const t = copy[locale];
 const e = t.workflowsPage.mapEdges;
 const bySlug = Object.fromEntries(workflows.map((workflow) => [workflow.slug, workflow]));
 
+// 节点铺满 960×680 视区：hub「开发」居中，四卫星分布四角（保持内缩边距，不贴边），六条边向心辐射
 const mapNodes = [
-  { slug: 'diagnose', x: 150, y: 96, r: 40, icon: 28 },
-  { slug: 'handoff', x: 812, y: 96, r: 38, icon: 26 },
-  { slug: 'code-design', x: 150, y: 300, r: 40, icon: 28 },
-  { slug: 'develop', x: 470, y: 300, r: 58, icon: 38 },
-  { slug: 'review', x: 762, y: 300, r: 40, icon: 28 },
+  { slug: 'diagnose', x: 118, y: 150, r: 40, icon: 28 },
+  { slug: 'handoff', x: 842, y: 150, r: 38, icon: 26 },
+  { slug: 'code-design', x: 118, y: 578, r: 40, icon: 28 },
+  { slug: 'develop', x: 480, y: 340, r: 58, icon: 38 },
+  { slug: 'review', x: 842, y: 578, r: 40, icon: 28 },
 ] as const;
 
-// 每条连线都对应源仓库里一条明确的流转规则，虚线表示只在特定条件下发生
+// 工作流节点的展示色调（与 bySlug[slug].tone 对应的 CSS 变量）
+const toneColor = (slug: string) => ({
+  develop: 'var(--green)',
+  diagnose: 'var(--orange)',
+  'code-design': 'var(--purple)',
+  review: 'var(--blue)',
+  handoff: 'var(--muted)',
+})[slug] ?? 'var(--muted)';
+
+// 每条连线对应源仓库一条明确的流转规则：from/to 声明端点（实线用 源色→目标色 渐变），虚线为条件流转。
+// 路径不手写坐标：由两端节点位置 + offA/offB（端点沿圆周偏转角度）+ bend（法向弯曲量）推导，
+// 与客户端拖拽共用 map-geometry，保证首屏与拖拽逐帧的几何完全一致。
+// 向心布局下六条边都触及 hub：配对边用 ∓18° 偏转错开端点、反向弯曲 ±40 分离曲线与标签锚点；
+// findings 用更大的 -52 弓向下方空区，两条单线微弯 -12 朝向上方空区
 const mapEdges = [
-  { d: 'M 196 288 H 404', label: e.proposal, x: 300, y: 270, flow: true },
-  { d: 'M 404 314 H 198', label: e.deeper, x: 300, y: 338, flow: false },
-  { d: 'M 530 300 H 716', label: e.changed, x: 623, y: 282, flow: true },
-  { d: 'M 752 340 C 706 402, 566 404, 500 354', label: e.findings, x: 626, y: 420, flow: false },
-  { d: 'M 184 132 C 268 200, 350 236, 420 268', label: e.undefined, x: 296, y: 176, flow: false },
-  { d: 'M 512 262 C 606 186, 700 124, 774 104', label: e.session, x: 664, y: 172, flow: false },
+  { from: 'code-design', to: 'develop', offA: -18, offB: -18, bend: -40, label: e.proposal, flow: true },
+  { from: 'develop', to: 'code-design', offA: 18, offB: 18, bend: -40, label: e.deeper, flow: false },
+  { from: 'develop', to: 'review', offA: -18, offB: -18, bend: -40, label: e.changed, flow: true },
+  { from: 'review', to: 'develop', offA: 18, offB: 18, bend: -52, label: e.findings, flow: false },
+  { from: 'diagnose', to: 'develop', offA: 0, offB: 0, bend: -12, label: e.undefined, flow: false },
+  { from: 'develop', to: 'handoff', offA: 0, offB: 0, bend: -12, label: e.session, flow: false },
 ];
+const nodeCircles = Object.fromEntries(mapNodes.map((node) => [node.slug, { x: node.x, y: node.y, r: node.r }]));
+// 客户端按画布实际高宽比动态调整视区高度，布局以分数坐标下发（与视区尺寸解耦，持久化也存分数）
+const defaultLayout = Object.fromEntries(mapNodes.map((node) => [node.slug, { fx: node.x / MAP_VIEWBOX.width, fy: node.y / MAP_VIEWBOX.height, r: node.r }]));
+const renderedEdges = mapEdges.map((edge) => ({ ...edge, geom: edgeGeometry(nodeCircles[edge.from], nodeCircles[edge.to], edge) }));
 ---
 
 <SiteLayout locale={locale} title={t.workflowsPage.title} description={t.workflowsPage.intro} active="workflows" wide>
@@ -44,11 +63,12 @@ const mapEdges = [
 
   <div class="workflow-layout">
     <section class="workflow-list panel-flat" aria-label={t.workflowsPage.title}>
-      {workflows.map((workflow) => (
+      {workflows.map((workflow, index) => (
         <a
           href={localizePath(locale, `workflows/${workflow.slug}`)}
           class:list={['workflow-row', workflow.tone]}
           data-link-slug={workflow.slug}
+          style={`--row-i:${index}`}
         >
           <span class="workflow-icon"><WorkflowIcon slug={workflow.slug} size={26} /></span>
           <span class="workflow-copy">
@@ -61,25 +81,65 @@ const mapEdges = [
       ))}
     </section>
 
-    <section class="workflow-map panel">
+    <section class="workflow-map">
       <header>
         <p class="eyebrow">{t.workflowsPage.map}</p>
-        <p class="map-hint">{t.workflowsPage.mapHint}</p>
+        {/* 图例 + 复位按钮并入标题行右侧：底部不再独占横条，画布留给图形本身 */}
+        <div class="map-tools">
+          <div class="map-legend">
+            <span><i class="solid"></i>{t.workflowsPage.mapLegendProgress}</span>
+            <span><i class="dashed"></i>{t.workflowsPage.mapLegendOptional}</span>
+            <span class="legend-gate"><i class="gate"><Icon name="lock" size={11} /></i>{t.detail.gate}</span>
+          </div>
+          <button type="button" class="map-reset" data-map-reset hidden><Icon name="refresh" size={14} />{t.workflowsPage.mapReset}</button>
+        </div>
       </header>
 
       <div class="map-canvas">
-        <svg class="map-svg" viewBox="0 0 960 452" role="img" aria-label={t.workflowsPage.map}>
+        <svg
+          class="map-svg"
+          viewBox={`0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`}
+          role="img"
+          aria-label={t.workflowsPage.map}
+          data-edge-config={JSON.stringify(mapEdges.map(({ from, to, offA, offB, bend, flow }) => ({ from, to, offA, offB, bend, flow })))}
+          data-default-layout={JSON.stringify(defaultLayout)}
+        >
           <defs>
             <marker id="map-arrow" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
               <path d="M 0 0 L 8 4.5 L 0 9 Z" class="map-arrowhead" />
             </marker>
+            {/* 实线箭头跟随目标节点色调；聚焦模式下虚线箭头切换为 --focus-tone */}
+            {(['green', 'orange', 'purple', 'blue', 'slate'] as const).map((tone) => (
+              <marker id={`map-arrow-${tone}`} markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+                <path d="M 0 0 L 8 4.5 L 0 9 Z" class="map-arrowhead" style={`fill: var(--${tone === 'slate' ? 'muted' : tone})`} />
+              </marker>
+            ))}
+            <marker id="map-arrow-lit" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M 0 0 L 8 4.5 L 0 9 Z" class="map-arrowhead" style="fill: var(--focus-tone, var(--line-strong))" />
+            </marker>
+            {renderedEdges.map((edge, index) => edge.flow && (
+              <linearGradient id={`edge-grad-${index}`} gradientUnits="userSpaceOnUse" x1={edge.geom.sx} y1={edge.geom.sy} x2={edge.geom.ex} y2={edge.geom.ey}>
+                <stop offset="0" style={`stop-color: ${toneColor(edge.from)}`} />
+                <stop offset="1" style={`stop-color: ${toneColor(edge.to)}`} />
+              </linearGradient>
+            ))}
           </defs>
 
-          {mapEdges.map((edge, index) => (
-            <g class:list={['map-edge-group', { dashed: !edge.flow }]} data-edge={index}>
-              <path class="map-edge" d={edge.d} marker-end="url(#map-arrow)" />
-              {edge.flow && <path class="map-pulse" d={edge.d} />}
-              <text class="map-edge-label" x={edge.x} y={edge.y} text-anchor="middle">{edge.label}</text>
+          {renderedEdges.map((edge, index) => (
+            <g class:list={['map-edge-group', { dashed: !edge.flow, draw: edge.flow }]} data-edge-from={edge.from} data-edge-to={edge.to} style={`--edge-i:${index}`}>
+              <path
+                class="map-edge"
+                d={edge.geom.d}
+                marker-end={edge.flow ? `url(#map-arrow-${bySlug[edge.to].tone})` : 'url(#map-arrow)'}
+                pathLength={edge.flow ? 100 : undefined}
+                stroke={edge.flow ? `url(#edge-grad-${index})` : undefined}
+              />
+              {edge.flow && <path class="map-pulse" d={edge.geom.d} />}
+              {/* 标签胶囊：rect 尺寸由 JS 按文字包围盒写入；无 JS 时 rect 宽高为 0，退化为带描边光晕的纯文字 */}
+              <g class="edge-chip" transform={`translate(${edge.geom.lx} ${edge.geom.ly})`}>
+                <rect />
+                <text text-anchor="middle" dominant-baseline="central">{edge.label}</text>
+              </g>
             </g>
           ))}
 
@@ -91,6 +151,8 @@ const mapEdges = [
                 class:list={['map-node', workflow.tone, { hub: node.slug === 'develop' }]}
                 transform={`translate(${node.x} ${node.y})`}
                 data-node-slug={node.slug}
+                data-tip-title={workflow.title[locale]}
+                data-tip-summary={workflow.summary[locale]}
               >
                 <a href={localizePath(locale, `workflows/${workflow.slug}`)} aria-label={workflow.title[locale]}>
                   <g class="node-inner">
@@ -113,26 +175,21 @@ const mapEdges = [
             );
           })}
         </svg>
+        <div class="map-tip" data-map-tip aria-hidden="true"><strong></strong><small></small></div>
       </div>
-
-      <footer class="map-legend">
-        <span><i class="solid"></i>{t.workflowsPage.mapLegendProgress}</span>
-        <span><i class="dashed"></i>{t.workflowsPage.mapLegendOptional}</span>
-        <span class="legend-gate"><i class="gate"><Icon name="lock" size={11} /></i>{t.detail.gate}</span>
-      </footer>
     </section>
 
     <aside class="workflow-summary">
-      <section class="panel-flat summary-card">
+      <section class="panel-flat summary-card" data-spot>
         <p class="eyebrow">{t.workflowsPage.summary}</p>
         <dl>
-          <div><dt><Icon name="grid" size={18} />{t.workflowsPage.active}</dt><dd>5</dd></div>
-          <div><dt><Icon name="terminal" size={18} />{t.workflowsPage.explicit}</dt><dd>5</dd></div>
-          <div><dt><Icon name="shield" size={18} />{t.workflowsPage.readOnly}</dt><dd>2</dd></div>
-          <div><dt><Icon name="lock" size={18} />{t.workflowsPage.gated}</dt><dd>2</dd></div>
+          <div><dt><Icon name="grid" size={18} />{t.workflowsPage.active}</dt><dd data-countup>5</dd></div>
+          <div><dt><Icon name="terminal" size={18} />{t.workflowsPage.explicit}</dt><dd data-countup>5</dd></div>
+          <div><dt><Icon name="shield" size={18} />{t.workflowsPage.readOnly}</dt><dd data-countup>2</dd></div>
+          <div><dt><Icon name="lock" size={18} />{t.workflowsPage.gated}</dt><dd data-countup>2</dd></div>
         </dl>
       </section>
-      <section class="panel-flat about-card">
+      <section class="panel-flat about-card" data-spot>
         <p class="eyebrow">{t.workflowsPage.whyTitle}</p>
         <p>{t.workflowsPage.whyBody}</p>
         <a href={localizePath(locale, 'docs')}>{t.workflowsPage.details} <Icon name="arrow" size={16} /></a>
@@ -142,21 +199,260 @@ const mapEdges = [
 </SiteLayout>
 
 <script>
-  const rows = [...document.querySelectorAll('[data-link-slug]')];
-  const nodes = [...document.querySelectorAll('[data-node-slug]')];
-  const pair = (slug: string, on: boolean) => {
-    rows.forEach((row) => row.classList.toggle('wf-live', on && row.getAttribute('data-link-slug') === slug));
-    nodes.forEach((node) => node.classList.toggle('wf-live', on && node.getAttribute('data-node-slug') === slug));
-  };
-  [...rows, ...nodes].forEach((element) => {
-    const slug = element.getAttribute('data-link-slug') ?? element.getAttribute('data-node-slug') ?? '';
-    element.addEventListener('pointerenter', () => pair(slug, true));
-    element.addEventListener('pointerleave', () => pair(slug, false));
+  import { MAP_VIEWBOX, clampNode, edgeGeometry, fitViewHeight } from '../../../lib/map-geometry.mjs';
+  import { onPageLife } from '../../../lib/motion.mjs';
+
+  onPageLife(() => {
+    const cleanups: Array<() => void> = [];
+    const on = (element: Element | Window, event: string, handler: EventListener) => {
+      element.addEventListener(event, handler);
+      cleanups.push(() => element.removeEventListener(event, handler));
+    };
+
+    // 列表行与图谱节点同 slug 联动高亮；悬停同时进入聚焦模式：
+    // 与该节点相连的边点亮为节点色调，无关的边和节点淡出
+    const rows = [...document.querySelectorAll('[data-link-slug]')];
+    const nodes = [...document.querySelectorAll('[data-node-slug]')];
+    const edgeGroups = [...document.querySelectorAll('.map-edge-group')];
+    const svgEl = document.querySelector('.map-svg');
+    const toneVar: Record<string, string> = {
+      develop: 'var(--green)', diagnose: 'var(--orange)', 'code-design': 'var(--purple)', review: 'var(--blue)', handoff: 'var(--muted)',
+    };
+    const pair = (slug: string, live: boolean) => {
+      rows.forEach((row) => row.classList.toggle('wf-live', live && row.getAttribute('data-link-slug') === slug));
+      const linked = edgeGroups.filter((group) => group.getAttribute('data-edge-from') === slug || group.getAttribute('data-edge-to') === slug);
+      edgeGroups.forEach((group) => {
+        const lit = live && linked.includes(group);
+        group.classList.toggle('lit', lit);
+        const path = group.querySelector('.map-edge');
+        if (group.classList.contains('dashed') && path) {
+          path.setAttribute('marker-end', lit ? 'url(#map-arrow-lit)' : 'url(#map-arrow)');
+        }
+      });
+      nodes.forEach((node) => {
+        const nodeSlug = node.getAttribute('data-node-slug') ?? '';
+        const connected = nodeSlug === slug
+          || linked.some((group) => group.getAttribute('data-edge-from') === nodeSlug || group.getAttribute('data-edge-to') === nodeSlug);
+        node.classList.toggle('wf-live', live && nodeSlug === slug);
+        node.classList.toggle('lit', live && connected);
+      });
+      if (svgEl instanceof SVGSVGElement) {
+        svgEl.classList.toggle('focus-active', live);
+        if (live) svgEl.style.setProperty('--focus-tone', toneVar[slug] ?? 'var(--green)');
+      }
+    };
+    [...rows, ...nodes].forEach((element) => {
+      const slug = element.getAttribute('data-link-slug') ?? element.getAttribute('data-node-slug') ?? '';
+      on(element, 'pointerenter', () => pair(slug, true));
+      on(element, 'pointerleave', () => pair(slug, false));
+    });
+
+    // 边标签胶囊：按文字实际包围盒给底板定尺寸；无 JS 时 rect 宽高为 0 不渲染，退化为纯文字
+    document.querySelectorAll('.edge-chip').forEach((chip) => {
+      const text = chip.querySelector('text');
+      const rect = chip.querySelector('rect');
+      if (!(text instanceof SVGTextElement) || !(rect instanceof SVGRectElement)) return;
+      const box = text.getBBox();
+      const padX = 10;
+      const padY = 5;
+      rect.setAttribute('x', `${box.x - padX}`);
+      rect.setAttribute('y', `${box.y - padY}`);
+      rect.setAttribute('width', `${box.width + padX * 2}`);
+      rect.setAttribute('height', `${box.height + padY * 2}`);
+      rect.setAttribute('rx', `${(box.height + padY * 2) / 2}`);
+    });
+
+    // 节点悬停摘要卡：按节点圆心的实际渲染位置定位，靠近画布顶部时翻转到下方
+    const canvas = document.querySelector('.map-canvas');
+    const tip = document.querySelector('[data-map-tip]');
+    if (canvas instanceof HTMLElement && tip instanceof HTMLElement) {
+      const tipTitle = tip.querySelector('strong');
+      const tipSummary = tip.querySelector('small');
+      nodes.forEach((node) => {
+        on(node, 'pointerenter', () => {
+          const circle = node.querySelector('.node-circle');
+          if (!(circle instanceof SVGGraphicsElement) || !tipTitle || !tipSummary) return;
+          const circleRect = circle.getBoundingClientRect();
+          const canvasRect = canvas.getBoundingClientRect();
+          const centerX = circleRect.left + circleRect.width / 2 - canvasRect.left;
+          const above = circleRect.top - canvasRect.top > 96;
+          tip.style.left = `${centerX}px`;
+          tip.style.top = `${(above ? circleRect.top : circleRect.bottom) - canvasRect.top}px`;
+          tip.classList.toggle('below', !above);
+          tipTitle.textContent = node.getAttribute('data-tip-title') ?? '';
+          tipSummary.textContent = node.getAttribute('data-tip-summary') ?? '';
+          tip.classList.add('show');
+        });
+        on(node, 'pointerleave', () => tip.classList.remove('show'));
+      });
+    }
+
+    // 节点自由拖拽：指针捕获 + 屏幕→viewBox 换算 + 边界钳制；每帧按共享几何模块重算全部连线。
+    // 视区高度跟随画布实际高宽比（图区与左侧列表列同高）；布局以分数坐标表示并持久化，与尺寸解耦；
+    // 与默认布局不一致时标题行出现复位按钮
+    if (svgEl instanceof SVGSVGElement && canvas instanceof HTMLElement) {
+      const edgeConfig = JSON.parse(svgEl.getAttribute('data-edge-config') ?? '[]') as Array<{ from: string; to: string; offA: number; offB: number; bend: number; flow: boolean }>;
+      const defaults = JSON.parse(svgEl.getAttribute('data-default-layout') ?? '{}') as Record<string, { fx: number; fy: number; r: number }>;
+      const fracs = Object.fromEntries(Object.entries(defaults).map(([slug, p]) => [slug, { fx: p.fx, fy: p.fy }]));
+      // 读取持久化布局：只接受已知 slug 的 [0,1] 有限分数；损坏或旧版绝对坐标数据直接回退默认
+      try {
+        const saved = JSON.parse(localStorage.getItem('engineering-flow-map-layout') ?? 'null') as Record<string, { fx: number; fy: number }> | null;
+        if (saved && typeof saved === 'object') {
+          Object.keys(fracs).forEach((slug) => {
+            const p = saved[slug];
+            if (p && Number.isFinite(p.fx) && Number.isFinite(p.fy) && p.fx >= 0 && p.fx <= 1 && p.fy >= 0 && p.fy <= 1) {
+              fracs[slug] = { fx: p.fx, fy: p.fy };
+            }
+          });
+        }
+      } catch { /* 损坏的布局数据忽略即可 */ }
+
+      let viewHeight = MAP_VIEWBOX.height;
+      // 分数坐标解析为当前视区下的圆（钳制在视区内）
+      const resolve = (slug: string) => {
+        const view = { width: MAP_VIEWBOX.width, height: viewHeight };
+        const clamped = clampNode({ x: fracs[slug].fx * view.width, y: fracs[slug].fy * view.height }, defaults[slug].r, view);
+        return { x: clamped.x, y: clamped.y, r: defaults[slug].r };
+      };
+
+      const resetButton = document.querySelector('[data-map-reset]');
+      const isDirty = () => Object.keys(fracs).some((slug) => Math.hypot(fracs[slug].fx - defaults[slug].fx, fracs[slug].fy - defaults[slug].fy) > 0.004);
+      const syncReset = () => { if (resetButton instanceof HTMLElement) resetButton.hidden = !isDirty(); };
+
+      const toSvgPoint = (event: PointerEvent) => {
+        const ctm = svgEl.getScreenCTM();
+        if (!ctm) return { x: 0, y: 0 };
+        const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
+        return { x: p.x, y: p.y };
+      };
+
+      // 按当前布局全量重绘：节点位移 + 每条边的路径/流光/渐变端点/标签锚点
+      const applyLayout = (persist: boolean) => {
+        const positions = Object.fromEntries(Object.keys(fracs).map((slug) => [slug, resolve(slug)]));
+        nodes.forEach((node) => {
+          const p = positions[node.getAttribute('data-node-slug') ?? ''];
+          if (p) node.setAttribute('transform', `translate(${p.x} ${p.y})`);
+        });
+        edgeGroups.forEach((group, index) => {
+          const cfg = edgeConfig[index];
+          if (!cfg || !positions[cfg.from] || !positions[cfg.to]) return;
+          const geom = edgeGeometry(positions[cfg.from], positions[cfg.to], cfg);
+          group.querySelector('.map-edge')?.setAttribute('d', geom.d);
+          group.querySelector('.map-pulse')?.setAttribute('d', geom.d);
+          group.querySelector('.edge-chip')?.setAttribute('transform', `translate(${geom.lx} ${geom.ly})`);
+          const grad = svgEl.querySelector(`#edge-grad-${index}`);
+          if (grad) {
+            grad.setAttribute('x1', String(geom.sx));
+            grad.setAttribute('y1', String(geom.sy));
+            grad.setAttribute('x2', String(geom.ex));
+            grad.setAttribute('y2', String(geom.ey));
+          }
+        });
+        if (persist) localStorage.setItem('engineering-flow-map-layout', JSON.stringify(fracs));
+        syncReset();
+      };
+
+      // 视区高度跟随画布：拖拽区域始终占满图区高度（与左侧列表列对齐）
+      const fitView = () => {
+        const box = canvas.getBoundingClientRect();
+        if (box.width < 1 || box.height < 1) return;
+        const next = fitViewHeight(box.width, box.height);
+        if (next === viewHeight) return;
+        viewHeight = next;
+        svgEl.setAttribute('viewBox', `0 0 ${MAP_VIEWBOX.width} ${viewHeight}`);
+        applyLayout(false);
+      };
+      const resizeObserver = new ResizeObserver(fitView);
+      resizeObserver.observe(canvas);
+      cleanups.push(() => resizeObserver.disconnect());
+
+      let suppressClick = false;
+      nodes.forEach((node) => {
+        const slug = node.getAttribute('data-node-slug') ?? '';
+        if (!fracs[slug]) return;
+        let dragging = false;
+        let moved = false;
+        let start = { x: 0, y: 0 };
+        let origin = { x: 0, y: 0 };
+        on(node, 'pointerdown', (event) => {
+          if (!(event instanceof PointerEvent) || event.button !== 0) return;
+          dragging = true;
+          moved = false;
+          start = toSvgPoint(event);
+          const p = resolve(slug);
+          origin = { x: p.x, y: p.y };
+          node.setPointerCapture(event.pointerId);
+          tip?.classList.remove('show');
+        });
+        on(node, 'pointermove', (event) => {
+          if (!dragging || !(event instanceof PointerEvent)) return;
+          const p = toSvgPoint(event);
+          // 6px 阈值区分点击与拖拽，保证普通点击仍然触发导航
+          if (!moved && Math.hypot(p.x - start.x, p.y - start.y) < 6) return;
+          moved = true;
+          node.classList.add('dragging');
+          const clamped = clampNode({ x: origin.x + p.x - start.x, y: origin.y + p.y - start.y }, defaults[slug].r, { width: MAP_VIEWBOX.width, height: viewHeight });
+          fracs[slug] = { fx: clamped.x / MAP_VIEWBOX.width, fy: clamped.y / viewHeight };
+          applyLayout(false);
+        });
+        const finish = () => {
+          if (!dragging) return;
+          dragging = false;
+          node.classList.remove('dragging');
+          if (!moved) return;
+          moved = false;
+          applyLayout(true);
+          // 拖拽抬手后的那一次 click 不是导航意图，吞掉它
+          suppressClick = true;
+          window.setTimeout(() => { suppressClick = false; }, 0);
+        };
+        on(node, 'pointerup', finish);
+        on(node, 'pointercancel', finish);
+        const swallow = (event: Event) => {
+          if (!suppressClick) return;
+          event.preventDefault();
+          event.stopPropagation();
+          suppressClick = false;
+        };
+        node.addEventListener('click', swallow, true);
+        cleanups.push(() => node.removeEventListener('click', swallow, true));
+      });
+
+      if (resetButton) {
+        on(resetButton, 'click', () => {
+          Object.keys(fracs).forEach((slug) => { fracs[slug] = { fx: defaults[slug].fx, fy: defaults[slug].fy }; });
+          localStorage.removeItem('engineering-flow-map-layout');
+          applyLayout(false);
+        });
+      }
+
+      fitView();
+      applyLayout(false);
+    }
+
+    // 连线首次进入视口时描边生长（只触发一次）
+    const svg = document.querySelector('.map-svg');
+    if (svg && 'IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          svg.classList.add('shown');
+          observer.disconnect();
+        });
+      }, { threshold: 0.35 });
+      observer.observe(svg);
+      cleanups.push(() => observer.disconnect());
+    } else {
+      svg?.classList.add('shown');
+    }
+
+    return () => cleanups.forEach((fn) => fn());
   });
 </script>
 
 <style>
-  .workflow-layout { display: grid; grid-template-columns: minmax(300px, .78fr) minmax(520px, 1.6fr) minmax(240px, .6fr); gap: 20px; }
+  /* 列表/摘要列抱住自身内容；图区用 align-self: stretch 撑满行高，与列表列上下对齐 */
+  .workflow-layout { display: grid; grid-template-columns: minmax(300px, .78fr) minmax(520px, 1.6fr) minmax(240px, .6fr); gap: 20px; align-items: start; }
 
   .workflow-list { overflow: hidden; }
   .workflow-row.green { --row-accent: var(--green); --row-soft: var(--green-soft); }
@@ -173,27 +469,71 @@ const mapEdges = [
   .workflow-row:hover > .icon:last-child { transform: translateX(5px); color: var(--row-accent); }
   .workflow-icon { display: grid; width: 50px; height: 50px; place-items: center; border: 1px solid color-mix(in srgb, var(--row-accent) 45%, transparent); border-radius: 14px; background: var(--row-soft); color: var(--row-accent); transition: transform .3s var(--ease-spring), border-radius .3s var(--ease-out); }
   .workflow-row:hover .workflow-icon, .workflow-row.wf-live .workflow-icon { transform: scale(1.06); border-radius: 50%; }
+  /* 列表行首载错峰入场；both 填充让延迟期间保持隐藏，结束后回归自然状态（无 JS 时直接可见） */
+  .reveal-on .workflow-row { animation: row-in .5s var(--ease-out) both; animation-delay: calc(var(--row-i, 0) * 60ms + .12s); }
+  @keyframes row-in { from { opacity: 0; transform: translateY(12px); } }
   .workflow-copy strong, .workflow-copy small, .workflow-copy em { display: block; }
   .workflow-copy strong { margin-bottom: 4px; font-size: 1.05rem; }
-  .workflow-copy small { margin-bottom: 8px; color: var(--muted); font-size: .85rem; line-height: 1.45; }
+  .workflow-copy small { margin-bottom: 8px; color: var(--muted); font-size: .88rem; line-height: 1.45; }
   .workflow-copy em { width: max-content; font-style: normal; }
 
-  .workflow-map { display: flex; flex-direction: column; padding: 24px; }
-  .workflow-map > header { margin-bottom: 6px; }
-  .map-hint { margin: 0; color: var(--muted); font-size: .86rem; }
-  .map-canvas { position: relative; display: grid; flex: 1; align-items: center; padding: 8px 0; }
-  .map-canvas::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, var(--line) 1px, transparent 1px); background-size: 22px 22px; opacity: .35; pointer-events: none; }
-  .map-svg { position: relative; display: block; width: 100%; height: auto; }
+  /* 去框浮动图：图形直接浮在页面上，section 撑满行高并铺一层页面级蓝图线格（径向淡出遮罩）与 hub 微光 */
+  .workflow-map { position: relative; display: flex; flex-direction: column; align-self: stretch; padding: 10px 4px 0; }
+  .workflow-map::before { content: ''; position: absolute; inset: -22px -18px -18px; z-index: -1; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 44px 44px; opacity: .55; -webkit-mask-image: radial-gradient(74% 80% at 50% 46%, #000 0%, transparent 80%); mask-image: radial-gradient(74% 80% at 50% 46%, #000 0%, transparent 80%); pointer-events: none; }
+  .workflow-map::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(340px 220px at 50% 54%, color-mix(in srgb, var(--green) 9%, transparent), transparent 72%); pointer-events: none; }
+  .workflow-map > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; margin-bottom: 6px; padding: 0 6px; }
+  .workflow-map > header .eyebrow { margin-bottom: 0; }
+  .map-tools { display: flex; align-items: center; gap: 14px; }
+  .map-reset { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted); font-size: .82rem; cursor: pointer; transition: color .2s var(--ease-out), border-color .2s var(--ease-out); }
+  .map-reset:hover { color: var(--green); border-color: var(--green); }
+  .map-reset[hidden] { display: none; }
+  /* 画布吃掉标题行之外的整段高度，svg 填满画布（viewBox 高宽比由 JS 跟随画布，无拉伸变形） */
+  .map-canvas { position: relative; flex: 1; min-height: 0; }
+  .map-svg { display: block; width: 100%; height: 100%; }
 
-  .map-edge { fill: none; stroke: var(--line-strong); stroke-width: 2; stroke-linecap: round; transition: stroke .25s var(--ease-out); }
-  .map-edge-group.dashed .map-edge { stroke-dasharray: 7 7; }
+  .map-edge { fill: none; stroke-width: 2; stroke-linecap: round; transition: stroke .25s var(--ease-out), stroke-width .25s var(--ease-out); }
+  /* 虚线为条件流转：灰调虚线持续缓慢行进；实线描边由 源色→目标色 的渐变属性给出 */
+  .map-edge-group.dashed .map-edge { stroke: var(--line-strong); stroke-dasharray: 7 7; animation: edge-dash-flow 1.5s linear infinite; }
+  @keyframes edge-dash-flow { to { stroke-dashoffset: -14; } }
   .map-arrowhead { fill: var(--line-strong); }
   .map-pulse { fill: none; stroke: var(--green); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 16 260; animation: edge-pulse 3.6s linear infinite; }
   .map-edge-group:nth-of-type(3) .map-pulse { animation-delay: 1.2s; }
   @keyframes edge-pulse { from { stroke-dashoffset: 276; } to { stroke-dashoffset: 0; } }
-  .map-edge-label { fill: var(--muted); font-size: 15px; letter-spacing: .01em; paint-order: stroke; stroke: var(--panel); stroke-width: 6px; stroke-linejoin: round; }
 
-  .map-node { color: var(--green); cursor: pointer; }
+  /* 边标签胶囊：底板尺寸由 JS 按文字包围盒写入；无 JS 时退化为带光晕的纯文字 */
+  .edge-chip rect { fill: var(--panel); stroke: var(--line); stroke-width: 1; transition: stroke .25s var(--ease-out); }
+  .edge-chip text { fill: var(--muted); font-size: 15px; paint-order: stroke; stroke: var(--panel); stroke-width: 5px; stroke-linejoin: round; transition: fill .25s var(--ease-out); }
+
+  /* 聚焦模式：悬停节点或列表行时，相连边点亮为节点色调，无关的边与节点淡出 */
+  .map-edge-group, .map-node { transition: opacity .3s var(--ease-out); }
+  .map-svg.focus-active .map-edge-group:not(.lit) { opacity: .12; }
+  .map-svg.focus-active .map-node:not(.lit) { opacity: .35; }
+  .map-edge-group.lit .map-edge { stroke-width: 2.8; }
+  .map-edge-group.dashed.lit .map-edge { stroke: var(--focus-tone, var(--line-strong)); }
+  .map-edge-group.lit .edge-chip rect { stroke: color-mix(in srgb, var(--focus-tone, var(--line-strong)) 60%, var(--line)); }
+  .map-edge-group.lit .edge-chip text { fill: var(--text); }
+
+  /* 首次进入视口时：实线沿 pathLength=100 描边生长，标签胶囊与流光随后淡入（无 JS 时全部直接可见） */
+  .reveal-on .map-edge-group.draw .map-edge { stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1s var(--ease-out) calc(var(--edge-i, 0) * .13s), stroke .25s var(--ease-out), stroke-width .25s var(--ease-out); }
+  .reveal-on .map-svg.shown .map-edge-group.draw .map-edge { stroke-dashoffset: 0; }
+  .reveal-on .edge-chip { opacity: 0; transition: opacity .45s var(--ease-out) calc(.4s + var(--edge-i, 0) * .13s); }
+  .reveal-on .map-svg.shown .edge-chip { opacity: 1; }
+  .reveal-on .map-arrowhead { opacity: 0; transition: opacity .35s ease 1s; }
+  .reveal-on .map-svg.shown .map-arrowhead { opacity: 1; }
+  .reveal-on .map-pulse { opacity: 0; transition: opacity .5s ease 1.15s; }
+  .reveal-on .map-svg.shown .map-pulse { opacity: 1; }
+
+  /* 节点悬停摘要卡：默认锚定在锚点上方，.below 翻转到下方 */
+  .map-tip { position: absolute; z-index: 3; display: grid; gap: 3px; max-width: 230px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); pointer-events: none; opacity: 0; visibility: hidden; transform: translate(-50%, calc(-100% - 2px)); transition: opacity .22s var(--ease-out), transform .22s var(--ease-out), visibility 0s linear .22s; }
+  .map-tip.show { opacity: 1; visibility: visible; transform: translate(-50%, calc(-100% - 12px)); transition: opacity .22s var(--ease-out), transform .22s var(--ease-out), visibility 0s; }
+  .map-tip.below { transform: translate(-50%, 2px); }
+  .map-tip.below.show { transform: translate(-50%, 12px); }
+  .map-tip strong { font-size: .9rem; }
+  .map-tip small { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+
+  .map-node { color: var(--green); cursor: grab; touch-action: none; }
+  .map-node a { cursor: grab; }
+  .map-node.dragging, .map-node.dragging a { cursor: grabbing; }
   .map-node.orange { color: var(--orange); }
   .map-node.purple { color: var(--purple); }
   .map-node.blue { color: var(--blue); }
@@ -202,7 +542,8 @@ const mapEdges = [
   .map-node:hover .node-inner, .map-node.wf-live .node-inner { transform: scale(1.08); }
   .node-halo { fill: currentColor; opacity: 0; transition: opacity .3s var(--ease-out); }
   .map-node:hover .node-halo, .map-node.wf-live .node-halo { opacity: .09; }
-  .node-circle { fill: var(--panel); stroke: currentColor; stroke-width: 1.8; }
+  /* 去框后节点靠投影浮起 */
+  .node-circle { fill: var(--panel); stroke: currentColor; stroke-width: 1.8; filter: drop-shadow(0 5px 10px rgba(23, 35, 28, .14)); }
   .map-node.hub .node-circle { fill: var(--green-soft); stroke-width: 2.4; }
   .map-node.orange .node-circle { fill: var(--orange-soft); }
   .map-node.purple .node-circle { fill: var(--purple-soft); }
@@ -210,11 +551,11 @@ const mapEdges = [
   .map-node.slate .node-circle { fill: var(--panel-soft); }
   .node-pulse { fill: none; stroke: var(--green); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: node-pulse 3s ease-out infinite; }
   @keyframes node-pulse { from { transform: scale(1); opacity: .55; } to { transform: scale(1.5); opacity: 0; } }
-  .node-title { fill: var(--text); font-size: 17px; font-weight: 700; }
+  .node-title { fill: var(--text); font-size: 19px; font-weight: 700; }
   .node-gate circle { fill: var(--orange); stroke: var(--panel); stroke-width: 2.5; }
   .node-gate .icon { color: #fff; }
 
-  .map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; }
+  .map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 15px; color: var(--muted); font-size: .86rem; }
   .map-legend > span { display: inline-flex; align-items: center; gap: 7px; }
   .map-legend i { width: 26px; border-top: 2px solid var(--line-strong); }
   .map-legend i.dashed { border-style: dashed; }
@@ -225,13 +566,13 @@ const mapEdges = [
   .summary-card dl { margin: 0; }
   .summary-card dl > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
   .summary-card dl > div:last-child { border: 0; }
-  .summary-card dt { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .86rem; line-height: 1.35; }
+  .summary-card dt { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .9rem; line-height: 1.35; }
   .summary-card dt > .icon { flex: 0 0 auto; color: var(--green); }
   .summary-card dd { margin: 0; font-size: 1.45rem; font-weight: 750; }
-  .about-card p:not(.eyebrow) { color: var(--muted); font-size: .89rem; line-height: 1.62; }
-  .about-card a { display: flex; align-items: center; justify-content: space-between; color: var(--green); font-size: .86rem; font-weight: 700; }
+  .about-card p:not(.eyebrow) { color: var(--muted); font-size: .92rem; line-height: 1.62; }
+  .about-card a { display: flex; align-items: center; justify-content: space-between; color: var(--green); font-size: .9rem; font-weight: 700; }
 
-  @media (prefers-reduced-motion: reduce) { .node-pulse, .map-pulse { animation: none; opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .node-pulse, .map-pulse { animation: none !important; opacity: 0 !important; } }
   @media (max-width: 1240px) {
     .workflow-layout { grid-template-columns: 330px 1fr; }
     .workflow-summary { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }

@@ -11,16 +11,24 @@ export function getStaticPaths() {
 
 const locale = Astro.params.locale as Locale;
 const t = copy[locale];
+// 英文按词、中文按字拆分，逐段错峰入场；整句仍通过 aria-label 提供给读屏
+const titleFrags = locale === 'zh-CN' ? [...t.home.title] : t.home.title.split(' ');
 ---
 
 <SiteLayout locale={locale} title={t.home.title} description={t.home.intro}>
   <section class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">{t.home.eyebrow}</p>
-      <h1>{t.home.title}<span class="title-accent">{t.home.titleAccent}</span></h1>
+      <h1 aria-label={`${t.home.title}${t.home.titleAccent}`}>
+        {titleFrags.flatMap((frag, index) => [
+          <span class="hero-frag" style={`--i:${index}`} aria-hidden="true">{frag}</span>,
+          locale === 'zh-CN' ? '' : ' ',
+        ])}
+        <span class="hero-frag title-accent" style={`--i:${titleFrags.length}`} aria-hidden="true">{t.home.titleAccent}</span>
+      </h1>
       <p class="lede">{t.home.intro}</p>
       <div class="hero-actions">
-        <a class="button primary" href={localizePath(locale, 'workflows')}>
+        <a class="button primary" data-magnet href={localizePath(locale, 'workflows')}>
           {t.home.primary}<Icon name="arrow" />
         </a>
         <a class="button" href={githubUrl} target="_blank" rel="noreferrer">
@@ -50,21 +58,65 @@ const t = copy[locale];
 
   <section class="stat-grid">
     {t.home.stats.map((stat: string[], index: number) => (
-      <article class="stat-card panel-flat reveal grow" data-reveal-step={index}>
+      <article class="stat-card panel-flat reveal grow" data-reveal-step={index} data-spot>
         <span class="stat-icon"><Icon name={['grid', 'shield', 'refresh', 'check'][index]} size={26} /></span>
         <Icon name="arrow" />
-        <strong>{stat[0]}</strong>
+        <strong data-countup>{stat[0]}</strong>
         <h2>{stat[1]}</h2>
-        <p>{stat[2]}</p>
       </article>
     ))}
   </section>
 </SiteLayout>
 
+<script>
+  import { onPageLife } from '../../lib/motion.mjs';
+
+  onPageLife(() => {
+    // 生命周期自动轮播：每 2.2s 高亮下一个阶段，让首屏流程图持续“活着”；
+    // 悬停面板、页面在后台、用户偏好减弱动态时都不推进
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const steps = [...document.querySelectorAll('.hero-flow .lifecycle-step')];
+    if (steps.length < 2) return;
+    const panel = document.querySelector('.hero-flow');
+    let index = Math.max(0, steps.findIndex((step) => step.classList.contains('active')));
+    let paused = false;
+    const timer = window.setInterval(() => {
+      if (paused || document.hidden) return;
+      steps[index]?.classList.remove('active');
+      index = (index + 1) % steps.length;
+      steps[index]?.classList.add('active');
+    }, 2200);
+    const pause = () => { paused = true; };
+    const resume = () => { paused = false; };
+    panel?.addEventListener('pointerenter', pause);
+    panel?.addEventListener('pointerleave', resume);
+    return () => {
+      window.clearInterval(timer);
+      panel?.removeEventListener('pointerenter', pause);
+      panel?.removeEventListener('pointerleave', resume);
+    };
+  });
+</script>
+
 <style>
   .hero-grid { position: relative; display: grid; grid-template-columns: minmax(370px, .78fr) minmax(660px, 1.5fr); gap: clamp(35px, 5vw, 82px); align-items: center; min-height: 470px; }
   .hero-grid::before { content: ''; position: absolute; inset: -70px -50px; z-index: -1; pointer-events: none; background: radial-gradient(540px 330px at 76% 10%, color-mix(in srgb, var(--green) 8%, transparent), transparent 72%), radial-gradient(430px 280px at 6% 92%, color-mix(in srgb, var(--green) 5%, transparent), transparent 72%); animation: glow-drift 16s ease-in-out infinite alternate; }
+  /* 网格底纹：径向遮罩让线条在边缘淡出，只留中心区间的“工程图纸”感 */
+  .hero-grid::after { content: ''; position: absolute; inset: -70px -50px; z-index: -1; pointer-events: none; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 46px 46px; opacity: .42; -webkit-mask-image: radial-gradient(62% 58% at 50% 42%, #000 0%, transparent 76%); mask-image: radial-gradient(62% 58% at 50% 42%, #000 0%, transparent 76%); }
   @keyframes glow-drift { to { transform: translate3d(2.2%, -1.4%, 0) scale(1.05); } }
+  /* 标题逐段入场：上浮 + 去模糊；只有 JS 可用时才先隐藏（.reveal-on），无脚本直接可读 */
+  .hero-frag { display: inline-block; }
+  .reveal-on .hero-frag { opacity: 0; transform: translateY(.5em); filter: blur(10px); animation: frag-in .85s var(--ease-out) forwards; animation-delay: calc(var(--i) * 70ms + .1s); }
+  @keyframes frag-in { to { opacity: 1; transform: none; filter: blur(0); } }
+  /* Hero 编排：eyebrow 先行，导语与按钮组接在标题入场后段，形成完整序列 */
+  .reveal-on .hero-copy .eyebrow, .reveal-on .hero-copy .lede, .reveal-on .hero-actions { opacity: 0; transform: translateY(16px); animation: hero-in .7s var(--ease-out) forwards; }
+  .reveal-on .hero-copy .lede { animation-delay: .55s; }
+  .reveal-on .hero-actions { animation-delay: .72s; }
+  @keyframes hero-in { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-on .hero-frag { opacity: 1; transform: none; filter: none; animation: none; }
+    .reveal-on .hero-copy .eyebrow, .reveal-on .hero-copy .lede, .reveal-on .hero-actions { opacity: 1; transform: none; animation: none; }
+  }
   .hero-copy h1 { max-width: 650px; }
   .title-accent { color: var(--green); }
   .hero-copy .lede { max-width: 610px; }
@@ -88,15 +140,14 @@ const t = copy[locale];
   .status-strip b { font-weight: 520; }
   .status-strip em { color: var(--green); font-style: normal; }
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 20px; }
-  .stat-card { position: relative; min-height: 190px; padding: 22px; border-top: 2px solid transparent; transition: transform .26s var(--ease-out), border-color .26s var(--ease-out), box-shadow .26s var(--ease-out); }
+  .stat-card { position: relative; min-height: 168px; padding: 22px; border-top: 2px solid transparent; transition: transform .26s var(--ease-out), border-color .26s var(--ease-out), box-shadow .26s var(--ease-out); }
   .stat-card:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); border-top-color: var(--green); box-shadow: var(--shadow); }
   .stat-card > .icon:last-of-type { position: absolute; top: 24px; right: 21px; transition: transform .26s var(--ease-out), color .26s var(--ease-out); }
   .stat-card:hover > .icon:last-of-type { transform: translateX(5px); color: var(--green); }
   .stat-icon { display: block; margin-bottom: 16px; color: var(--green); transition: transform .32s var(--ease-spring); }
   .stat-card:hover .stat-icon { transform: scale(1.1) rotate(-3deg); }
-  .stat-card strong { display: block; font-size: 2.5rem; line-height: 1; letter-spacing: -.06em; }
+  .stat-card strong { display: block; font-size: 2.5rem; line-height: 1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
   .stat-card h2 { margin: 7px 0 2px; font-size: 1rem; }
-  .stat-card p { margin: 0; color: var(--muted); font-size: .92rem; }
   @media (max-width: 1180px) { .hero-grid { grid-template-columns: 1fr; } .hero-flow { order: 2; } }
   @media (max-width: 850px) { .status-strip { grid-template-columns: 1fr 1fr; gap: 14px; } .status-strip > span { justify-content: start; border: 0; } .stat-grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 540px) { .hero-grid { min-height: 0; } .hero-flow { padding: 22px 18px; } .flow-heading { flex-direction: column; margin-bottom: 15px; } .stat-grid { grid-template-columns: 1fr; } }
