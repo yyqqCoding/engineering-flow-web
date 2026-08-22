@@ -195,8 +195,8 @@ export const engineeringPage = {
       icon: 'lock',
       title: { en: 'Approval is a separate, explicit act', 'zh-CN': '批准是独立且明确的动作' },
       detail: {
-        en: 'The checkpoint carries five fixed items: goal, acceptance behavior, out of scope, assumptions, and solution boundary. Only action language sent after that checkpoint authorizes implementation. The initial request, answers to clarification questions, and a reading acknowledgement do not.',
-        'zh-CN': '检查点固定包含五项：目标、验收行为、范围外、假设、方案边界。只有在检查点之后发出的行动指令才授权实施；最初的请求、对澄清问题的回答、以及一句"已读"，都不构成批准。',
+        en: 'The checkpoint carries five fixed items: goal, acceptance behavior, out of scope, assumptions, and solution boundary. Only action language sent after that checkpoint authorizes implementation. The initial request, answers to clarification questions, and a reading acknowledgement do not — and neither does an approval that arrives bundled with a material scope increase, because that approval precedes the revised checkpoint.',
+        'zh-CN': '检查点固定包含五项：目标、验收行为、范围外、假设、方案边界。只有在检查点之后发出的行动指令才授权实施；最初的请求、对澄清问题的回答、以及一句"已读"，都不构成批准。同一条消息里既批准又实质扩大范围时同样不构成批准——因为那句批准发生在修订后的检查点之前。',
       },
       rules: ['REQ-03', 'REQ-05', 'REQ-06'],
     },

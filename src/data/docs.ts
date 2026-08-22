@@ -1,7 +1,8 @@
 import { workflows, type Locale, type WorkflowSlug } from './site';
 
 // 文档内容与站点营销文案分开维护：这里只放"参考手册"口径的深度内容，
-// 全部摘自源仓库 skills/<slug>/SKILL.md、docs/user-guide*.md、docs/product-design.md（v1.0.1, commit 3a70929）
+// 全部摘自源仓库 skills/<slug>/SKILL.md、docs/user-guide*.md、docs/product-design.md、
+// docs/behavior-spec.md 与 docs/benchmark-log.md（v1.0.2, commit f74d6f5）
 type L<T> = Record<Locale, T>;
 
 export const docsUi = {
@@ -93,6 +94,10 @@ export const overviewPage = {
     {
       title: { en: 'Same-task follow-up', 'zh-CN': '同任务后续回复' },
       detail: { en: 'Ordinary replies continue the current phase — no need to repeat the token.', 'zh-CN': '普通回复继续当前阶段，不需要重复输入 token。' },
+    },
+    {
+      title: { en: 'A new session tomorrow', 'zh-CN': '第二天的新会话' },
+      detail: { en: 'A substantial task leaves a requirement record that can be finished without the earlier conversation — the phase is recovered from the repository.', 'zh-CN': '实质任务会留下需求记录，不依赖之前的对话也能收尾——进度从仓库状态恢复。' },
     },
   ],
   chooseTitle: { en: 'Choose a workflow', 'zh-CN': '选择工作流' },
@@ -269,8 +274,8 @@ export const quickstartPage = {
   },
   step3Code: { en: 'Proceed with the plan above.', 'zh-CN': '按上述方案执行。' },
   step3Note: {
-    en: 'Requirement records move through Draft → Accepted → Implemented, and can be marked Superseded when replaced.',
-    'zh-CN': '需求记录的状态依次是 Draft → Accepted → Implemented，被新文档替代时可标记 Superseded。',
+    en: 'Requirement records move through Draft → Accepted → Implemented, and can be marked Superseded when replaced. The final step is not a status edit: a bundled read-only validator checks the record against the files that actually changed and the verification command that actually ran.',
+    'zh-CN': '需求记录的状态依次是 Draft → Accepted → Implemented，被新文档替代时可标记 Superseded。最后一步不是改个状态就行：随包分发的只读校验器会拿记录去核对真正改动的文件和真正执行过的验证命令。',
   },
   continuityTitle: { en: 'Staying in the same task', 'zh-CN': '同一个任务里继续' },
   continuityBody: {
@@ -443,13 +448,13 @@ export const experimentsPage = {
     {
       icon: 'document',
       title: { en: 'Fingerprinted cohorts', 'zh-CN': '指纹分群' },
-      detail: { en: 'Every instruction change produces a new fingerprint; results from different fingerprints are never averaged together.', 'zh-CN': '每次指令修改都会产生新指纹；不同指纹的结果绝不混合平均。' },
+      detail: { en: 'Every instruction or grader change produces a new fingerprint; results from different fingerprints are never averaged together, and each published cohort names its exact report files.', 'zh-CN': '每次指令或判据的修改都会产生新指纹；不同指纹的结果绝不混合平均，每个公开 cohort 都精确列出所使用的报告文件。' },
     },
   ],
   resultsTitle: { en: 'Headline results', 'zh-CN': '关键结果' },
   resultsNote: {
-    en: 'Counts come from the project’s own published test records and are not recomputed here.',
-    'zh-CN': '这些数字来自项目自己公开的测试记录，本页不会重新计算。',
+    en: 'Counts come from the project’s own published test records and are not recomputed here. The first card is a comparison against having no workflows installed at all; the rest are pass rates for the current release.',
+    'zh-CN': '这些数字来自项目自己公开的测试记录，本页不会重新计算。第一张卡片是与"完全不装工作流"的对比，其余是当前版本的通过率。',
   },
   viewResults: { en: 'Open the full results page', 'zh-CN': '打开完整验证结果页' },
   lessonsTitle: { en: 'What the experiments changed', 'zh-CN': '实验改变了什么' },
@@ -457,11 +462,68 @@ export const experimentsPage = {
     en: 'Two auto-trigger experiments were run and both were rolled back. They are the reason every workflow is explicit today.',
     'zh-CN': '两个自动触发实验都被回滚。它们就是今天所有工作流都必须显式调用的原因。',
   },
+  chainTitle: { en: 'A worked example: five rounds to one mechanism', 'zh-CN': '一个完整案例：五轮实验换来一个机制' },
+  chainIntro: {
+    en: 'Getting a requirement record to survive a fresh session — no chat history, only the repository — took five bounded experiments. Each declared its pass mark before running, and each was scored against a scenario the rules had never seen. Four of the five failed, and the failures were kept rather than tuned away.',
+    'zh-CN': '让一份需求记录能在全新会话里被正确完成——没有对话历史，只有仓库——一共花了五轮有界实验。每一轮都在开跑前先声明通过线，并用规则从未见过的新场景来评分。五轮里失败了四轮，失败结果被保留，而不是回头调参数抹掉。',
+  },
+  chain: [
+    {
+      round: '01',
+      title: { en: 'Prose rules only', 'zh-CN': '只靠文字规则' },
+      score: '1/6',
+      detail: {
+        en: 'The workflow was told in words to replace every placeholder with real paths and fresh results. Most runs implemented the behavior correctly but still left the record saying tests would be added “after approval”.',
+        'zh-CN': '用文字要求工作流把占位内容替换成真实路径和新鲜结果。多数运行行为实现正确，但记录里仍然留着"批准后再补测试"这类说法。',
+      },
+    },
+    {
+      round: '02',
+      title: { en: 'A bundled validator', 'zh-CN': '随包分发校验器' },
+      score: '0/6',
+      detail: {
+        en: 'A read-only script was shipped with the workflow to check the record. Every run passed the first check and implemented correctly — and then none of them ran the final check, because the fresh session had no way to find the script again.',
+        'zh-CN': '随工作流分发一个只读脚本来检查记录。每次运行都通过了第一道检查、也正确实现了行为——然后没有一次跑了最后那道检查，因为新会话根本找不到这个脚本在哪。',
+      },
+    },
+    {
+      round: '03',
+      title: { en: 'Persist the exact command', 'zh-CN': '把确切命令写进记录' },
+      score: '0/6',
+      detail: {
+        en: 'The record itself now carried the exact command to run. Six of six runs persisted it and five executed it successfully — but every final record still contained the machine-specific path instead of durable evidence.',
+        'zh-CN': '让记录自己带上要执行的确切命令。6/6 的运行都写下了它，5 次成功执行——但每一份最终记录里留下的仍是本机专属路径，而不是可长期保存的证据。',
+      },
+    },
+    {
+      round: '04',
+      title: { en: 'One atomic finalize', 'zh-CN': '一次原子完结' },
+      score: '5/6',
+      detail: {
+        en: 'The validator gained a finalize mode: validate first, then write the completed status and stable evidence in a single atomic step. Five of six passed. The sixth recorded a different passing command than the project’s own.',
+        'zh-CN': '给校验器加上完结模式：先校验，再用一次原子写入同时写下完成状态和稳定证据。6 次里过了 5 次，剩下 1 次记录的是另一条能通过的命令，而不是项目自己的那条。',
+      },
+    },
+    {
+      round: '05',
+      title: { en: 'Pin the canonical command', 'zh-CN': '锁定规范验证命令' },
+      score: '6/6',
+      detail: {
+        en: 'Completion evidence must now record the project’s own verification command exactly as executed, arguments included. A different passing command is not equivalent evidence. This cleared the preregistered gate, so the full release cohort was rerun.',
+        'zh-CN': '完成证据必须记录项目自己的验证命令，包含全部参数、与实际执行完全一致。换一条能通过的命令不算等价证据。这一轮通过了预先声明的门槛，因此整个发布 cohort 被重跑。',
+      },
+    },
+  ],
+  chainConclusion: {
+    en: 'Four consecutive failures produced one small mechanism. That ratio is the point: a rule is added only after a failure is demonstrated, and it is kept only after an unseen scenario confirms it.',
+    'zh-CN': '连续四次失败，换来一个很小的机制。这个比例正是重点：先有被证实的失败，才允许加规则；再由一个未曾见过的场景确认，才允许留下它。',
+  },
   limitsTitle: { en: 'Verification status and limits', 'zh-CN': '验证状态与限制' },
   limits: [
-    { en: 'Static and deterministic tests: 50/50 passing.', 'zh-CN': '静态与确定性测试：50/50 通过。' },
-    { en: 'Current Codex general cohort: 17 scenarios, candidate 51/51 passing; explicit invocation 51/51, with zero false triggers, misses, collisions, contamination, or unauthorized commits.', 'zh-CN': 'Codex 当前通用 cohort：17 个场景，候选组 51/51 通过；显式调用 51/51，误触发、漏触发、碰撞、污染和未授权提交均为 0。' },
-    { en: 'Latest task-level paired A/B: under the same model, reasoning effort, and final scenario fingerprint, the current-release control scored 0/12 and the candidate 12/12.', 'zh-CN': '最新任务级配对 A/B：相同模型、推理等级和最终场景指纹下，current-release 对照组 0/12，候选组 12/12。' },
+    { en: 'Static and deterministic tests: 77/77 passing.', 'zh-CN': '静态与确定性测试：77/77 通过。' },
+    { en: 'Corpus: 36 configured scenarios semantically cover all 45 behavior rules, and 9 of them are holdouts whose results are never used to tune a rule or a grader. Semantic coverage is not a count of completed model runs.', 'zh-CN': '语料库：36 个已配置场景在语义上覆盖全部 45 条行为规则，其中 9 个是留出集，其结果永不用于调整规则或判据。语义覆盖不等于已完成的模型运行次数。' },
+    { en: 'Against no workflows at all: 17 scenarios, control 45/51 versus 51/51 with workflows; explicit invocation 51/51, with zero false triggers, misses, collisions, contamination, or unauthorized commits.', 'zh-CN': '与"完全不装"对比：17 个场景，对照组 45/51，安装工作流 51/51；显式调用 51/51，误触发、漏触发、碰撞、污染和未授权提交均为 0。' },
+    { en: 'Task-level behavior is sampled separately: multi-turn continuity 12/12, session handoff completeness 3/3, and a ten-scenario release cohort of 60 pinned reports with invocation 30/30 in each arm and no contaminated, incomplete, or unauthorized-commit runs.', 'zh-CN': '任务级行为单独采样：多轮连续性 12/12、会话交接完整性 3/3，以及一个十场景发布 cohort 共 60 份锁定报告，两组调用均为 30/30，无污染、不完整或未授权提交的运行。' },
     { en: 'Claude Code 2.1.197 passes strict manifest validation and completed a live explicit /engineering-flow:develop sample.', 'zh-CN': 'Claude Code 2.1.197 通过 strict manifest 校验，并完成显式 /engineering-flow:develop 实机样本。' },
     { en: 'Claude Core-only ambiguous samples have not yet reached Codex-equivalent behavior, so name a full workflow for material data or permission decisions.', 'zh-CN': 'Claude 的 Core-only 歧义样本尚未达到 Codex 同等行为，涉及数据、权限等重大决定时应显式调用完整工作流。' },
     { en: 'Full workflows add context, tool calls, and duration, which is exactly why they are not loaded into every request.', 'zh-CN': '完整工作流会增加上下文、工具调用和耗时，这正是它们不会被加载到每个请求里的原因。' },
@@ -484,7 +546,7 @@ export const practicesPage = {
     { title: { en: 'Pay for depth only when needed', 'zh-CN': '深度按需付费' }, detail: { en: 'Simple tasks carry zero ceremony; full workflows load only when you ask.', 'zh-CN': '简单任务零仪式；完整工作流只在你要求时加载。' } },
     { title: { en: 'Task-level continuity', 'zh-CN': '任务级连续' }, detail: { en: 'Corrections and omissions continue inside the same flow, with no re-invocation.', 'zh-CN': '纠正和补漏在同一流程内继续，不用重新调用。' } },
     { title: { en: 'Approval is never implied', 'zh-CN': '批准绝不默认' }, detail: { en: 'A separate, explicit human act separates understanding from doing.', 'zh-CN': '理解需求与动手实施之间，隔着一个独立、明确的人工动作。' } },
-    { title: { en: 'Evidence-driven completion', 'zh-CN': '证据驱动完成' }, detail: { en: 'Nothing counts as done without fresh, scope-appropriate verification.', 'zh-CN': '没有新鲜、范围匹配的验证，就不算完成。' } },
+    { title: { en: 'Evidence-driven completion', 'zh-CN': '证据驱动完成' }, detail: { en: 'Nothing counts as done without fresh, scope-appropriate verification — and a substantial task’s record is validated against the real diff before it can say so.', 'zh-CN': '没有新鲜、范围匹配的验证就不算完成；实质任务的记录还要先对照真实 diff 通过校验，才允许说自己完成了。' } },
     { title: { en: 'Two hosts, one semantics', 'zh-CN': '双平台一致语义' }, detail: { en: 'Codex CLI and Claude Code share synchronized invocation behavior.', 'zh-CN': 'Codex CLI 与 Claude Code 的调用行为保持同步。' } },
     { title: { en: 'Read-only where it matters', 'zh-CN': '该只读时严格只读' }, detail: { en: 'Review and handoff never touch your repository.', 'zh-CN': '评审和交接绝不改动你的仓库。' } },
   ],
@@ -603,6 +665,9 @@ export const workflowGuides: Record<WorkflowSlug, {
             'Present the goal, acceptance behavior, out of scope, assumptions, and material solution boundary.',
             'A short checkpoint stays in the conversation. A substantial one uses the project’s authoritative document, or `docs/requirements/<feature-slug>.md` with status `Draft` when no convention exists.',
             'When the first request already supplies a complete contract, create and verify that Draft in the same turn — hypothetical optional inputs cannot delay it.',
+            'A fallback record is written in timeless constraints, never as work deferred until approval, and its completion section starts with implementation files, test files, and verification all pending.',
+            'The record also carries the exact command a later session needs to validate and finalize it, so a fresh context never has to rediscover this conversation.',
+            'Run the bundled read-only validator in draft mode before presenting the checkpoint; it reports every failed condition at once.',
             'Do not change production code, tests, or configuration before approval. Writing the requirement record is allowed.',
             'End the turn after the checkpoint. The Develop invocation itself is not approval to code.',
           ],
@@ -614,6 +679,7 @@ export const workflowGuides: Record<WorkflowSlug, {
           rules: [
             'Only action language sent after the checkpoint approves implementation, such as “implement this”, “start implementation”, or “proceed with the plan above”.',
             'The initial request, answers to clarification questions, and reading acknowledgements never count as approval.',
+            'If one message both approves the checkpoint and materially adds scope, the whole turn becomes alignment-only: the revised checkpoint is presented, and neither the prior scope nor the increment is implemented until a later approval.',
             'On approval, a durable requirement record is marked `Accepted` and work continues directly — you are never asked to invoke Develop again.',
           ],
         },
@@ -646,7 +712,10 @@ export const workflowGuides: Record<WorkflowSlug, {
           rules: [
             'Re-read the accepted behavior and inspect the diff for correctness, safety, ownership, readability, test sensitivity, scope, and temporary artifacts.',
             'Reconcile every accepted behavior as verified, partially verified, incomplete, or deviated.',
-            'Before marking a record `Implemented`, replace stale future-tense language — “will be added”, “to be created”, “pending” — with the actual files and fresh evidence. A status-only edit is not sufficient.',
+            '`Implemented` is the final write. While the record is still `Accepted`, inspect the actual diff and fresh verification output, then replace every pending field with exact implementation paths, test paths, command results, and confirmed deviations.',
+            'Record the project’s canonical verification command exactly as executed, arguments included, together with its passing result. A different passing command is not equivalent evidence.',
+            'Run the persisted finalization command from the target repository. It validates the complete record first, then atomically writes the completed status and stable evidence — and writes nothing at all when validation fails.',
+            'Remove stale prospective wording across the whole record — “will”, “after approval”, “planned”, “to be added”. A status-only edit is not sufficient.',
             'Update authoritative documentation only for changed facts; update project instructions only for durable cross-task rules.',
             'Remove temporary diagnostics and report remaining gaps.',
             'Do not commit, push, publish, create external issues, install dependencies, or change global configuration unless authorized.',
@@ -684,6 +753,9 @@ export const workflowGuides: Record<WorkflowSlug, {
             '给出目标、验收行为、范围外、假设和实质方案边界。',
             '内容少时留在对话里；实质需求优先写进项目已有的权威文档，没有适用约定时新建 `docs/requirements/<feature-slug>.md`，状态 `Draft`。',
             '首轮请求已经给出完整契约时，就在这一轮创建并核实 Draft，契约外的假设性可选输入不能拖住它。',
+            '兜底记录用"无时态"的约束写成，绝不写成"批准之后再做"；完成区先留空，实现文件、测试文件和验证结果都标为待填。',
+            '记录里还会写下后续会话验证并完结它所需的确切命令，这样新会话不必回头去找这次对话。',
+            '给出检查点之前，先用随包分发的只读校验器跑一遍 draft 模式，它会一次性报出所有不满足的条件。',
             '批准之前不改生产代码、测试和配置——写需求记录是允许的。',
             '给完检查点就结束这一轮。调用 Develop 本身不是编码授权。',
           ],
@@ -695,6 +767,7 @@ export const workflowGuides: Record<WorkflowSlug, {
           rules: [
             '只有检查点之后发出的行动语言才算批准，例如"开始实施""按上述方案执行"。',
             '初始请求、澄清问题的回答、"我看过了/明白了"，都不算批准。',
+            '如果一条消息里既批准了检查点、又实质扩大了范围，这一整轮只做对齐：给出修订后的检查点，原范围和新增量都不动手，直到后续再次批准。',
             '获得批准后把需求记录标记为 `Accepted` 并直接继续，不会要求你再调用一次 Develop。',
           ],
         },
@@ -727,7 +800,10 @@ export const workflowGuides: Record<WorkflowSlug, {
           rules: [
             '重读验收行为，检查 diff 的正确性、安全、归属、可读性、测试敏感度、范围和临时产物。',
             '把每条验收行为标记为已验证、部分验证、未完成或有偏差。',
-            '标记 `Implemented` 之前，把"将会添加""待创建""待补充"这类未来时改写成事实，并写上真实文件与新鲜证据；只改状态不算完成。',
+            '`Implemented` 是记录的最后一次写入。在状态仍为 `Accepted` 时先看实际 diff 和新鲜验证输出，把所有待填字段替换成确切的实现路径、测试路径、命令结果和已确认的偏差。',
+            '记录项目的规范验证命令：与实际执行完全一致、包含全部参数，并附上通过结果。换一条能通过的命令不算等价证据。',
+            '在目标仓库执行记录里持久化的完结命令。它先校验整份记录，再用一次原子写入写下完成状态与稳定证据；校验不通过时它什么都不写。',
+            '清除整份记录里过期的前瞻表述——"将会""批准后""计划""待添加"。只改状态不算完成。',
             '只为发生变化的事实更新权威文档；只为跨任务的长期规则更新项目指令文件。',
             '删掉临时诊断代码，并报告剩余缺口。',
             '未获授权不提交、不推送、不发布、不创建外部 issue、不安装依赖、不修改全局配置。',
@@ -741,12 +817,16 @@ export const workflowGuides: Record<WorkflowSlug, {
         { icon: 'chat', title: 'Batched clarification', detail: 'Independent questions are asked in one batch; only questions created by those answers get follow-ups. No drip-feed interviewing.' },
         { icon: 'refresh', title: 'Task-level continuity', detail: 'Corrections, omissions, and same-task follow-ups continue inside the same flow. An `Implemented` record returns to `Accepted` until the omission is completed.' },
         { icon: 'shield', title: 'Undefined is a question', detail: 'An explicitly undefined result never becomes out of scope by itself — least of all the unknown-resource behavior of a delete or write operation.' },
+        { icon: 'grid', title: 'Approval plus scope pauses both', detail: 'A message that approves and expands in one breath authorizes nothing. The turn realigns, presents the revised checkpoint, and waits.' },
+        { icon: 'check', title: 'Completion is validated, not asserted', detail: 'A read-only validator checks the record against the real changed paths and the project’s canonical verification command before the single atomic write that marks it complete.' },
       ],
       'zh-CN': [
         { icon: 'lock', title: '批准关卡', detail: '只有检查点之后的明确行动语言才开始编码。初始请求、澄清回答和"看起来不错"都不算。' },
         { icon: 'chat', title: '批量澄清', detail: '独立问题一次问完；只有这些答案引出的依赖问题才追问，不做挤牙膏式访谈。' },
         { icon: 'refresh', title: '任务级连续', detail: '纠正、补漏和同任务追问都在当前流程内继续。已标 `Implemented` 的记录会退回 `Accepted`，补完后再标回去。' },
         { icon: 'shield', title: '未定义即问题', detail: '显式标注为"未定义"的结果不会自己变成范围外，尤其是删除和写操作对未知资源的行为。' },
+        { icon: 'grid', title: '批准加范围＝两边都停', detail: '一条消息里既批准又扩大范围，等于什么都没授权：这一轮重新对齐、给出修订检查点，然后等待。' },
+        { icon: 'check', title: '完成要被校验，不能自称', detail: '只读校验器会对照真实改动路径和项目规范验证命令核对记录，通过后才由那一次原子写入标记完成。' },
       ],
     },
     example: {
@@ -803,13 +883,15 @@ export const workflowGuides: Record<WorkflowSlug, {
       en: [
         { q: 'I already invoked Develop — why is it still waiting for me?', a: 'Invoking the workflow is not approval to code. The checkpoint is a fixed step even when the request is clear: it states the goal and boundary, then pauses. Reply with action language and it continues.' },
         { q: 'I noticed a missing acceptance item. Do I re-invoke?', a: 'No. An omitted original acceptance item belongs to the same task, so Develop reopens implementation and verification directly and returns the record from `Implemented` to `Accepted` until it is done.' },
-        { q: 'Is adding a new requirement an omission or new scope?', a: 'Explicitly adding or changing behavior is a scope increment. Develop aligns only that increment, presents an incremental checkpoint, and waits for approval again.' },
+        { q: 'Is adding a new requirement an omission or new scope?', a: 'Explicitly adding or changing behavior is a scope increment. Develop aligns only that increment, presents an incremental checkpoint, and waits for approval again. If your message both approves the old checkpoint and adds the increment, nothing is implemented that turn — the revised checkpoint comes back and waits.' },
+        { q: 'What happens to the requirement record if I come back tomorrow?', a: 'A substantial task leaves a record that a fresh session can finish without this conversation: the current phase is recoverable from the repository, and the record carries the exact command needed to validate and complete it.' },
         { q: 'Will it commit my work?', a: 'No. Committing, pushing, publishing, opening issues, installing dependencies, and changing global configuration all require separate authorization.' },
       ],
       'zh-CN': [
         { q: '我已经调用 Develop 了，它为什么还在等我？', a: '调用工作流不是编码授权。哪怕需求很清楚，检查点也是固定动作：先讲清目标和边界，然后暂停。你回一句行动指令它就继续。' },
         { q: '发现漏了一条验收行为，要重新调用吗？', a: '不用。原验收行为的遗漏属于同一个任务，Develop 会直接重新进入实施和验证，并把记录从 `Implemented` 退回 `Accepted`，补完后再标回去。' },
-        { q: '追加新需求算遗漏还是新范围？', a: '明确新增或改变行为算范围增量。Develop 只对齐这个增量，给出增量检查点，然后再次等待你批准。' },
+        { q: '追加新需求算遗漏还是新范围？', a: '明确新增或改变行为算范围增量。Develop 只对齐这个增量，给出增量检查点，然后再次等待你批准。如果你同一条消息里既批准了旧检查点又加了增量，这一轮什么都不会实施——它会给出修订后的检查点继续等。' },
+        { q: '如果我明天再回来，需求记录会怎样？', a: '实质任务会留下一份记录，让新会话不依赖这次对话也能收尾：当前阶段可以从仓库状态恢复，记录本身也带着验证并完成它所需的确切命令。' },
         { q: '它会自己提交代码吗？', a: '不会。提交、推送、发布、创建 issue、安装依赖和修改全局配置，都需要你另外授权。' },
       ],
     },
@@ -835,6 +917,7 @@ export const workflowGuides: Record<WorkflowSlug, {
             'Build the fastest practical signal for the exact symptom: focused test, command or request, replay, minimal harness, stress loop, or performance measurement.',
             'Tighten that signal for speed, determinism, and unattended execution.',
             'Inspect once and reuse the evidence. If automated reproduction is impractical, report what was attempted and calibrate confidence instead of guessing.',
+            'If the reported behavior cannot be reproduced at all, say so explicitly in the final diagnosis and state that no repository-supported root cause can be established. A speculative cause may not replace that bounded conclusion.',
           ],
         },
         {
@@ -895,6 +978,7 @@ export const workflowGuides: Record<WorkflowSlug, {
             '为这个确切症状搭最快的可用信号：聚焦测试、命令/请求、回放、最小复现程序、压力循环或性能测量。',
             '把信号调到更快、更确定、可以无人值守重复运行。',
             '现场只勘察一次并复用证据。确实无法自动复现时，如实说明尝试过什么并给出置信度，而不是猜。',
+            '如果报告的行为根本复现不出来，就在最终诊断里明说，并声明现有仓库证据不足以确定根因——不允许用一个听起来合理的猜测顶替这个有界结论。',
           ],
         },
         {
@@ -952,12 +1036,14 @@ export const workflowGuides: Record<WorkflowSlug, {
         { icon: 'pulse', title: 'Red before green', detail: 'The first write after authorization is the regression test, and its failure must be observed. No probe or workaround bypasses this gate.' },
         { icon: 'compass', title: 'One hypothesis at a time', detail: 'Each observation is chosen to distinguish between ranked hypotheses. Two variables are never changed at once.' },
         { icon: 'flag', title: 'Honest limitations', detail: 'When no correct regression seam exists, the limitation is reported instead of shipping a test that cannot detect the defect.' },
+        { icon: 'chat', title: 'A failed reproduction is a result', detail: 'If the reported behavior cannot be reproduced, the diagnosis says exactly that and stops. It does not substitute a plausible-sounding cause the repository cannot support.' },
       ],
       'zh-CN': [
         { icon: 'shield', title: '授权前只读', detail: '没有明确的修复授权就不动任何文件。你否定结论时它保持只读，回去找新证据。' },
         { icon: 'pulse', title: '先红后绿', detail: '授权后的第一次写入是回归测试，并且必须观察到它失败。任何探针或变通都绕不过这道关卡。' },
         { icon: 'compass', title: '逐假设证伪', detail: '每次观察都用来区分排好序的假设，绝不同时改变两个变量。' },
         { icon: 'flag', title: '如实说限制', detail: '确实没有正确的回归缝隙时，如实报告限制，而不是交一个测不到缺陷的测试。' },
+        { icon: 'chat', title: '复现失败也是结论', detail: '复现不出报告的行为时，诊断就明说这一点并到此为止，不会用一个仓库证据支撑不了、但听起来合理的原因顶上。' },
       ],
     },
     example: {

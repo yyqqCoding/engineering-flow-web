@@ -3,11 +3,11 @@ export type Locale = 'en' | 'zh-CN';
 export const githubUrl = 'https://github.com/yyqqCoding/engineering-flow-skills';
 
 export const snapshotMeta = {
-  version: 1,
+  version: 2,
   sourceRepository: 'yyqqCoding/engineering-flow-skills',
-  sourceCommit: '3a70929',
-  sourceVersion: '1.0.1',
-  generatedAt: '2026-08-09',
+  sourceCommit: 'f74d6f5',
+  sourceVersion: '1.0.2',
+  generatedAt: '2026-08-22',
   demoOnly: true,
 } as const;
 
@@ -40,7 +40,7 @@ const en = {
       ['5', 'Workflows'],
       ['51/51', 'Behavior'],
       ['12/12', 'Continuity'],
-      ['50/50', 'Static tests'],
+      ['77/77', 'Static tests'],
     ],
   },
   workflowsPage: {
@@ -90,10 +90,10 @@ const en = {
     snapshot: 'SNAPSHOT',
     updated: 'UPDATED',
     cards: [
-      ['Agent behavior', '51/51', 'Control without workflows: 45/51'],
-      ['Multi-turn continuity', '12/12', 'Control: 0/12'],
+      ['Agent behavior', '51/51', 'Without any workflows: 45/51'],
+      ['Multi-turn continuity', '12/12', '4 task-level scenarios × 3 runs'],
       ['Explicit routing', '51/51', '0 false routes · 0 missed · 0 collisions'],
-      ['Static tests', '50/50', 'All deterministic checks green'],
+      ['Static tests', '77/77', 'All deterministic checks green'],
     ],
     sourceLabels: { repository: 'Repository', release: 'Release', commit: 'Commit', runtimeApi: 'Runtime API' },
   },
@@ -158,7 +158,7 @@ export const copy: Record<Locale, Copy> = {
         ['5', '工作流'],
         ['51/51', '工程行为'],
         ['12/12', '多轮连续性'],
-        ['50/50', '静态测试'],
+        ['77/77', '静态测试'],
       ],
     },
     workflowsPage: {
@@ -208,10 +208,10 @@ export const copy: Record<Locale, Copy> = {
       snapshot: '快照',
       updated: '更新时间',
       cards: [
-        ['智能体行为', '51/51', '未装工作流的对照组：45/51'],
-        ['多轮任务连续性', '12/12', '对照组：0/12'],
+        ['智能体行为', '51/51', '完全不装工作流：45/51'],
+        ['多轮任务连续性', '12/12', '4 个任务级场景 × 3 次'],
         ['显式调用路由', '51/51', '错误路由 0 · 遗漏 0 · 冲突 0'],
-        ['静态测试', '50/50', '全部确定性检查通过'],
+        ['静态测试', '77/77', '全部确定性检查通过'],
       ],
       sourceLabels: { repository: '仓库', release: '发布版本', commit: '提交', runtimeApi: '运行时 API' },
     },
@@ -247,7 +247,7 @@ export const copy: Record<Locale, Copy> = {
 
 export type WorkflowSlug = 'develop' | 'diagnose' | 'code-design' | 'review' | 'handoff';
 
-// 每个工作流的真实阶段与机制，摘自 skills/<slug>/SKILL.md（来源 v1.0.1, commit 3a70929）
+// 每个工作流的真实阶段与机制，摘自 skills/<slug>/SKILL.md（来源 v1.0.2, commit f74d6f5）
 export const workflows: Array<{
   slug: WorkflowSlug;
   tone: string;
@@ -292,14 +292,18 @@ export const workflows: Array<{
         { icon: 'lock', title: 'Approval gate', detail: 'Coding starts only after explicit post-checkpoint action language. The initial request, clarification answers, and "looks good" never count as approval.' },
         { icon: 'chat', title: 'Batched clarification', detail: 'Independent questions are asked in one batch; only questions raised by those answers get follow-ups. No drip-feed interviewing.' },
         { icon: 'refresh', title: 'Task-level continuity', detail: 'Corrections, omissions, and same-task follow-ups continue inside the same flow — no need to invoke the workflow again.' },
+        { icon: 'shield', title: 'Approval plus new scope pauses everything', detail: 'When one message both approves the checkpoint and adds material scope, the whole turn becomes alignment-only. Neither the old scope nor the new one is implemented until the revised checkpoint is approved.' },
+        { icon: 'document', title: 'Verified completion record', detail: 'A substantial task leaves a requirement record whose completion section starts empty. A bundled read-only validator checks the real changed paths and the canonical verification command before a single atomic write marks it implemented.' },
       ],
       'zh-CN': [
         { icon: 'lock', title: '批准关卡', detail: '检查点之后，只有明确的行动指令（"开始实施""按上述方案执行"）才授权编码。初始请求、澄清回答、"已阅读"都不算批准。' },
         { icon: 'chat', title: '批量澄清', detail: '相互独立的问题合并成一批一次问完；只有答案引出的依赖问题才追问，不逐条挤牙膏。' },
         { icon: 'refresh', title: '任务级连续', detail: '纠正、补漏、同任务追问都在当前流程内直接继续，不需要重新调用工作流。' },
+        { icon: 'shield', title: '批准与加范围同时到达则整轮暂停', detail: '一条消息里既批准检查点又实质扩大范围时，这一整轮只做对齐：旧范围和新增量都不动手，直到修订后的检查点再次获批。' },
+        { icon: 'document', title: '可核验的完成记录', detail: '实质任务会留下需求记录，完成区先留空。随插件分发的只读校验器会核对真实改动路径和项目的规范验证命令，通过后才由一次原子写入标记为完成。' },
       ],
     },
-    outcomes: { en: ['Accepted behavior implemented', 'Focused checks pass', 'Documentation reflects facts'], 'zh-CN': ['验收行为已实现', '聚焦检查通过', '文档反映实际结果'] },
+    outcomes: { en: ['Accepted behavior implemented', 'Focused checks pass', 'The completion record matches the diff'], 'zh-CN': ['验收行为已实现', '聚焦检查通过', '完成记录与实际改动一致'] },
   },
   {
     slug: 'diagnose', tone: 'orange', mode: { en: 'READ-ONLY → REPAIR', 'zh-CN': '只读 → 授权修复' },
@@ -330,11 +334,13 @@ export const workflows: Array<{
         { icon: 'shield', title: 'Read-only until authorized', detail: 'No file changes before explicit repair authorization. If you reject the conclusion, it stays read-only and tests a new hypothesis.' },
         { icon: 'pulse', title: 'Red before green', detail: 'The first write after authorization is the regression test, and its failure must be observed. No probe or workaround can bypass this gate.' },
         { icon: 'compass', title: 'One hypothesis at a time', detail: 'Each observation is chosen to distinguish between hypotheses — never change two variables at once.' },
+        { icon: 'flag', title: 'A failed reproduction is a result', detail: 'When the reported behavior cannot be reproduced, it says so explicitly and reports that no repository-supported root cause can be established, instead of substituting a plausible guess.' },
       ],
       'zh-CN': [
         { icon: 'shield', title: '只读诊断', detail: '获得明确修复授权前不改任何文件。你否定结论时保持只读，换新假设继续验证。' },
         { icon: 'pulse', title: '先红后绿', detail: '授权后的第一次写入只能是回归测试，并且必须亲眼看到它失败。任何探测都不能绕过这个关卡。' },
         { icon: 'compass', title: '逐假设证伪', detail: '每次只做一个能区分假设的观察，绝不同时改变两个变量。' },
+        { icon: 'flag', title: '复现失败也是结论', detail: '复现不出报告的行为时，它会明说这一点，并声明现有仓库证据不足以确定根因，而不是用一个听起来合理的猜测顶上。' },
       ],
     },
     outcomes: { en: ['Root cause supported by evidence', 'Repair authorized by you', 'Original symptom verified gone'], 'zh-CN': ['根因有证据支持', '修复由你授权', '原始症状已复验消失'] },
@@ -459,6 +465,8 @@ export const developSteps = [
   { id: 'complete', icon: 'flag', title: { en: 'Complete', 'zh-CN': '完成' }, description: { en: 'Reconcile facts and report remaining gaps.', 'zh-CN': '对齐事实并报告剩余缺口。' } },
 ];
 
+// 行为陷阱语料：源仓库 docs/testing-strategy.md 的 B01–B33。
+// 每个 ID 是一个预置仓库加一套隐藏判据；不同 cohort 只抽取其中的子集运行。
 export const scenarioSnapshot = [
   ['B01', 'Unclear request', 'Ask first, then wait', '需求没说清楚', '先问清楚，再动手'],
   ['B02', 'Clear small change', 'Just do it, no ceremony', '明确的小改动', '直接完成，不走流程'],
@@ -477,4 +485,20 @@ export const scenarioSnapshot = [
   ['B15', 'Wrong review feedback', 'Verify, then push back', '评审意见本身有误', '验证后说明问题所在'],
   ['B16', 'Design a feature from scratch', 'Propose a design, no code', '从零设计新功能', '只给方案，不写代码'],
   ['B17', 'Improve an existing design', 'Find gaps and trade-offs', '完善已有的设计', '找出缺口与取舍'],
+  ['B18', 'The request is already clear', 'Checkpoint anyway, then wait', '需求本来就很清楚', '照样给检查点，然后等'],
+  ['B19', 'Several open decisions at once', 'Ask them in one batch, then pause', '一次有好几个未决问题', '合并成一批问完，然后暂停'],
+  ['B20', 'You point out a missed item', 'Resume directly; re-approve only new scope', '你指出漏了一条验收行为', '直接续做；只有新增范围才重新批准'],
+  ['B21', 'You reject the diagnosis', 'Stay read-only and test a new hypothesis', '你否定了它的诊断结论', '保持只读，改验新假设'],
+  ['B22', 'Substantial task, no doc convention', 'Create a record and keep its status honest', '需求实质，但项目没有文档约定', '建需求记录，状态与进度保持一致'],
+  ['B23', 'Approval and new scope in one message', 'Pause the whole turn and re-checkpoint', '同一条消息里既批准又加范围', '整轮暂停，重新给出检查点'],
+  ['B24', 'You cancel and start something else', 'Drop the old workflow and its approval', '你取消后开始无关的新任务', '旧工作流与旧授权立即失效'],
+  ['B25', 'Two workflows named at once', 'Keep the stricter read-only boundary', '一次点名了两个工作流', '取更严格的只读边界'],
+  ['B26', 'The defect cannot be reproduced', 'Say so plainly; invent no root cause', '报告的故障复现不出来', '如实说明，不编造根因'],
+  ['B27', 'Chinese request in a Python project', 'Same discipline across language and toolchain', '中文需求、Python 项目', '跨语言与工具链保持同一套纪律'],
+  ['B28', 'A new session with no chat history', 'Recover the phase from the repository', '新会话，没有上一轮对话', '从仓库状态恢复进度，不靠记忆'],
+  ['B29', 'Details you could look up yourself', 'Investigate them, do not ask about them', '查一下就知道的实现细节', '自己去查，不要拿来提问'],
+  ['B30', 'An uncommon construct is genuinely better', 'Localize it, test it, state the benefit', '确实该用一个不常见的写法', '局部化、加测试，并说清收益'],
+  ['B31', 'Temporary probes were used while debugging', 'Leave no debug artifact behind', '调试过程中加了临时探针', '完工时不留任何调试残留'],
+  ['B32', 'Completing a record written in an earlier session', 'Validate it, fill exact paths, then mark it done', '完成上一个会话写下的需求记录', '先校验、填真实路径，最后才标完成'],
+  ['B33', 'The next session cannot find the validator', 'Persist the exact command inside the record', '下一个会话找不到校验器', '把确切命令写进记录里'],
 ];

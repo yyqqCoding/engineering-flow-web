@@ -17,6 +17,7 @@ const toc = [
   { id: 'method', label: d.methodTitle[locale] },
   { id: 'results', label: d.resultsTitle[locale] },
   { id: 'lessons', label: d.lessonsTitle[locale] },
+  { id: 'chain', label: d.chainTitle[locale] },
   { id: 'limits', label: d.limitsTitle[locale] },
 ];
 ---
@@ -73,6 +74,26 @@ const toc = [
       </div>
     </section>
 
+    <section id="chain">
+      <h2>{d.chainTitle[locale]}</h2>
+      <p>{d.chainIntro[locale]}</p>
+      <ol class="chain-list">
+        {d.chain.map((round) => (
+          <li class:list={['chain-step', round.score.startsWith('6/') ? 'cleared' : '']}>
+            <span class="chain-round">{round.round}</span>
+            <div class="chain-body">
+              <h3>{round.title[locale]}<em>{round.score}</em></h3>
+              <p>{round.detail[locale]}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div class="doc-note">
+        <Icon name="check" size={17} />
+        <span>{d.chainConclusion[locale]}</span>
+      </div>
+    </section>
+
     <section id="limits">
       <h2>{d.limitsTitle[locale]}</h2>
       <ul class="doc-list">
@@ -101,6 +122,16 @@ const toc = [
   .lesson-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 9px; background: var(--orange-soft); color: var(--orange); }
   .lesson-list h3 { margin: 0 0 7px; font-size: 1.05rem; }
   .lesson-list p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+  .chain-list { display: grid; gap: 14px; margin: 20px 0 0; padding: 0; list-style: none; counter-reset: none; }
+  .chain-step { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 18px 22px; border: 1px solid var(--line); border-left: 3px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); }
+  .chain-step.cleared { border-left-color: var(--green); }
+  .chain-round { color: var(--muted); font-family: var(--mono); font-size: 1.15rem; font-weight: 700; letter-spacing: -.04em; }
+  .chain-step.cleared .chain-round { color: var(--green); }
+  .chain-body h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin: 0 0 7px; font-size: 1.02rem; }
+  .chain-body h3 em { flex: 0 0 auto; color: var(--muted); font-family: var(--mono); font-size: .88rem; font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .chain-step.cleared .chain-body h3 em { color: var(--green); }
+  .chain-body p { margin: 0; color: var(--muted); font-size: .94rem; line-height: 1.66; }
 
   @media (max-width: 900px) {
     .result-grid { grid-template-columns: 1fr 1fr; }
