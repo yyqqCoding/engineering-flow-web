@@ -1,7 +1,7 @@
 import type { Locale } from './site';
 
 // 验证结果页文案：全部摘自源仓库 docs/benchmark-log.md、docs/testing-strategy.md
-// 与 config/evidence-manifest.json（v1.0.2, commit f74d6f5）。
+// 与 config/evidence-manifest.json（v1.0.2, commit eeef0fc）。
 // 按仓库安全约定，这里不出现供应商、模型名、端点、本地路径或原始日志。
 //
 // 页面只呈现当前稳定版本的实测结果。唯一画成"对照"的是 17 场景那组——
@@ -35,8 +35,8 @@ export const evidencePage = {
       icon: 'document',
       title: { en: 'Prepared traps with hidden graders', 'zh-CN': '预置陷阱与隐藏判据' },
       detail: {
-        en: '36 configured scenarios semantically cover all 45 behavior rules. Nine are holdouts: their results are never used to tune a rule or a grader.',
-        'zh-CN': '36 个已配置场景在语义上覆盖全部 45 条行为规则。其中 9 个是留出集，它们的结果永远不用来调规则或调判据。',
+        en: '37 configured scenarios semantically cover all 46 behavior rules. Nine are holdouts: their results are never used to tune a rule or a grader.',
+        'zh-CN': '37 个已配置场景在语义上覆盖全部 46 条行为规则。其中 9 个是留出集，它们的结果永远不用来调规则或调判据。',
       },
     },
     {
@@ -86,13 +86,13 @@ export const evidencePage = {
     { icon: 'chat', value: '12/12', label: { en: 'Multi-turn task continuity', 'zh-CN': '多轮任务连续性' } },
     { icon: 'flag', value: '3/3', label: { en: 'Session handoff completeness', 'zh-CN': '会话交接完整性' } },
     { icon: 'terminal', value: '51/51', label: { en: 'Named workflow loaded correctly — zero false routes, misses, or collisions', 'zh-CN': '点名的工作流被正确加载——误触发、遗漏、冲突均为 0' } },
-    { icon: 'check', value: '77/77', label: { en: 'Deterministic project tests', 'zh-CN': '项目确定性测试' } },
+    { icon: 'check', value: '84/84', label: { en: 'Deterministic project tests', 'zh-CN': '项目确定性测试' } },
   ],
 
   casesTitle: { en: 'What it does in the hard cases', 'zh-CN': '难场景下它怎么做' },
   casesIntro: {
-    en: 'Five situations where an agent normally goes wrong, and what this release does instead.',
-    'zh-CN': '五个智能体通常会出错的场景，以及当前版本的实际做法。',
+    en: 'Six situations where an agent normally goes wrong, and what this release does instead.',
+    'zh-CN': '六个智能体通常会出错的场景，以及当前版本的实际做法。',
   },
   cases: [
     {
@@ -130,6 +130,13 @@ export const evidencePage = {
       behavior: { en: 'Recovered the phase from the repository, ran the bundled validator against the real changed paths and the project’s own verification command, then marked the record complete in a single atomic write — no leftover "tests to be added after approval".', 'zh-CN': '从仓库状态恢复进度，用随包分发的校验器核对真实改动路径和项目自身的验证命令，通过后由一次原子写入标记完成——不会留下"测试将在批准后补充"这种残句。' },
       score: '6/6',
     },
+    {
+      tone: 'blue',
+      icon: 'code',
+      situation: { en: 'A clear feature request that never mentions tests', 'zh-CN': '一个只字未提测试的清晰功能需求' },
+      behavior: { en: 'Finished the production code before writing any test, then left mutation-sensitive coverage for the balance boundary. Silence about tests was not read as a ban, an ad-hoc probe was not accepted as coverage, and a conversation-sized task got no unnecessary requirement record.', 'zh-CN': '先完成生产代码再写任何测试，然后为余额边界留下能捕捉变异的覆盖。没提测试不被当成禁止测试，临时探针不被当作覆盖的替代品，对话装得下的任务也没有多建一份需求记录。' },
+      score: '3/3',
+    },
   ],
 
   scenariosTitle: { en: 'The behavior corpus', 'zh-CN': '行为语料库' },
@@ -140,10 +147,6 @@ export const evidencePage = {
   scenarioColumns: {
     en: ['#', 'Scenario', 'Expected behavior'],
     'zh-CN': ['#', '场景', '期望行为'],
-  },
-  coverageNote: {
-    en: 'Semantic coverage and completed trials are reported separately on purpose: 36 configured scenarios map all 45 behavior rules, but that mapping is not evidence that 36 model runs passed.',
-    'zh-CN': '语义覆盖与实际完成的模型运行分开统计，这是有意为之：36 个已配置场景映射全部 45 条行为规则，但这个映射本身不构成"36 次运行通过"的证据。',
   },
 
   costTitle: { en: 'What the process costs', 'zh-CN': '流程的成本' },

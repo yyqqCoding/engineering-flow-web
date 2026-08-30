@@ -3,11 +3,11 @@ export type Locale = 'en' | 'zh-CN';
 export const githubUrl = 'https://github.com/yyqqCoding/engineering-flow-skills';
 
 export const snapshotMeta = {
-  version: 2,
+  version: 3,
   sourceRepository: 'yyqqCoding/engineering-flow-skills',
-  sourceCommit: 'f74d6f5',
+  sourceCommit: 'eeef0fc',
   sourceVersion: '1.0.2',
-  generatedAt: '2026-08-22',
+  generatedAt: '2026-08-30',
   demoOnly: true,
 } as const;
 
@@ -35,12 +35,11 @@ const en = {
     demoApproval: 'APPROVAL',
     required: 'REQUIRED',
     lifecycle: 'Develop lifecycle',
-    humanGate: 'Approval is a gated human step',
     stats: [
       ['5', 'Workflows'],
       ['51/51', 'Behavior'],
       ['12/12', 'Continuity'],
-      ['77/77', 'Static tests'],
+      ['84/84', 'Static tests'],
     ],
   },
   workflowsPage: {
@@ -93,7 +92,7 @@ const en = {
       ['Agent behavior', '51/51', 'Without any workflows: 45/51'],
       ['Multi-turn continuity', '12/12', '4 task-level scenarios × 3 runs'],
       ['Explicit routing', '51/51', '0 false routes · 0 missed · 0 collisions'],
-      ['Static tests', '77/77', 'All deterministic checks green'],
+      ['Static tests', '84/84', 'All deterministic checks green'],
     ],
     sourceLabels: { repository: 'Repository', release: 'Release', commit: 'Commit', runtimeApi: 'Runtime API' },
   },
@@ -101,7 +100,6 @@ const en = {
     title: 'Playground',
     lede: 'A fixed replay of each workflow. Step through it or let it play, and observe what happens at every stage — where it pauses, what it requires from you, and what evidence it leaves behind.',
     simulation: 'FIXED SIMULATION',
-    notice: 'A curated, sanitized snapshot — no agent is running and no repository is modified.',
     chooseDemo: 'Choose a workflow to replay',
     currentState: 'CURRENT STATE',
     stepLabel: 'STEP',
@@ -110,7 +108,6 @@ const en = {
     snapshotLabel: 'SNAPSHOT',
     demoTag: 'DEMO',
     fixedRequest: 'FIXED REQUEST',
-    start: 'Start the fixed workflow snapshot.',
     steps: 'Workflow steps',
     trace: 'Workflow trace',
     evidence: 'Evidence snapshot',
@@ -119,9 +116,6 @@ const en = {
     reset: 'Reset demo',
     play: 'Play',
     pause: 'Pause',
-    gateHint: 'This is the point the workflow exists for. No file has been modified up to here.',
-    waiting: 'Waiting for explicit approval before implementation.',
-    completed: 'Simulation complete. The accepted behavior has verification evidence.',
     statuses: { complete: 'COMPLETE', running: 'RUNNING', pending: 'PENDING', gated: 'GATED' },
   },
 };
@@ -153,12 +147,11 @@ export const copy: Record<Locale, Copy> = {
       demoApproval: '批准',
       required: '需要',
       lifecycle: 'Develop 生命周期',
-      humanGate: '批准是必须经过的人工关卡',
       stats: [
         ['5', '工作流'],
         ['51/51', '工程行为'],
         ['12/12', '多轮连续性'],
-        ['77/77', '静态测试'],
+        ['84/84', '静态测试'],
       ],
     },
     workflowsPage: {
@@ -211,7 +204,7 @@ export const copy: Record<Locale, Copy> = {
         ['智能体行为', '51/51', '完全不装工作流：45/51'],
         ['多轮任务连续性', '12/12', '4 个任务级场景 × 3 次'],
         ['显式调用路由', '51/51', '错误路由 0 · 遗漏 0 · 冲突 0'],
-        ['静态测试', '77/77', '全部确定性检查通过'],
+        ['静态测试', '84/84', '全部确定性检查通过'],
       ],
       sourceLabels: { repository: '仓库', release: '发布版本', commit: '提交', runtimeApi: '运行时 API' },
     },
@@ -219,7 +212,6 @@ export const copy: Record<Locale, Copy> = {
       title: '流程演示',
       lede: '五个工作流的固定回放。可以逐步推进，也可以自动播放，观察每个阶段发生了什么：它在哪里停下、向你要什么、留下了哪些证据。',
       simulation: '固定模拟',
-      notice: '这是经过整理和脱敏的静态快照——没有运行智能体，也不会修改仓库。',
       chooseDemo: '选择要演示的工作流',
       currentState: '当前状态',
       stepLabel: '步骤',
@@ -228,7 +220,6 @@ export const copy: Record<Locale, Copy> = {
       snapshotLabel: '快照',
       demoTag: '演示',
       fixedRequest: '固定请求',
-      start: '开始运行固定流程快照。',
       steps: '工作流步骤',
       trace: '流程轨迹',
       evidence: '证据快照',
@@ -237,9 +228,6 @@ export const copy: Record<Locale, Copy> = {
       reset: '重置演示',
       play: '播放',
       pause: '暂停',
-      gateHint: '这是整个工作流存在的理由。到此为止，没有任何文件被修改。',
-      waiting: '正在等待明确批准，尚未开始实施。',
-      completed: '模拟已完成，全部验收行为都有验证证据。',
       statuses: { complete: '完成', running: '运行中', pending: '待处理', gated: '关卡' },
     },
   },
@@ -247,7 +235,7 @@ export const copy: Record<Locale, Copy> = {
 
 export type WorkflowSlug = 'develop' | 'diagnose' | 'code-design' | 'review' | 'handoff';
 
-// 每个工作流的真实阶段与机制，摘自 skills/<slug>/SKILL.md（来源 v1.0.2, commit f74d6f5）
+// 每个工作流的真实阶段与机制，摘自 skills/<slug>/SKILL.md（来源 v1.0.2, commit eeef0fc）
 export const workflows: Array<{
   slug: WorkflowSlug;
   tone: string;
@@ -262,7 +250,7 @@ export const workflows: Array<{
   {
     slug: 'develop', tone: 'green', mode: { en: 'GATED · STATEFUL', 'zh-CN': '含批准关卡' },
     title: { en: 'Develop', 'zh-CN': '开发' },
-    summary: { en: 'Align, approve, implement, and verify one change.', 'zh-CN': '对齐、批准、实施并验证一项变更。' },
+    summary: { en: 'Align and approve one change, then complete production code before selecting its evidence.', 'zh-CN': '对齐并批准一项变更，先完成生产代码，再选择必要验证。' },
     idea: {
       en: 'Understand the task well enough to implement safely before writing any code. Approval is a separate, explicit human act — never implied.',
       'zh-CN': '先把需求理解到足以安全实施，再动手写代码。批准是一个独立、明确的人工动作，绝不默认。',
@@ -273,8 +261,8 @@ export const workflows: Array<{
         { name: 'Clarify', detail: 'Ask only about undecided behavior that changes the result. Independent questions are batched and asked together.' },
         { name: 'Checkpoint', detail: 'Present the goal, acceptance behavior, out of scope, assumptions, and solution boundary — then stop.' },
         { name: 'Approval', detail: 'Only explicit action language sent after the checkpoint ("implement this") authorizes coding. Answers and acknowledgements do not.', gate: true },
-        { name: 'Implement', detail: 'Make the smallest clear change inside the module that owns the rule.' },
-        { name: 'Harden', detail: 'Add targeted coverage only for real risks — no ceremonial tests.' },
+        { name: 'Implement', detail: 'Complete the smallest clear production change inside the module that owns the rule — before any test file is touched.' },
+        { name: 'Select tests', detail: 'Add coverage only where it protects critical behavior or an established risk boundary. A reproducible regression still goes red first.' },
         { name: 'Complete', detail: 'Reconcile every accepted behavior against fresh verification, and make the docs match the facts.' },
       ],
       'zh-CN': [
@@ -282,8 +270,8 @@ export const workflows: Array<{
         { name: '澄清', detail: '只问会影响结果的未决行为。相互独立的问题合并成一批，一次问完。' },
         { name: '检查点', detail: '给出目标、验收行为、范围外、假设和方案边界，然后暂停等待。' },
         { name: '批准', detail: '只有检查点之后发出的明确指令（如"开始实施"）才授权编码；回答问题、表示已读都不算。', gate: true },
-        { name: '实施', detail: '在拥有该规则的模块边界内，做最小且清晰的改动。' },
-        { name: '加固', detail: '只为真实存在的风险补充针对性测试，不做仪式感覆盖。' },
+        { name: '实施', detail: '在拥有该规则的模块边界内完成最小且清晰的生产改动——此之前不动任何测试文件。' },
+        { name: '选择测试', detail: '只在能保护关键行为或既定风险边界时补充覆盖；可稳定复现的回归仍然先红后绿。' },
         { name: '完成', detail: '逐条核对验收行为与新鲜验证结果，让文档反映事实。' },
       ],
     },
@@ -293,6 +281,7 @@ export const workflows: Array<{
         { icon: 'chat', title: 'Batched clarification', detail: 'Independent questions are asked in one batch; only questions raised by those answers get follow-ups. No drip-feed interviewing.' },
         { icon: 'refresh', title: 'Task-level continuity', detail: 'Corrections, omissions, and same-task follow-ups continue inside the same flow — no need to invoke the workflow again.' },
         { icon: 'shield', title: 'Approval plus new scope pauses everything', detail: 'When one message both approves the checkpoint and adds material scope, the whole turn becomes alignment-only. Neither the old scope nor the new one is implemented until the revised checkpoint is approved.' },
+        { icon: 'code', title: 'Production before tests', detail: 'For new behavior the implementation completes before the first test-file write, and only coverage that can catch a real break is kept. Silence about tests is neutral — never read as a ban. A reproducible regression is the one exception: it still goes red first.' },
         { icon: 'document', title: 'Verified completion record', detail: 'A substantial task leaves a requirement record whose completion section starts empty. A bundled read-only validator checks the real changed paths and the canonical verification command before a single atomic write marks it implemented.' },
       ],
       'zh-CN': [
@@ -300,6 +289,7 @@ export const workflows: Array<{
         { icon: 'chat', title: '批量澄清', detail: '相互独立的问题合并成一批一次问完；只有答案引出的依赖问题才追问，不逐条挤牙膏。' },
         { icon: 'refresh', title: '任务级连续', detail: '纠正、补漏、同任务追问都在当前流程内直接继续，不需要重新调用工作流。' },
         { icon: 'shield', title: '批准与加范围同时到达则整轮暂停', detail: '一条消息里既批准检查点又实质扩大范围时，这一整轮只做对齐：旧范围和新增量都不动手，直到修订后的检查点再次获批。' },
+        { icon: 'code', title: '生产代码先行', detail: '新行为先完成生产实现，再写第一个测试文件，只保留能真正捕捉故障的覆盖。用户没提测试不等于禁止测试；可稳定复现的回归是唯一例外，仍然先红后绿。' },
         { icon: 'document', title: '可核验的完成记录', detail: '实质任务会留下需求记录，完成区先留空。随插件分发的只读校验器会核对真实改动路径和项目的规范验证命令，通过后才由一次原子写入标记为完成。' },
       ],
     },
@@ -315,18 +305,16 @@ export const workflows: Array<{
     },
     process: {
       en: [
-        { name: 'Pin the symptom', detail: 'State the expected versus actual behavior, then build the fastest, most deterministic reproduction signal.' },
-        { name: 'Minimize & locate', detail: 'Observe the failure with your own eyes first, then strip it down — test one falsifiable hypothesis at a time.' },
+        { name: 'Establish the symptom', detail: 'State the expected versus actual behavior, then build the fastest reliable signal for the exact symptom.' },
+        { name: 'Locate the root cause', detail: 'Trace to the module that owns the violated invariant, and test one falsifiable hypothesis at a time.' },
         { name: 'Repair when authorized', detail: 'After authorization, the first write must be a regression test. Watch it fail (red) before any production code may change (green).', gate: true },
-        { name: 'Harden the root cause', detail: 'Add only the adjacent cases that prevent the same class of regression — never grow a fix into a redesign.' },
-        { name: 'Complete', detail: 'Re-verify the original symptom and report the root cause, evidence, fix, and remaining uncertainty.' },
+        { name: 'Harden and complete', detail: 'Add only the adjacent cases that prevent the same class of regression, re-verify the original symptom, and report what remains uncertain.' },
       ],
       'zh-CN': [
-        { name: '锁定症状', detail: '写清预期行为与实际行为，搭一个最快、最稳定的复现信号。' },
-        { name: '最小化定位', detail: '先亲眼看到失败，再逐层剥离现场，一次只验证一个可证伪的假设。' },
+        { name: '锁定症状', detail: '写清预期行为与实际行为，搭一个最快、最可靠的复现信号。' },
+        { name: '定位根因', detail: '追踪到拥有被破坏不变式的模块，一次只验证一个可证伪的假设。' },
         { name: '授权修复', detail: '获得授权后，第一次写入只能是回归测试；亲眼看到它失败（红），才允许改生产代码（绿）。', gate: true },
-        { name: '围绕根因加固', detail: '只补能防住同类回归的相邻用例，绝不把修复扩大成重构。' },
-        { name: '完成', detail: '复验原始症状，报告根因、证据、修复内容和遗留风险。' },
+        { name: '加固并完成', detail: '只补能防住同类回归的相邻用例，复验原始症状，并报告遗留风险。' },
       ],
     },
     mechanisms: {
@@ -355,20 +343,16 @@ export const workflows: Array<{
     },
     process: {
       en: [
-        { name: 'Select the mode', detail: 'Design from scratch, or refine an existing proposal — the two modes ask different questions.' },
-        { name: 'Establish context', detail: 'Pin down the problem, goals, constraints, and acceptance behavior; read what the repository already offers.' },
-        { name: 'Explore the pressure', detail: 'Name the real problem first: hidden effects, semantic duplication, a true variation axis… No observed pressure means no new abstraction.' },
-        { name: 'Compare options', detail: 'Only compare options with materially different trade-offs, and recommend the lowest complexity that satisfies the need.' },
-        { name: 'Maintainability check', detail: 'Novel constructs must show concrete benefit; code is shared only when it is the same domain rule.' },
-        { name: 'Produce the proposal', detail: 'Deliver boundaries, contracts, trade-offs, and an implementation sequence. No production code is written.' },
+        { name: 'Choose the mode', detail: 'Greenfield turns an unsettled goal into the smallest coherent solution; refinement corrects, completes, or simplifies an existing proposal.' },
+        { name: 'Establish context', detail: 'Pin down the desired outcome, constraints, and out of scope; separate accepted requirements, repository facts, reversible choices, and open decisions.' },
+        { name: 'Design from demonstrated pressure', detail: 'Name the real pressure first — hidden effects, semantic duplication, a true variation axis. No observed pressure means no new abstraction.' },
+        { name: 'Produce the proposal', detail: 'Compare only materially different options, recommend the lowest necessary complexity, and deliver boundaries, contracts, and a sequence — never code.' },
       ],
       'zh-CN': [
-        { name: '选择模式', detail: '从零设计新方案，还是完善已有设计——两种模式问的问题不同。' },
-        { name: '建立上下文', detail: '明确问题、目标、约束和验收行为，读取仓库已有的能力。' },
-        { name: '探索设计压力', detail: '先命名真实问题：隐藏副作用、语义重复、真实变化轴……没有压力就不新增抽象。' },
-        { name: '比较方案', detail: '只比较取舍实质不同的方案，推荐满足需求的最低复杂度。' },
-        { name: '可维护性检验', detail: '新奇写法必须拿出具体收益；只有同一领域规则才允许复用。' },
-        { name: '产出方案', detail: '给出边界、契约、取舍和实施顺序；不写生产代码。' },
+        { name: '选择模式', detail: '全新设计把未定目标变成最小连贯方案；完善模式纠错、补全或简化已有提案。' },
+        { name: '建立上下文', detail: '明确期望结果、约束和范围外；分清已接受需求、仓库事实、可逆选择和未决决定。' },
+        { name: '从设计压力出发', detail: '先命名真实压力——隐藏副作用、语义重复、真实变化轴。没有观察到压力，就不引入新抽象。' },
+        { name: '产出方案', detail: '只比较取舍实质不同的方案，推荐必要的最低复杂度，交付边界、契约和实施顺序——不写代码。' },
       ],
     },
     mechanisms: {
@@ -460,12 +444,12 @@ export const developSteps = [
   { id: 'clarify', icon: 'chat', title: { en: 'Clarify', 'zh-CN': '澄清' }, description: { en: 'Resolve only decisions that change behavior.', 'zh-CN': '只解决会改变行为的决定。' } },
   { id: 'checkpoint', icon: 'document', title: { en: 'Checkpoint', 'zh-CN': '检查点' }, description: { en: 'Record the final implementation boundary.', 'zh-CN': '记录最终实施边界。' } },
   { id: 'approval', icon: 'lock', title: { en: 'Approval', 'zh-CN': '批准' }, description: { en: 'Require clear action language from the user.', 'zh-CN': '要求用户给出明确行动指令。' } },
-  { id: 'implement', icon: 'code', title: { en: 'Implement', 'zh-CN': '实施' }, description: { en: 'Make the smallest clear change.', 'zh-CN': '完成最小且清晰的变更。' } },
-  { id: 'verify', icon: 'shield', title: { en: 'Verify', 'zh-CN': '验证' }, description: { en: 'Run fresh, scope-appropriate evidence.', 'zh-CN': '运行新鲜且范围匹配的验证。' } },
+  { id: 'implement', icon: 'code', title: { en: 'Implement', 'zh-CN': '实施' }, description: { en: 'Complete the production change before any test file changes.', 'zh-CN': '先完成生产改动，再动测试文件。' } },
+  { id: 'verify', icon: 'shield', title: { en: 'Verify', 'zh-CN': '验证' }, description: { en: 'Select only the coverage that protects critical behavior.', 'zh-CN': '只选择能保护关键行为的覆盖。' } },
   { id: 'complete', icon: 'flag', title: { en: 'Complete', 'zh-CN': '完成' }, description: { en: 'Reconcile facts and report remaining gaps.', 'zh-CN': '对齐事实并报告剩余缺口。' } },
 ];
 
-// 行为陷阱语料：源仓库 docs/testing-strategy.md 的 B01–B33。
+// 行为陷阱语料：源仓库 docs/testing-strategy.md 的 B01–B34。
 // 每个 ID 是一个预置仓库加一套隐藏判据；不同 cohort 只抽取其中的子集运行。
 export const scenarioSnapshot = [
   ['B01', 'Unclear request', 'Ask first, then wait', '需求没说清楚', '先问清楚，再动手'],
@@ -501,4 +485,5 @@ export const scenarioSnapshot = [
   ['B31', 'Temporary probes were used while debugging', 'Leave no debug artifact behind', '调试过程中加了临时探针', '完工时不留任何调试残留'],
   ['B32', 'Completing a record written in an earlier session', 'Validate it, fill exact paths, then mark it done', '完成上一个会话写下的需求记录', '先校验、填真实路径，最后才标完成'],
   ['B33', 'The next session cannot find the validator', 'Persist the exact command inside the record', '下一个会话找不到校验器', '把确切命令写进记录里'],
+  ['B34', 'A clear feature that never mentions tests', 'Production code first, then sensitive coverage', '需求清晰但只字未提测试', '先完成生产代码，再补敏感覆盖'],
 ];

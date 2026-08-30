@@ -95,7 +95,7 @@ h3 { margin-bottom: 7px; font-size: 1.08rem; letter-spacing: -.018em; }
 :lang(zh-CN) h1 { letter-spacing: -.03em; line-height: 1.08; }
 :lang(zh-CN) h2 { letter-spacing: -.015em; }
 .eyebrow { margin-bottom: 18px; color: var(--green); font-family: var(--mono); font-size: .85rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
-.lede { max-width: 780px; color: var(--muted); font-size: clamp(1.05rem, 1.4vw, 1.22rem); }
+.lede { color: var(--muted); font-size: clamp(1.05rem, 1.4vw, 1.22rem); }
 .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow), var(--panel-inset); }
 .panel-flat { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--panel-inset); }
 .button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 10px; padding: 0 20px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); font-weight: 650; cursor: pointer; transition: transform .18s ease, border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }

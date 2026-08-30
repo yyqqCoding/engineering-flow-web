@@ -2,7 +2,7 @@ import { workflows, type Locale, type WorkflowSlug } from './site';
 
 // 文档内容与站点营销文案分开维护：这里只放"参考手册"口径的深度内容，
 // 全部摘自源仓库 skills/<slug>/SKILL.md、docs/user-guide*.md、docs/product-design.md、
-// docs/behavior-spec.md 与 docs/benchmark-log.md（v1.0.2, commit f74d6f5）
+// docs/behavior-spec.md 与 docs/benchmark-log.md（v1.0.2, commit eeef0fc）
 type L<T> = Record<Locale, T>;
 
 export const docsUi = {
@@ -258,8 +258,8 @@ export const quickstartPage = {
     'zh-CN': '把工作流 token 和需求一起发送，建议放在第一行。之后这个工作流会接管整个任务，而不只是那一条消息。',
   },
   step2Code: {
-    en: '$engineering-flow:develop\nImplement order batch export. Reuse existing permission and query capabilities, add focused tests, and reconcile the authoritative documentation. Do not commit.',
-    'zh-CN': '$engineering-flow:develop\n实现订单批量导出。复用现有权限和查询能力，添加聚焦测试并同步权威文档。不要提交。',
+    en: '$engineering-flow:develop\nImplement order batch export. Reuse existing permission and query capabilities, protect critical behavior with necessary evidence, and reconcile the authoritative documentation. Do not commit.',
+    'zh-CN': '$engineering-flow:develop\n实现订单批量导出。复用现有权限和查询能力，用必要证据保护关键行为，并同步权威文档。不要提交。',
   },
   formatTitle: { en: 'Invocation format', 'zh-CN': '调用格式' },
   formatColumns: { en: ['Host', 'Format'], 'zh-CN': ['环境', '格式'] },
@@ -518,13 +518,51 @@ export const experimentsPage = {
     en: 'Four consecutive failures produced one small mechanism. That ratio is the point: a rule is added only after a failure is demonstrated, and it is kept only after an unseen scenario confirms it.',
     'zh-CN': '连续四次失败，换来一个很小的机制。这个比例正是重点：先有被证实的失败，才允许加规则；再由一个未曾见过的场景确认，才允许留下它。',
   },
+  policyTitle: { en: 'A newer chain: teaching production-before-tests', 'zh-CN': '一个较新的案例：教会"生产代码先行"' },
+  policyIntro: {
+    en: 'The testing rule for new behavior was inverted: complete the production implementation first, then select only the coverage that protects critical behavior. Two reviewed failures shaped the final wording.',
+    'zh-CN': '新行为的测试规则被反转：先完成生产实现，再只选择能保护关键行为的覆盖。最终措辞由两个经过人工评审的失败样本塑造。',
+  },
+  policy: [
+    {
+      round: '01',
+      title: { en: 'A test ban invented from silence', 'zh-CN': '从沉默里脑补出测试禁令' },
+      score: 'fail',
+      detail: {
+        en: 'The task never mentioned tests, yet the checkpoint forbade test edits — generalizing unrelated "no dependencies, no commit" constraints — and the run kept only an ephemeral probe. The rule now states that silence about tests is neutral.',
+        'zh-CN': '任务只字未提测试，检查点却禁止改测试——把"不加依赖、不提交"这类无关约束推广到了测试上——而且整场只留下一个临时探针。规则现在明确写明：对测试保持沉默是中性的。',
+      },
+    },
+    {
+      round: '02',
+      title: { en: 'A probe mistaken for coverage', 'zh-CN': '把探针当成了覆盖' },
+      score: 'fail',
+      detail: {
+        en: 'With the invented ban gone, the next sample still treated an ad-hoc probe as a substitute for automated coverage of a money-integrity boundary. A probe may supplement selected coverage; it can never replace it.',
+        'zh-CN': '脑补的禁令消失后，下一个样本仍然拿临时探针顶替资金完整性边界的自动化覆盖。探针可以补充已选中的覆盖，但永远不能替代它。',
+      },
+    },
+    {
+      round: '03',
+      title: { en: 'Two narrow corrections, nothing more', 'zh-CN': '只做两处窄修正' },
+      score: 'pass',
+      detail: {
+        en: 'Only those two sentences changed. The next sample wrote the production file before the test file and left mutation-sensitive boundary coverage; a configuration-only negative control still added no ceremonial tests. The final release cohort passed every run of both testing-policy scenarios.',
+        'zh-CN': '只改了这两句话。下一个样本先写生产文件、再写测试文件，并留下对边界变异敏感的覆盖；只改配置的阴性对照依然没有产生仪式性测试。最终发布 cohort 在两个测试策略场景的全部运行均通过。',
+      },
+    },
+  ],
+  policyConclusion: {
+    en: 'Both failures were real reviewed behavior, kept in the log rather than tuned away. The rule changed only where a failure demanded it.',
+    'zh-CN': '两个失败都是经过评审的真实行为，保留在日志里而不是调参抹掉。规则只在失败要求的地方做了改动。',
+  },
   limitsTitle: { en: 'Verification status and limits', 'zh-CN': '验证状态与限制' },
   limits: [
-    { en: 'Static and deterministic tests: 77/77 passing.', 'zh-CN': '静态与确定性测试：77/77 通过。' },
-    { en: 'Corpus: 36 configured scenarios semantically cover all 45 behavior rules, and 9 of them are holdouts whose results are never used to tune a rule or a grader. Semantic coverage is not a count of completed model runs.', 'zh-CN': '语料库：36 个已配置场景在语义上覆盖全部 45 条行为规则，其中 9 个是留出集，其结果永不用于调整规则或判据。语义覆盖不等于已完成的模型运行次数。' },
+    { en: 'Static and deterministic tests: 84/84 passing.', 'zh-CN': '静态与确定性测试：84/84 通过。' },
+    { en: 'Corpus: 37 configured scenarios semantically cover all 46 behavior rules, and 9 of them are holdouts whose results are never used to tune a rule or a grader. Semantic coverage is not a count of completed model runs.', 'zh-CN': '语料库：37 个已配置场景在语义上覆盖全部 46 条行为规则，其中 9 个是留出集，其结果永不用于调整规则或判据。语义覆盖不等于已完成的模型运行次数。' },
     { en: 'Against no workflows at all: 17 scenarios, control 45/51 versus 51/51 with workflows; explicit invocation 51/51, with zero false triggers, misses, collisions, contamination, or unauthorized commits.', 'zh-CN': '与"完全不装"对比：17 个场景，对照组 45/51，安装工作流 51/51；显式调用 51/51，误触发、漏触发、碰撞、污染和未授权提交均为 0。' },
-    { en: 'Task-level behavior is sampled separately: multi-turn continuity 12/12, session handoff completeness 3/3, and a ten-scenario release cohort of 60 pinned reports with invocation 30/30 in each arm and no contaminated, incomplete, or unauthorized-commit runs.', 'zh-CN': '任务级行为单独采样：多轮连续性 12/12、会话交接完整性 3/3，以及一个十场景发布 cohort 共 60 份锁定报告，两组调用均为 30/30，无污染、不完整或未授权提交的运行。' },
-    { en: 'Claude Code 2.1.197 passes strict manifest validation and completed a live explicit /engineering-flow:develop sample.', 'zh-CN': 'Claude Code 2.1.197 通过 strict manifest 校验，并完成显式 /engineering-flow:develop 实机样本。' },
+    { en: 'Task-level behavior is sampled separately: multi-turn continuity 12/12, session handoff completeness 3/3, and a final release cohort pinned to the two testing-policy scenarios — 12 reports, 6/6 for the current release, with invocation, fixture-verification, contamination, and unauthorized-commit checks green in every selected run. The earlier ten-scenario cohort stays pinned to a superseded fingerprint as historical evidence.', 'zh-CN': '任务级行为单独采样：多轮连续性 12/12、会话交接完整性 3/3；最终发布 cohort 锁定两个测试策略场景共 12 份报告，当前版本 6/6 通过，所有入选运行的调用、fixture 验证、污染与未授权提交检查全部通过。更早的十场景 cohort 停留在被取代的指纹上，作为历史证据保留。' },
+    { en: 'Claude Code 2.1.223 passes strict manifest validation; its live explicit /engineering-flow:develop sample wrote production code before the focused boundary tests.', 'zh-CN': 'Claude Code 2.1.223 通过 strict manifest 校验；其显式 /engineering-flow:develop 实机样本先写生产代码，再补聚焦边界测试。' },
     { en: 'Claude Core-only ambiguous samples have not yet reached Codex-equivalent behavior, so name a full workflow for material data or permission decisions.', 'zh-CN': 'Claude 的 Core-only 歧义样本尚未达到 Codex 同等行为，涉及数据、权限等重大决定时应显式调用完整工作流。' },
     { en: 'Full workflows add context, tool calls, and duration, which is exactly why they are not loaded into every request.', 'zh-CN': '完整工作流会增加上下文、工具调用和耗时，这正是它们不会被加载到每个请求里的原因。' },
   ],
@@ -636,21 +674,21 @@ export const workflowGuides: Record<WorkflowSlug, {
     stages: {
       en: [
         {
-          name: 'Discover once',
+          name: 'Discover and align once',
           summary: 'Read everything worth reading — and read it only once.',
           rules: [
             'Read applicable project instructions and authoritative requirement or design documents.',
-            'Inspect version-control state and preserve unrelated uncommitted work.',
-            'Read the relevant implementation, tests, callers, and nearby existing patterns.',
-            'If the existing behavior is itself broken, switch to the Diagnose lifecycle.',
-            'Evidence is gathered once and reused; unchanged discovery is never repeated for narration.',
+            'Inspect version-control state, the relevant implementation, tests, callers, and nearby patterns — preserving unrelated work and reusing the evidence instead of repeating discovery.',
+            'Locate the owning boundary and existing same-domain behavior. Repository mechanics — field names, associations, helper choice, test layout — are investigation work, never user choices.',
+            'Apply design-pressure and trade-off reasoning only to material interfaces, state, dependencies, module boundaries, or competing approaches.',
+            'If the existing behavior is itself broken, switch to the Diagnose lifecycle, including its regression-first exception.',
           ],
         },
         {
           name: 'Clarify to a safe threshold',
           summary: 'Ask only what changes the result, and ask it all at once.',
           rules: [
-            'A question is allowed only when all three hold: the answer changes accepted behavior, the request leaves it unresolved or authoritative evidence contradicts it, and no contract or precedent already resolves it.',
+            'A question is allowed only when the answer materially changes accepted behavior, interfaces, data, permissions, security, compatibility, or acceptance — and neither the request nor authoritative same-domain evidence resolves it.',
             'Implementation facts discoverable in the repository — field names, associations, helper choice, storage shape — are investigation work, not user choices.',
             'Inventory every behavior marked undefined, unknown, intentional, or not established before asking. Undefined never means out of scope on its own.',
             'For delete and write operations, an undefined unknown or missing-resource result is a hard-stop question. It cannot be inferred from a success return value, absent precedent, or a neighboring read API.',
@@ -659,15 +697,16 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: 'Present the checkpoint',
+          name: 'Record the checkpoint and pause',
           summary: 'Put the final understanding on the table, then stop.',
           rules: [
             'Present the goal, acceptance behavior, out of scope, assumptions, and material solution boundary.',
-            'A short checkpoint stays in the conversation. A substantial one uses the project’s authoritative document, or `docs/requirements/<feature-slug>.md` with status `Draft` when no convention exists.',
+            'A local task whose checkpoint fits in the conversation gets no fallback record. Substantial work that needs repository-backed recovery uses the project’s authoritative document, or `docs/requirements/<feature-slug>.md` with status `Draft` when no convention exists.',
             'When the first request already supplies a complete contract, create and verify that Draft in the same turn — hypothetical optional inputs cannot delay it.',
             'A fallback record is written in timeless constraints, never as work deferred until approval, and its completion section starts with implementation files, test files, and verification all pending.',
             'The record also carries the exact command a later session needs to validate and finalize it, so a fresh context never has to rediscover this conversation.',
-            'Run the bundled read-only validator in draft mode before presenting the checkpoint; it reports every failed condition at once.',
+            'Before creating, resuming, or completing a fallback record, follow the bundled requirement-record reference and run its read-only validator in draft mode.',
+            'Absence of a test request is not a prohibition: a “no test edits” constraint is never invented, and restrictions on dependencies, documentation, or commits do not extend to tests.',
             'Do not change production code, tests, or configuration before approval. Writing the requirement record is allowed.',
             'End the turn after the checkpoint. The Develop invocation itself is not approval to code.',
           ],
@@ -684,26 +723,27 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: 'Choose boundary and feedback',
-          summary: 'Decide where the change belongs and what evidence will prove it.',
+          name: 'Complete the production implementation',
+          summary: 'The smallest clear change at the owning boundary — finished before any test file changes.',
           rules: [
-            'Reuse existing behavior only when it has the same domain responsibility and should evolve together.',
-            'Place rules with the module that owns the relevant data and invariant; inspect sibling callers before changing shared behavior.',
-            'Choose the highest stable public seam that can prove each behavior slice.',
-            'Use red-green-refactor for regressions and valuable business behavior; use compile, lint, or integration checks for mechanical, presentation, configuration, and framework-wiring work.',
-            'When new stable behavior closes a coverage gap, leave focused automated coverage — unless it would be ceremonial or could not detect the behavior.',
+            'Make the smallest clear change at the module that owns the relevant data and invariant; inspect sibling callers before changing shared behavior.',
+            'Reuse only identical domain behavior that should evolve together, and keep control flow, effects, failures, and state transitions explicit.',
+            'Avoid speculative abstractions, dependencies, configuration, and unrelated cleanup.',
+            'Preserve validation, permissions, security, data integrity, compatibility, accessibility, and unrelated work.',
+            'Existing tests may be read or run for context and regression detection, but no test file is added or edited until the approved production behavior is implemented. This phase boundary adds no checkpoint and requires no commit.',
+            'If implementation reveals a material requirement change, align only that increment, update the checkpoint, and pause for approval again.',
           ],
         },
         {
-          name: 'Implement and harden',
-          summary: 'Smallest clear change at the owning boundary, then targeted hardening only.',
+          name: 'Select necessary tests and verification',
+          summary: 'Coverage is chosen by risk after implementation — never by ceremony.',
           rules: [
-            'Make the smallest clear change at the owning boundary and keep control flow, effects, failures, and state transitions explicit.',
-            'Avoid speculative abstractions, dependencies, configuration, and unrelated cleanup.',
-            'Preserve validation, permissions, security, data integrity, compatibility, accessibility, and unrelated work.',
-            'Run focused feedback after a behavior-changing slice only when its result could have changed — never rerun the same command against the same state.',
-            'Add targeted coverage only for real risk: input, numeric/time, collection, state/lifecycle, duplicate/concurrent, permission/trust, resource/external-failure, migration, or compatibility.',
-            'If implementation reveals a material requirement change, align only that increment, update the checkpoint, and pause for approval again.',
+            'Add automated coverage only when it protects critical accepted behavior, a domain invariant, or an established risk boundary, and can fail through a stable public seam when that behavior breaks.',
+            'Permissions and trust, money or data integrity, destructive effects, lifecycle transitions, duplicate or concurrent operations, migration, compatibility, and external failures are strong reasons for targeted tests.',
+            'Add only applicable adjacent boundary cases whose expected behavior is established by requirements or repository precedent — never invented product behavior.',
+            'Mechanical, presentation, documentation, configuration, or framework-wiring changes use the smallest meaningful build, type, lint, integration, smoke, or visual check instead of ceremonial unit tests.',
+            'An ad-hoc probe may supplement selected coverage but never replaces it; an explicit no-test request switches to the strongest non-test evidence and a reported coverage gap.',
+            'When the accepted request explicitly requires automated coverage, it lands in the project’s established test convention — a passing probe alone does not satisfy it.',
           ],
         },
         {
@@ -712,7 +752,7 @@ export const workflowGuides: Record<WorkflowSlug, {
           rules: [
             'Re-read the accepted behavior and inspect the diff for correctness, safety, ownership, readability, test sensitivity, scope, and temporary artifacts.',
             'Reconcile every accepted behavior as verified, partially verified, incomplete, or deviated.',
-            '`Implemented` is the final write. While the record is still `Accepted`, inspect the actual diff and fresh verification output, then replace every pending field with exact implementation paths, test paths, command results, and confirmed deviations.',
+            '`Implemented` is the final write. While the record is still `Accepted`, inspect the actual diff and fresh verification output, then replace every pending field with exact implementation paths, exact test paths — or `None` when no test file changed — command results, and confirmed deviations.',
             'Record the project’s canonical verification command exactly as executed, arguments included, together with its passing result. A different passing command is not equivalent evidence.',
             'Run the persisted finalization command from the target repository. It validates the complete record first, then atomically writes the completed status and stable evidence — and writes nothing at all when validation fails.',
             'Remove stale prospective wording across the whole record — “will”, “after approval”, “planned”, “to be added”. A status-only edit is not sufficient.',
@@ -724,21 +764,21 @@ export const workflowGuides: Record<WorkflowSlug, {
       ],
       'zh-CN': [
         {
-          name: '一次性发现',
+          name: '一次性发现与对齐',
           summary: '把该读的读完，而且只读一次。',
           rules: [
             '读适用的项目指令和权威需求/设计文档。',
-            '检查版本控制状态，保护无关的未提交改动。',
-            '读相关实现、测试、调用方和邻近的既有写法。',
-            '如果是已有行为本身坏了，转用 Diagnose 生命周期。',
-            '证据只收集一次并全程复用，不为了"看起来在工作"重复执行没有变化的命令。',
+            '检查版本控制状态、相关实现、测试、调用方和邻近写法——保护无关改动，并复用这份证据，不为了叙述重复勘察。',
+            '定位归属边界和现有的同领域行为。字段名、关联关系、辅助函数选择、测试布局等仓库机制属于调查范围，不能推给你来选。',
+            '只对实质的接口、状态、依赖、模块边界或竞争方案做设计压力与取舍推理。',
+            '如果是已有行为本身坏了，转用 Diagnose 生命周期，包括它的回归优先例外。',
           ],
         },
         {
           name: '澄清到可安全实施',
           summary: '只问会改变结果的问题，而且一次问完。',
           rules: [
-            '一个问题必须同时满足三个条件才允许提出：答案会改变验收行为；请求本身未决，或权威证据与请求矛盾；契约、权威文档和同类操作的先例都没有解决它。',
+            '只有答案会实质改变验收行为、接口、数据、权限、安全、兼容性或验收标准，且请求与权威同域证据都未解决时，才允许提问。',
             '仓库里查得到的实现事实——字段名、关联关系、辅助函数选择、存储形态——属于调查范围，不能推给你来选。',
             '提问前先清点所有被标为"未定义/未知/有意为之/尚未建立"的行为。"未定义"本身从来不等于"范围外"。',
             '对删除和写操作，未知资源或资源不存在时的结果是硬停问题，不能从成功返回值、缺少先例或相邻的读接口推断出来。',
@@ -747,15 +787,16 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: '给出检查点',
+          name: '记录检查点并暂停',
           summary: '把最终理解摆到台面上，然后停下。',
           rules: [
             '给出目标、验收行为、范围外、假设和实质方案边界。',
-            '内容少时留在对话里；实质需求优先写进项目已有的权威文档，没有适用约定时新建 `docs/requirements/<feature-slug>.md`，状态 `Draft`。',
+            '对话装得下的本地任务不建兜底记录；需要仓库级恢复或协作的实质工作，优先写进项目已有的权威文档，没有适用约定时新建 `docs/requirements/<feature-slug>.md`，状态 `Draft`。',
             '首轮请求已经给出完整契约时，就在这一轮创建并核实 Draft，契约外的假设性可选输入不能拖住它。',
             '兜底记录用"无时态"的约束写成，绝不写成"批准之后再做"；完成区先留空，实现文件、测试文件和验证结果都标为待填。',
             '记录里还会写下后续会话验证并完结它所需的确切命令，这样新会话不必回头去找这次对话。',
-            '给出检查点之前，先用随包分发的只读校验器跑一遍 draft 模式，它会一次性报出所有不满足的条件。',
+            '创建、恢复或完成兜底记录之前，先读随包分发的需求记录参考文件，并用其只读校验器跑一遍 draft 模式。',
+            '没提测试不等于禁止测试：绝不脑补"不准改测试"的约束，对依赖、文档或提交的限制也不会延伸到测试上。',
             '批准之前不改生产代码、测试和配置——写需求记录是允许的。',
             '给完检查点就结束这一轮。调用 Develop 本身不是编码授权。',
           ],
@@ -772,26 +813,27 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: '选定边界与反馈',
-          summary: '决定改动该落在哪里，以及用什么证据证明它。',
+          name: '完成生产实现',
+          summary: '在拥有该规则的边界上做最小改动——先完成，再动任何测试文件。',
           rules: [
-            '只有同一领域职责、且应该共同演进的行为才允许复用。',
-            '规则放在拥有相关数据和不变式的模块；改动共享行为前先看兄弟调用方。',
-            '选择能证明每个行为切片的最高稳定公共缝隙。',
-            '回归和有价值的业务行为走红-绿-重构；机械改动、纯展示、配置和框架接线用编译、lint 或集成检查。',
-            '新增的稳定行为填上了覆盖缺口时留下聚焦测试，除非它只是仪式，或根本测不出该行为。',
+            '在拥有相关数据和不变式的模块做最小且清晰的改动；改动共享行为前先看兄弟调用方。',
+            '只复用应当共同演进的同领域行为；控制流、副作用、失败和状态转换保持显式。',
+            '不引入投机抽象、依赖和配置，也不顺手做无关清理。',
+            '保留校验、权限、安全、数据完整性、兼容性、可访问性和无关工作。',
+            '现有测试可以读、可以跑，但在批准的生产行为实现完成之前，不新增也不编辑任何测试文件。这个相位边界不增加检查点，也不要求提交。',
+            '实施过程中发现实质需求变化，只对齐这个增量、更新检查点，并再次暂停等待批准。',
           ],
         },
         {
-          name: '实施与加固',
-          summary: '在拥有该规则的边界上做最小改动，只为真实风险加固。',
+          name: '选择必要的测试与验证',
+          summary: '覆盖按风险在实施之后选择——绝不按仪式。',
           rules: [
-            '在拥有该规则的边界上做最小且清晰的改动，控制流、副作用、失败和状态转换保持显式。',
-            '不引入投机抽象、依赖和配置，也不顺手做无关清理。',
-            '保留校验、权限、安全、数据完整性、兼容性、可访问性和无关工作。',
-            '只在结果可能变化时才跑反馈命令，绝不对同一状态重复同一条命令。',
-            '只为真实风险补测试：输入、数值/时间、集合、状态/生命周期、重复/并发、权限/信任、资源/外部失败、迁移、兼容性。',
-            '实施过程中发现实质需求变化，只对齐这个增量、更新检查点，并再次暂停等待批准。',
+            '只有在能保护关键验收行为、领域不变式或既定风险边界，并且能通过稳定公共缝隙在该行为被破坏时失败时，才添加自动化覆盖。',
+            '权限与信任、资金或数据完整性、破坏性影响、生命周期转换、重复或并发操作、迁移、兼容性和外部失败，都是补针对性测试的强理由。',
+            '只补预期行为已由需求或仓库先例确立的相邻边界用例——绝不编造产品行为。',
+            '机械、纯展示、文档、配置或框架接线的改动，用最小的构建、类型、lint、集成、冒烟或视觉检查，不写仪式性单测。',
+            '临时探针可以补充已选中的覆盖，但永远不能替代；你明确禁止改测试时，改用最强的非测试证据并报告剩余的覆盖缺口。',
+            '验收请求明确要求自动化覆盖时，必须落在项目既定的测试约定里——只跑通一个探针不算数。',
           ],
         },
         {
@@ -800,7 +842,7 @@ export const workflowGuides: Record<WorkflowSlug, {
           rules: [
             '重读验收行为，检查 diff 的正确性、安全、归属、可读性、测试敏感度、范围和临时产物。',
             '把每条验收行为标记为已验证、部分验证、未完成或有偏差。',
-            '`Implemented` 是记录的最后一次写入。在状态仍为 `Accepted` 时先看实际 diff 和新鲜验证输出，把所有待填字段替换成确切的实现路径、测试路径、命令结果和已确认的偏差。',
+            '`Implemented` 是记录的最后一次写入。在状态仍为 `Accepted` 时先看实际 diff 和新鲜验证输出，把所有待填字段替换成确切的实现路径、确切的测试路径（没有改测试时写 `None`）、命令结果和已确认的偏差。',
             '记录项目的规范验证命令：与实际执行完全一致、包含全部参数，并附上通过结果。换一条能通过的命令不算等价证据。',
             '在目标仓库执行记录里持久化的完结命令。它先校验整份记录，再用一次原子写入写下完成状态与稳定证据；校验不通过时它什么都不写。',
             '清除整份记录里过期的前瞻表述——"将会""批准后""计划""待添加"。只改状态不算完成。',
@@ -818,6 +860,7 @@ export const workflowGuides: Record<WorkflowSlug, {
         { icon: 'refresh', title: 'Task-level continuity', detail: 'Corrections, omissions, and same-task follow-ups continue inside the same flow. An `Implemented` record returns to `Accepted` until the omission is completed.' },
         { icon: 'shield', title: 'Undefined is a question', detail: 'An explicitly undefined result never becomes out of scope by itself — least of all the unknown-resource behavior of a delete or write operation.' },
         { icon: 'grid', title: 'Approval plus scope pauses both', detail: 'A message that approves and expands in one breath authorizes nothing. The turn realigns, presents the revised checkpoint, and waits.' },
+        { icon: 'code', title: 'Production before tests', detail: 'For new behavior the implementation completes before the first test-file write, and only coverage that can catch a real break is kept. A reproducible regression is the exception — it still goes red first.' },
         { icon: 'check', title: 'Completion is validated, not asserted', detail: 'A read-only validator checks the record against the real changed paths and the project’s canonical verification command before the single atomic write that marks it complete.' },
       ],
       'zh-CN': [
@@ -826,28 +869,29 @@ export const workflowGuides: Record<WorkflowSlug, {
         { icon: 'refresh', title: '任务级连续', detail: '纠正、补漏和同任务追问都在当前流程内继续。已标 `Implemented` 的记录会退回 `Accepted`，补完后再标回去。' },
         { icon: 'shield', title: '未定义即问题', detail: '显式标注为"未定义"的结果不会自己变成范围外，尤其是删除和写操作对未知资源的行为。' },
         { icon: 'grid', title: '批准加范围＝两边都停', detail: '一条消息里既批准又扩大范围，等于什么都没授权：这一轮重新对齐、给出修订检查点，然后等待。' },
+        { icon: 'code', title: '生产代码先行', detail: '新行为先完成生产实现，再写第一个测试文件，只保留能真正捕捉故障的覆盖。可稳定复现的回归是唯一例外——仍然先红后绿。' },
         { icon: 'check', title: '完成要被校验，不能自称', detail: '只读校验器会对照真实改动路径和项目规范验证命令核对记录，通过后才由那一次原子写入标记完成。' },
       ],
     },
     example: {
       en: {
-        prompt: '$engineering-flow:develop\nImplement order batch export. Reuse existing permission and query capabilities, add focused tests, and reconcile the authoritative documentation. Do not commit.',
+        prompt: '$engineering-flow:develop\nImplement order batch export. Reuse existing permission and query capabilities, protect critical behavior with necessary evidence, and reconcile the authoritative documentation. Do not commit.',
         turns: [
           { who: 'agent', text: 'Reads project rules, Git state, the existing export and permission code, then asks the single question that changes the result: what should happen for an order ID that does not exist?' },
           { who: 'user', text: 'Fail with a 404.' },
           { who: 'agent', text: 'Returns the checkpoint — goal, acceptance behavior, out of scope, assumptions, solution boundary — creates `docs/requirements/order-batch-export.md` as `Draft`, and stops.' },
           { who: 'user', text: 'Proceed with the plan above.' },
-          { who: 'agent', text: 'Marks the record `Accepted`, implements inside the order module boundary, adds a focused test for the 404 branch, runs verification, then marks the record `Implemented` with the real files and fresh results.' },
+          { who: 'agent', text: 'Marks the record `Accepted`, completes the production change inside the order module boundary, then adds a focused test for the 404 branch, runs verification, and marks the record `Implemented` with the real files and fresh results.' },
         ],
       },
       'zh-CN': {
-        prompt: '$engineering-flow:develop\n实现订单批量导出。复用现有权限和查询能力，添加聚焦测试并同步权威文档。不要提交。',
+        prompt: '$engineering-flow:develop\n实现订单批量导出。复用现有权限和查询能力，用必要证据保护关键行为，并同步权威文档。不要提交。',
         turns: [
           { who: 'agent', text: '读项目规则、Git 状态、现有的导出与权限代码，然后只提一个会改变结果的问题：导出中包含不存在的订单 ID 时应该怎么办？' },
           { who: 'user', text: '报错，返回 404。' },
           { who: 'agent', text: '给出检查点——目标、验收行为、范围外、假设、方案边界，创建 `docs/requirements/order-batch-export.md`（状态 `Draft`），然后停下。' },
           { who: 'user', text: '按上述方案执行。' },
-          { who: 'agent', text: '把记录标为 `Accepted`，在订单模块边界内实现，为 404 分支补一个聚焦测试，跑验证，最后把记录标为 `Implemented` 并写上真实文件和最新测试结果。' },
+          { who: 'agent', text: '把记录标为 `Accepted`，先在订单模块边界内完成生产改动，再为 404 分支补一个聚焦测试，跑验证，最后把记录标为 `Implemented` 并写上真实文件和最新测试结果。' },
         ],
       },
     },
@@ -885,6 +929,7 @@ export const workflowGuides: Record<WorkflowSlug, {
         { q: 'I noticed a missing acceptance item. Do I re-invoke?', a: 'No. An omitted original acceptance item belongs to the same task, so Develop reopens implementation and verification directly and returns the record from `Implemented` to `Accepted` until it is done.' },
         { q: 'Is adding a new requirement an omission or new scope?', a: 'Explicitly adding or changing behavior is a scope increment. Develop aligns only that increment, presents an incremental checkpoint, and waits for approval again. If your message both approves the old checkpoint and adds the increment, nothing is implemented that turn — the revised checkpoint comes back and waits.' },
         { q: 'What happens to the requirement record if I come back tomorrow?', a: 'A substantial task leaves a record that a fresh session can finish without this conversation: the current phase is recoverable from the repository, and the record carries the exact command needed to validate and complete it.' },
+        { q: 'Will it write the tests first?', a: 'No — for new behavior the production implementation completes before any test file changes, and only coverage that protects critical behavior or an established risk boundary is added. The exception is a reproducible regression, which still gets its failing test before the fix.' },
         { q: 'Will it commit my work?', a: 'No. Committing, pushing, publishing, opening issues, installing dependencies, and changing global configuration all require separate authorization.' },
       ],
       'zh-CN': [
@@ -892,6 +937,7 @@ export const workflowGuides: Record<WorkflowSlug, {
         { q: '发现漏了一条验收行为，要重新调用吗？', a: '不用。原验收行为的遗漏属于同一个任务，Develop 会直接重新进入实施和验证，并把记录从 `Implemented` 退回 `Accepted`，补完后再标回去。' },
         { q: '追加新需求算遗漏还是新范围？', a: '明确新增或改变行为算范围增量。Develop 只对齐这个增量，给出增量检查点，然后再次等待你批准。如果你同一条消息里既批准了旧检查点又加了增量，这一轮什么都不会实施——它会给出修订后的检查点继续等。' },
         { q: '如果我明天再回来，需求记录会怎样？', a: '实质任务会留下一份记录，让新会话不依赖这次对话也能收尾：当前阶段可以从仓库状态恢复，记录本身也带着验证并完成它所需的确切命令。' },
+        { q: '它会先写测试吗？', a: '不会——新行为先完成生产实现，再动测试文件，而且只补能保护关键行为或既定风险边界的覆盖。唯一的例外是可稳定复现的回归：仍然先看到测试失败再修复。' },
         { q: '它会自己提交代码吗？', a: '不会。提交、推送、发布、创建 issue、安装依赖和修改全局配置，都需要你另外授权。' },
       ],
     },
@@ -909,27 +955,24 @@ export const workflowGuides: Record<WorkflowSlug, {
     stages: {
       en: [
         {
-          name: 'Pin the symptom and signal',
+          name: 'Establish the symptom and signal',
           summary: 'Say exactly what is wrong, then build the fastest way to see it happen.',
           rules: [
             'State the expected versus the actual behavior.',
-            'Read applicable instructions and docs, plus the relevant implementation, tests, callers, and recent changes.',
-            'Build the fastest practical signal for the exact symptom: focused test, command or request, replay, minimal harness, stress loop, or performance measurement.',
-            'Tighten that signal for speed, determinism, and unattended execution.',
-            'Inspect once and reuse the evidence. If automated reproduction is impractical, report what was attempted and calibrate confidence instead of guessing.',
-            'If the reported behavior cannot be reproduced at all, say so explicitly in the final diagnosis and state that no repository-supported root cause can be established. A speculative cause may not replace that bounded conclusion.',
+            'Read applicable instructions and requirements, then inspect the relevant implementation, tests, callers, and recent changes.',
+            'Build the fastest reliable signal for the exact symptom: a focused command or test, request replay, minimal harness, stress loop, or performance measurement.',
+            'Record inputs, environment, frequency, and the limits of the evidence.',
+            'If the symptom cannot be reproduced or established, stay read-only and report that no root cause is yet supported — a speculative cause may not replace that bounded conclusion.',
           ],
         },
         {
-          name: 'Minimize and locate ownership',
-          summary: 'Watch it fail, strip it down, and find the module that owns the broken rule.',
+          name: 'Locate the root cause',
+          summary: 'Trace to the module that owns the broken rule, one falsifiable hypothesis at a time.',
           rules: [
-            'Observe the failure before committing to a cause.',
-            'Remove inputs, steps, dependencies, and callers while preserving the failure.',
-            'Follow data and control flow across boundaries, and inspect sibling entry points.',
-            'Locate the module that owns the violated invariant.',
-            'Test a small ranked set of falsifiable hypotheses, one distinguishing observation at a time.',
-            'If you reject the diagnosis, it stays read-only, discards the rejected cause, and looks for new distinguishing evidence — no re-invocation needed.',
+            'Trace from the failing boundary toward the module that owns the violated invariant.',
+            'Rank a small set of falsifiable hypotheses and test one distinguishing observation at a time, separating the trigger, the root cause, and the resulting symptom.',
+            'Check affected sibling callers, state transitions, permissions, external effects, time or order behavior, and compatibility only when relevant.',
+            'If you reject the diagnosis, the rejected cause is discarded as a conclusion; the workflow stays read-only and gathers new distinguishing evidence — no re-invocation needed.',
           ],
         },
         {
@@ -947,50 +990,39 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: 'Harden around the root cause',
-          summary: 'Prevent this class of regression — and nothing more.',
+          name: 'Harden and complete',
+          summary: 'Prevent this class of regression, clean up, and report what remains uncertain.',
           rules: [
             'For a boundary defect, add only adjacent cases that prevent the same class of regression: below/at/above, before/at/after, first/duplicate/concurrent, or allowed/denied.',
-            'Derive expectations from requirements; do not invent product behavior.',
+            'Derive expectations from accepted requirements or authoritative precedent; do not invent product behavior.',
             'Improve the owning design only when the root cause demonstrates scattered rules, hidden effects, repeated variation, distributed state transitions, or an unstable dependency.',
-            'Do not turn a focused fix into a broad redesign, or apply a pattern without pressure.',
-          ],
-        },
-        {
-          name: 'Complete',
-          summary: 'Re-verify the original symptom and report what remains uncertain.',
-          rules: [
-            'Remove temporary diagnostics.',
+            'Remove temporary logs, probes, fixtures, and debug-only artifacts.',
             'Verify the regression signal, the original symptom, relevant siblings, and one warranted broader check — without rerunning unchanged evidence.',
-            'Reconcile affected acceptance behavior and authoritative documentation.',
-            'Report the root cause, evidence, authorized fix, hardening performed, and remaining uncertainty.',
-            'If you later identify an omitted part of the same defect, repair and verification reopen without repeating the full diagnosis or approval.',
+            'Reconcile affected acceptance behavior and authoritative documentation, and report the root cause, evidence, authorized fix, retained regression protection, and remaining uncertainty.',
+            'A later report of an omitted part of the same defect reopens repair and verification directly, without repeating the full diagnosis or approval.',
           ],
         },
       ],
       'zh-CN': [
         {
-          name: '锁定症状与信号',
+          name: '确立症状与信号',
           summary: '先说清哪里不对，再搭一个最快能看到它发生的信号。',
           rules: [
             '写清预期行为与实际行为的差别。',
-            '读适用的指令和文档，以及相关实现、测试、调用方和近期改动。',
-            '为这个确切症状搭最快的可用信号：聚焦测试、命令/请求、回放、最小复现程序、压力循环或性能测量。',
-            '把信号调到更快、更确定、可以无人值守重复运行。',
-            '现场只勘察一次并复用证据。确实无法自动复现时，如实说明尝试过什么并给出置信度，而不是猜。',
-            '如果报告的行为根本复现不出来，就在最终诊断里明说，并声明现有仓库证据不足以确定根因——不允许用一个听起来合理的猜测顶替这个有界结论。',
+            '读适用的指令与需求，再检查相关实现、测试、调用方和近期改动。',
+            '为这个确切症状搭最快、最可靠的信号：聚焦命令或测试、请求回放、最小复现程序、压力循环或性能测量。',
+            '记录输入、环境、发生频率和证据的局限。',
+            '症状复现不出来或无法确立时，保持只读，如实报告"尚无可支撑的根因"——不允许用一个听起来合理的猜测顶替这个有界结论。',
           ],
         },
         {
-          name: '最小化并定位归属',
-          summary: '先亲眼看到失败，再逐层剥离，找到拥有这条规则的模块。',
+          name: '定位根因',
+          summary: '追踪到拥有这条规则的模块，一次只证伪一个假设。',
           rules: [
-            '先观察到失败，再下结论。',
-            '在保持失败的前提下，删掉输入、步骤、依赖和调用方。',
-            '跨边界跟踪数据流和控制流，并检查兄弟入口。',
-            '定位到拥有被破坏不变式的那个模块。',
-            '用一小组排好序的可证伪假设，每次只做一个能区分它们的观察。',
-            '你否定这个诊断结论时，它保持只读、丢掉该结论，去找新的区分证据——不需要重新调用。',
+            '从失败的边界向拥有被破坏不变式的模块追踪。',
+            '用一小组排好序的可证伪假设，每次只做一个能区分它们的观察，并区分开触发条件、根因和表现出的症状。',
+            '只在相关时检查受影响的兄弟调用方、状态转换、权限、外部副作用、时序行为和兼容性。',
+            '你否定这个诊断结论时，该结论即被丢弃；它保持只读，去收集新的区分证据——不需要重新调用。',
           ],
         },
         {
@@ -1008,24 +1040,16 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: '围绕根因加固',
-          summary: '只防住同一类回归，不多做。',
+          name: '加固并完成',
+          summary: '防住这一类回归，清理现场，报告遗留的不确定性。',
           rules: [
-            '边界类缺陷只补能防住同类回归的相邻用例：below/at/above、before/at/after、首次/重复/并发、允许/拒绝。',
-            '期望值从需求推导，不自己发明产品行为。',
-            '只有根因确实暴露出规则分散、隐藏副作用、重复变化、状态转换分散或不稳定依赖时，才改进设计。',
-            '不把一次聚焦修复变成大重构，也不在没有压力时套用设计模式。',
-          ],
-        },
-        {
-          name: '完成',
-          summary: '复验原始症状，并说清还有什么不确定。',
-          rules: [
-            '删掉临时诊断代码。',
-            '复验回归信号、原始症状、相关兄弟路径，必要时加一个更广的检查；不重复跑没有变化的证据。',
-            '对齐受影响的验收行为和权威文档。',
-            '报告根因、证据、已授权的修复、加固内容和剩余不确定性。',
-            '之后你指出同一缺陷还有遗漏部分时，直接重新进入修复与验证，不重跑整套诊断和审批。',
+            '对边界缺陷，只补能防住同类回归的相邻用例：低于/等于/高于、之前/当时/之后、首次/重复/并发、允许/拒绝。',
+            '预期行为从已接受的需求或权威先例推导，不编造产品行为。',
+            '只有当根因表明存在规则分散、隐藏副作用、重复变化、状态转换分散或依赖不稳定时，才改进归属模块的设计。',
+            '删除临时日志、探针、fixture 和只用于调试的产物。',
+            '复验回归信号、原始症状、相关兄弟调用方，以及一个有必要的更广检查——不重复跑没有变化的证据。',
+            '对齐受影响的验收行为和权威文档，报告根因、证据、授权后的修复、保留的回归防护和遗留风险。',
+            '之后发现同一缺陷的遗漏部分时，直接重新进入修复与验证，不重跑整套诊断和审批。',
           ],
         },
       ],
@@ -1122,7 +1146,7 @@ export const workflowGuides: Record<WorkflowSlug, {
     stages: {
       en: [
         {
-          name: 'Select the design mode',
+          name: 'Choose the mode',
           summary: 'Greenfield discovery and refinement ask different questions.',
           rules: [
             'Greenfield / discovery: you have a goal or problem but no settled solution.',
@@ -1131,7 +1155,7 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: 'Establish problem and local context',
+          name: 'Establish context',
           summary: 'Separate accepted requirements, repository facts, reversible choices, and open decisions.',
           rules: [
             'Clarify the user problem, desired outcome, acceptance behavior, constraints, and out of scope.',
@@ -1141,36 +1165,15 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: 'Explore the design pressure',
-          summary: 'Name the actual problem before reaching for a technique.',
+          name: 'Design from demonstrated pressure',
+          summary: 'Name the actual problem before reaching for a technique — no observed pressure, no new abstraction.',
           rules: [
-            'Look for real pressure: hard-to-follow control flow; hidden mutation, I/O, errors, or state transitions; semantic duplication that should change together; similar-looking rules that should stay independent; repeated conditionals along one real variation axis; an unstable external dependency; scattered ownership of one invariant; construction or lifecycle rules with real combinations; a missing stable public seam.',
-            'No observed pressure means no new abstraction.',
-            'For greenfield work, propose the smallest coherent architecture that satisfies known behavior and credible near-term variation.',
-            'For refinement, identify missing behavior, contradictions, unclear ownership, infeasible assumptions, accidental complexity, and decisions that lack evidence.',
-          ],
-        },
-        {
-          name: 'Develop and compare options',
-          summary: 'Only genuinely different trade-offs deserve to be separate options.',
-          rules: [
-            'Produce alternatives only when they represent materially different trade-offs.',
-            'Compare ownership, coupling, cohesion, state and failure behavior, compatibility, testability, operability, migration cost, and expected change pressure.',
-            'Prefer existing repository language, frameworks, and boundaries unless a concrete problem justifies change.',
-            'Recommend one option and state why it is the lowest necessary complexity.',
-            'Reject speculative extension points and unnecessary dependencies explicitly when they are tempting.',
-          ],
-        },
-        {
-          name: 'Apply the maintainability standard',
-          summary: 'Familiar, explicit, named, local, debuggable, single-owner — and boring.',
-          rules: [
-            'Prefer code that is familiar in the repository, explicit about branches and effects, named with domain concepts, locally understandable, easy to debug, and structured so one rule has one authoritative owner.',
-            'Novelty tax: an uncommon construct, reflection, metaprogramming, dense expression, implicit runtime behavior, new dependency, abstraction, or design pattern must provide concrete benefit. When justified, localize it, name the intent, keep effects observable, and explain why it exists rather than how the syntax works.',
-            'Reuse by semantics: share code only when it implements the same domain rule, every caller should change together, the owner holds the relevant data and invariant, parameterization does not obscure the result, and no existing abstraction already suffices.',
-            'Allow duplication when rules only happen to look alike and will evolve independently.',
+            'Look for real pressure: hard-to-follow control flow; hidden mutation, I/O, errors, or state transitions; semantic duplication that should change together; repeated conditionals along one real variation axis; an unstable external dependency; scattered ownership of one invariant; construction or lifecycle rules with real combinations; a missing stable public seam.',
+            'For greenfield work, propose the smallest coherent architecture that satisfies known behavior and credible near-term variation; for refinement, identify missing behavior, contradictions, unclear ownership, infeasible assumptions, accidental complexity, and decisions that lack evidence.',
+            'Produce alternatives only when they represent materially different trade-offs; compare ownership, coupling, cohesion, state and failure behavior, compatibility, testability, operability, migration cost, and expected change pressure — and recommend one option as the lowest necessary complexity.',
+            'Prefer familiar, explicit, locally understandable, debuggable code where one rule has one authoritative owner; an uncommon construct, new dependency, or design pattern must pay a novelty tax in concrete benefit.',
+            'Reuse by semantics: share code only when it implements the same domain rule and every caller should change together; allow duplication when rules merely look alike and will evolve independently.',
             'Use a pattern only under real pressure — Strategy for multiple real policies, an explicit state machine for distributed transitions, an Adapter for an unstable third-party interface, a factory or builder for real construction combinations, a pipeline for ordered independent stages. A pattern name is not evidence of quality.',
-            'Use the standard to shape module boundaries and contracts, not to prescribe internal classes prematurely.',
           ],
         },
         {
@@ -1187,7 +1190,7 @@ export const workflowGuides: Record<WorkflowSlug, {
       ],
       'zh-CN': [
         {
-          name: '选择设计模式',
+          name: '选择模式',
           summary: '从零设计和完善已有设计，问的问题完全不同。',
           rules: [
             '全新 / 探索：你有目标或问题，但方案还没定下来。',
@@ -1196,7 +1199,7 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: '建立问题与本地上下文',
+          name: '建立上下文',
           summary: '把已接受需求、仓库事实、可逆选择和开放决定分清楚。',
           rules: [
             '明确用户问题、期望结果、验收行为、约束和范围外。',
@@ -1206,36 +1209,15 @@ export const workflowGuides: Record<WorkflowSlug, {
           ],
         },
         {
-          name: '探索设计压力',
-          summary: '先命名真实问题，再去找技术手段。',
+          name: '从设计压力出发',
+          summary: '先命名真实问题，再去找技术手段——没有观察到压力，就不引入新抽象。',
           rules: [
-            '寻找真实压力：难以跟随的控制流；隐藏的修改、I/O、错误或状态转换；应该一起改的语义重复；只是长得像、但应各自演化的规则；沿同一条真实变化轴反复出现的条件分支；不稳定的外部依赖；同一不变式的归属分散；有真实组合的构造与生命周期规则；缺少稳定的公共缝隙。',
-            '没有观察到压力，就不引入新抽象。',
-            '全新设计给出满足已知行为和可信近期变化的最小连贯架构。',
-            '完善已有设计则找出缺失行为、矛盾、归属不清、不可行假设、附带复杂度和缺乏证据的决定。',
-          ],
-        },
-        {
-          name: '发展并比较方案',
-          summary: '只有取舍真的不同，才配成为两个方案。',
-          rules: [
-            '只在取舍实质不同时才给出多个备选方案。',
-            '从归属、耦合、内聚、状态与失败行为、兼容性、可测性、可运维性、迁移成本和预期变化压力来比较。',
-            '优先沿用仓库既有的语言、框架和边界，除非有具体问题要求改变。',
-            '推荐一个方案，并说明它为什么是"必要的最低复杂度"。',
-            '对诱人但投机的扩展点和不必要依赖，明确写出拒绝理由。',
-          ],
-        },
-        {
-          name: '应用可维护性标准',
-          summary: '熟悉、显式、有名字、局部、可调试、单一归属——而且无聊。',
-          rules: [
-            '偏好这样的代码：在仓库里熟悉、对分支和副作用显式、用领域概念命名、无需追踪无关模块即可理解、能在有意义的步骤上调试、一条规则只有一个权威归属。',
-            '新奇税：不常见的写法、反射、元编程、密集表达式、隐式运行时行为、新依赖、抽象或设计模式，都必须给出具体收益。确有必要时把它隔离在清晰边界后、命名意图、保持副作用可观察，并解释它为什么存在，而不是语法怎么运作。',
-            '按语义复用：只有实现同一条领域规则、所有调用方都应共同改变、拟定的归属者拥有相关数据和不变式、参数化不会让结果更难懂、且没有现成抽象够用时，才共享代码。',
-            '规则只是碰巧长得像、且会各自演化时，允许重复。',
-            '只有真实压力才用模式：多个真实策略用 Strategy；转换逻辑分散用显式状态机；不稳定的第三方接口用 Adapter；真实的构造组合与不变式用工厂或建造者；有序且独立的处理阶段用管道。模式名字本身不是质量证明。',
-            '这套标准用来塑造模块边界和契约，而不是提前规定内部类怎么写。',
+            '寻找真实压力：难以跟随的控制流；隐藏的修改、I/O、错误或状态转换；应该一起改的语义重复；沿同一条真实变化轴反复出现的条件分支；不稳定的外部依赖；同一不变式的归属分散；有真实组合的构造与生命周期规则；缺少稳定的公共缝隙。',
+            '全新设计给出满足已知行为和可信近期变化的最小连贯架构；完善已有设计则找出缺失行为、矛盾、归属不清、不可行假设、附带复杂度和缺乏证据的决定。',
+            '只在取舍实质不同时才给出多个备选方案，从归属、耦合、内聚、状态与失败行为、兼容性、可测性、可运维性、迁移成本和预期变化压力来比较，并推荐一个"必要最小复杂度"的方案。',
+            '偏好熟悉、显式、局部可理解、可调试、一条规则只有一个权威归属的代码；不常见的写法、新依赖或设计模式必须交"新奇税"，给出具体收益。',
+            '按语义复用：只有实现同一条领域规则、且所有调用方都应共同改变时才共享代码；规则只是碰巧长得像、会各自演化时允许重复。',
+            '只有真实压力才用模式：多个真实策略用 Strategy；转换逻辑分散用显式状态机；不稳定的第三方接口用 Adapter；真实的构造组合用工厂或建造者；有序且独立的处理阶段用管道。模式名字本身不是质量证明。',
           ],
         },
         {

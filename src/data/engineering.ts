@@ -204,10 +204,10 @@ export const engineeringPage = {
       icon: 'pulse',
       title: { en: 'Evidence precedes the claim', 'zh-CN': '证据先于结论' },
       detail: {
-        en: 'Where a stable automated seam exists, the first write after repair authorization is the regression test, and its failure must be observed before production code changes. Completion is not claimed without fresh, scope-appropriate command output, and each accepted behavior is either supported by that evidence or reported as incomplete.',
-        'zh-CN': '存在稳定的自动化接缝时，修复授权后的第一次写入必须是回归测试，并且必须先观察到它失败，才允许修改生产代码。没有新鲜且范围匹配的命令输出，不得声称完成；每条验收行为要么有证据支持，要么被明确报告为未完成。',
+        en: 'New behavior is implemented before any test file changes, then only coverage that protects critical behavior or an established risk boundary is added — a temporary probe never substitutes for it. The one exception is a reproducible regression, which still goes red before the fix. Completion is not claimed without fresh, scope-appropriate command output; each accepted behavior is either supported by that evidence or reported as incomplete.',
+        'zh-CN': '新行为先完成生产实现、再动测试文件，随后只补充能保护关键行为或既定风险边界的覆盖——临时探针不能顶替。唯一的例外是可稳定复现的回归：仍然先观察到测试失败再修复。没有新鲜且范围匹配的命令输出，不得声称完成；每条验收行为要么有证据支持，要么被明确报告为未完成。',
       },
-      rules: ['TEST-01', 'TEST-03', 'DONE-01', 'DONE-02'],
+      rules: ['TEST-01', 'TEST-03', 'TEST-06', 'DONE-01', 'DONE-02'],
     },
     {
       icon: 'flag',
