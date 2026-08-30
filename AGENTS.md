@@ -1,4 +1,4 @@
-# CLAUDE.md
+# Repository Guidelines
 
 长期协作规则只放稳定约定；业务口径、接口、字段和验收清单以 `docs/` 为准。
 
@@ -9,7 +9,7 @@
 - 不回滚他人改动；只改当前需求相关文件。
 - 复用现有封装和代码风格；必要注释用中文说明“做什么/为什么”。
 - 口径不明时先确认，并同步更新对应 `docs/`。
-
+- 
 ## Project Structure & Module Organization
 
 This is a bilingual Astro static site. Route entry points live in `src/pages/`; localized pages use `src/pages/[locale]/` with stable English slugs. Shared UI belongs in `src/components/`, page chrome in `src/layouts/`, and global design tokens in `src/styles/global.css`. Product copy, workflow definitions, and curated snapshots are owned by `src/data/`. Keep reusable, framework-independent behavior in `src/lib/` so it can be tested directly. Tests live in `test/`, requirement records in `docs/requirements/`, and UI references in `docs/UiImage/`.
