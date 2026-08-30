@@ -18,6 +18,7 @@ const toc = [
   { id: 'results', label: d.resultsTitle[locale] },
   { id: 'lessons', label: d.lessonsTitle[locale] },
   { id: 'chain', label: d.chainTitle[locale] },
+  { id: 'policy', label: d.policyTitle[locale] },
   { id: 'limits', label: d.limitsTitle[locale] },
 ];
 ---
@@ -91,6 +92,26 @@ const toc = [
       <div class="doc-note">
         <Icon name="check" size={17} />
         <span>{d.chainConclusion[locale]}</span>
+      </div>
+    </section>
+
+    <section id="policy">
+      <h2>{d.policyTitle[locale]}</h2>
+      <p>{d.policyIntro[locale]}</p>
+      <ol class="chain-list">
+        {d.policy.map((round) => (
+          <li class:list={['chain-step', { cleared: round.score === 'pass' }]}>
+            <span class="chain-round">{round.round}</span>
+            <div class="chain-body">
+              <h3>{round.title[locale]}<em>{round.score}</em></h3>
+              <p>{round.detail[locale]}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div class="doc-note">
+        <Icon name="check" size={17} />
+        <span>{d.policyConclusion[locale]}</span>
       </div>
     </section>
 
