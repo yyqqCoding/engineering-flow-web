@@ -27,7 +27,8 @@ export const playgroundMeta = {
 export const playgroundDemos: WorkflowDemo[] = [
   {
     slug: 'develop',
-    gateIndex: 2,
+    // 关卡位置从步骤 id 推导，developSteps 增删节点时不必再手工对齐下标
+    gateIndex: developSteps.findIndex((step) => step.id === 'approval'),
     mutationsAfter: 3,
     scenario: localized('Customer CSV export', '客户 CSV 导出'),
     request: localized(
@@ -38,8 +39,13 @@ export const playgroundDemos: WorkflowDemo[] = [
     trace: [
       {
         actor: 'USER',
-        title: localized('Request and context aligned', '请求与上下文已对齐'),
-        body: localized('The contract names validation, filtering, sorting, escaping, and verification behavior. The existing customer export module is the owning boundary, and no unrelated files need to change.', '契约明确了校验、过滤、排序、转义和验证行为。现有客户导出模块是规则所有者，无需修改无关文件。'),
+        title: localized('Request received', '收到用户请求'),
+        body: localized('The contract names validation, filtering, sorting, escaping, and verification behavior.', '契约明确了校验、过滤、排序、转义和验证行为。'),
+      },
+      {
+        actor: 'AGENT',
+        title: localized('Repository context discovered', '已发现仓库上下文'),
+        body: localized('The existing customer export module is the owning boundary. No unrelated files need to change.', '现有客户导出模块是规则所有者，无需修改无关文件。'),
       },
       {
         actor: 'CHECKPOINT',

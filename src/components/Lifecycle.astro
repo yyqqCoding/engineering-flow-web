@@ -3,12 +3,14 @@ import Icon from './Icon.astro';
 import { developSteps, type Locale } from '../data/site';
 
 interface Props { locale: Locale; compact?: boolean; activeIndex?: number }
-const { locale, compact = false, activeIndex = 3 } = Astro.props;
+const { locale, compact = false, activeIndex } = Astro.props;
+// 高亮节点按 id 定位，不写死索引：生命周期图始终突出中间那道人工关卡。
+const focusedIndex = activeIndex ?? developSteps.findIndex((step) => step.id === 'approval');
 ---
 
 <div class:list={['lifecycle', { compact }]} role="list" aria-label="Develop lifecycle">
   {developSteps.map((step, index) => (
-    <div class:list={['lifecycle-step', step.id, { active: index === activeIndex }]} role="listitem">
+    <div class:list={['lifecycle-step', step.id, { active: index === focusedIndex }]} role="listitem">
       <span class="step-orb"><Icon name={step.icon} size={compact ? 17 : 26} /></span>
       <strong>{step.title[locale]}</strong>
       {!compact && <small>{step.description[locale]}</small>}
