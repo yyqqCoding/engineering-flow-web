@@ -1,7 +1,6 @@
 ---
 import CodeBlock from '../../../components/CodeBlock.astro';
 import DocsShell from '../../../components/DocsShell.astro';
-import Icon from '../../../components/Icon.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
 import { installPage } from '../../../data/docs';
 import type { Locale } from '../../../data/site';
@@ -48,10 +47,7 @@ const toc = [
       <h2>{d.claudeTitle[locale]}</h2>
       <p>{d.claudeNote[locale]}</p>
       <CodeBlock locale={locale} code={d.claudeCode} />
-      <div class="doc-note warn">
-        <Icon name="lock" size={17} />
-        <span>{d.tip[locale]}</span>
-      </div>
+      <p>{d.tip[locale]}</p>
     </section>
 
     <section id="update">

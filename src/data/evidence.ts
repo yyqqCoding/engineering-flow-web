@@ -1,11 +1,12 @@
 import type { Locale } from './site';
 
-// 验证结果页文案：全部摘自源仓库 docs/benchmark-log.md、docs/testing-strategy.md
-// 与 config/evidence-manifest.json（v1.0.2, commit eeef0fc）。
+// 验证结果页文案：全部摘自源仓库 docs/testing-strategy.md、docs/benchmark-log.md
+// 与 config/evidence-manifest.json（v1.0.4, commit a647b73）。
 // 按仓库安全约定，这里不出现供应商、模型名、端点、本地路径或原始日志。
 //
-// 页面只呈现当前稳定版本的实测结果。唯一画成"对照"的是 17 场景那组——
-// 只有它的对照臂真的没有安装本插件；其余数字一律作为本版本自身的通过率呈现。
+// 页面只呈现本版本的实测结果，不携带版本间对比叙事。
+// 唯一画成"对照"的是 17 场景那组——只有它的对照臂真的没有安装本插件；
+// 其余数字一律作为通过率呈现，不画对照条。
 type L<T> = Record<Locale, T>;
 
 /** 无插件对照：对照臂完全没有安装本插件，是页面上唯一允许使用"未安装"图例的数据 */
@@ -13,15 +14,11 @@ type PluginRow = { icon: string; name: L<string>; note: L<string>; without: numb
 
 export const evidencePage = {
   lede: {
-    en: 'Everything below is measured behavior of the current release. Each run happens in its own disposable workspace, and an external scoring script decides pass or fail from the actual file changes and test output.',
-    'zh-CN': '下面全部是当前版本的实测行为。每次运行都在独立的一次性工作区中进行，是否通过由外部评分脚本判定，依据是实际的文件变更与测试输出。',
+    en: 'Measured behavior from the project’s own published test records. Each run happens in its own disposable workspace, and an external scoring script decides pass or fail from the actual file changes and command output.',
+    'zh-CN': '来自项目自己公开的测试记录的实测行为。每次运行都在独立的一次性工作区中进行，是否通过由外部评分脚本依据实际的文件变更与命令输出判定。',
   },
 
   methodTitle: { en: 'How the comparison was run', 'zh-CN': '对比是如何进行的' },
-  methodIntro: {
-    en: 'No result is self-reported. A claim of having verified something scores nothing — only the diff and the command output count.',
-    'zh-CN': '结果不由智能体自述。仅声明"我已验证"不计分，只有实际改动和命令输出算数。',
-  },
   methodSteps: [
     {
       icon: 'grid',
@@ -35,8 +32,8 @@ export const evidencePage = {
       icon: 'document',
       title: { en: 'Prepared traps with hidden graders', 'zh-CN': '预置陷阱与隐藏判据' },
       detail: {
-        en: '37 configured scenarios semantically cover all 46 behavior rules. Nine are holdouts: their results are never used to tune a rule or a grader.',
-        'zh-CN': '37 个已配置场景在语义上覆盖全部 46 条行为规则。其中 9 个是留出集，它们的结果永远不用来调规则或调判据。',
+        en: '45 configured scenarios semantically cover all 47 behavior rules. Nine are holdouts: their results are never used to tune a rule or a grader.',
+        'zh-CN': '45 个已配置场景在语义上覆盖全部 47 条行为规则。其中 9 个是留出集，它们的结果永远不用来调规则或调判据。',
       },
     },
     {
@@ -58,10 +55,6 @@ export const evidencePage = {
   ],
 
   compareTitle: { en: 'Measured difference', 'zh-CN': '实测差异' },
-  compareIntro: {
-    en: 'The same seventeen everyday engineering scenarios, three runs each, run twice: once with these workflows installed and once with nothing installed at all.',
-    'zh-CN': '同样的 17 个日常工程场景，每个跑三次，两组各跑一遍：一组安装了这些工作流，一组什么都没装。',
-  },
   withoutLabel: { en: 'No workflows installed', 'zh-CN': '未安装工作流' },
   withLabel: { en: 'Workflows installed', 'zh-CN': '已安装工作流' },
   pluginResults: [
@@ -72,28 +65,16 @@ export const evidencePage = {
       without: 45, with: 51, total: 51,
     },
   ] satisfies PluginRow[],
-  compareNote: {
-    en: 'Fifteen of the seventeen scenarios scored identically in both groups — a capable model already handles them. The whole difference came from two scenarios, both shown below.',
-    'zh-CN': '17 个场景中有 15 个两组得分相同——能力足够的模型本来就能处理。全部差异来自其中两个场景，见下方。',
-  },
 
   factsTitle: { en: 'Other measured results', 'zh-CN': '其他实测结果' },
-  factsIntro: {
-    en: 'Pass rates for the current release across the remaining tested dimensions.',
-    'zh-CN': '当前版本在其余受测维度上的通过率。',
-  },
   facts: [
-    { icon: 'chat', value: '12/12', label: { en: 'Multi-turn task continuity', 'zh-CN': '多轮任务连续性' } },
-    { icon: 'flag', value: '3/3', label: { en: 'Session handoff completeness', 'zh-CN': '会话交接完整性' } },
+    { icon: 'grid', value: '47/47', label: { en: 'Behavior rules covered across 45 scenarios', 'zh-CN': '45 个场景覆盖 47 条行为规则' } },
+    { icon: 'flag', value: '18/18', label: { en: 'Release cohort — six scenarios, three runs each', 'zh-CN': '发布验证——6 个场景，各 3 次' } },
     { icon: 'terminal', value: '51/51', label: { en: 'Named workflow loaded correctly — zero false routes, misses, or collisions', 'zh-CN': '点名的工作流被正确加载——误触发、遗漏、冲突均为 0' } },
-    { icon: 'check', value: '84/84', label: { en: 'Deterministic project tests', 'zh-CN': '项目确定性测试' } },
+    { icon: 'check', value: '219/219', label: { en: 'Deterministic project tests', 'zh-CN': '项目确定性测试' } },
   ],
 
   casesTitle: { en: 'What it does in the hard cases', 'zh-CN': '难场景下它怎么做' },
-  casesIntro: {
-    en: 'Six situations where an agent normally goes wrong, and what this release does instead.',
-    'zh-CN': '六个智能体通常会出错的场景，以及当前版本的实际做法。',
-  },
   cases: [
     {
       tone: 'orange',
@@ -134,40 +115,18 @@ export const evidencePage = {
       tone: 'blue',
       icon: 'code',
       situation: { en: 'A clear feature request that never mentions tests', 'zh-CN': '一个只字未提测试的清晰功能需求' },
-      behavior: { en: 'Finished the production code before writing any test, then left mutation-sensitive coverage for the balance boundary. Silence about tests was not read as a ban, an ad-hoc probe was not accepted as coverage, and a conversation-sized task got no unnecessary requirement record.', 'zh-CN': '先完成生产代码再写任何测试，然后为余额边界留下能捕捉变异的覆盖。没提测试不被当成禁止测试，临时探针不被当作覆盖的替代品，对话装得下的任务也没有多建一份需求记录。' },
+      behavior: { en: 'Agreed the acceptance examples before implementing, then chose implementation and verification order by risk, in independently verifiable slices. Silence about tests was not read as a ban, and a conversation-sized task got no unnecessary requirement record.', 'zh-CN': '实施前先约定验收实例，再按风险安排实现与验证的顺序，按可独立验证的切片推进。没提测试不被当成禁止测试，对话装得下的任务也没有多建一份需求记录。' },
       score: '3/3',
     },
   ],
 
   scenariosTitle: { en: 'The behavior corpus', 'zh-CN': '行为语料库' },
-  scenariosIntro: {
-    en: 'Every trap the graders can score, in the order it was added. A test run draws a subset of these — the corpus size is not a count of completed model runs.',
-    'zh-CN': '判据能够评分的全部陷阱，按加入顺序排列。每次测试只抽取其中一部分运行；语料库的规模不等于已完成的模型运行次数。',
-  },
   scenarioColumns: {
     en: ['#', 'Scenario', 'Expected behavior'],
     'zh-CN': ['#', '场景', '期望行为'],
   },
 
-  costTitle: { en: 'What the process costs', 'zh-CN': '流程的成本' },
-  costIntro: {
-    en: 'Process is not free. Averaged across the behavior comparison above, the workflow group used more of both:',
-    'zh-CN': '流程本身有成本。在上面那组行为对照上取平均，安装工作流的一组两项指标都更高：',
-  },
-  costs: [
-    { icon: 'terminal', label: { en: 'Tool calls per run', 'zh-CN': '每次运行的工具调用次数' }, delta: '+17.6%', from: '7.47', to: '8.78' },
-    { icon: 'document', label: { en: 'Input tokens per run', 'zh-CN': '每次运行的输入 token 量' }, delta: '+16.5%', from: '75,956', to: '88,525' },
-  ],
-  costNote: {
-    en: 'This is precisely why all five workflows are invoked by name. Ordinary requests never load them, so the cost lands only on the tasks where you asked for the deeper process.',
-    'zh-CN': '这正是五个工作流都必须点名调用的原因：普通请求不会加载它们，这份成本只落在你主动要求更深流程的任务上。',
-  },
-
   sourceTitle: { en: 'Source of the figures', 'zh-CN': '数据来源' },
-  sourceNote: {
-    en: 'Every figure comes from the project’s own published test records for the release below. Nothing is recomputed here, and no raw logs, prompts, provider details, or environment details are published.',
-    'zh-CN': '所有数字均来自项目自己公开的测试记录，对应下方所列版本。本页不做二次计算，也不发布原始日志、提示词、供应商信息或环境细节。',
-  },
 } satisfies Record<string, unknown>;
 
 export type EvidenceCopy = typeof evidencePage;

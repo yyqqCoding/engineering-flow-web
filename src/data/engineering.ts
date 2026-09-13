@@ -21,21 +21,7 @@ export const engineeringPage = {
     indirect: { en: 'No dedicated rule', 'zh-CN': '无独立条款' },
   },
 
-  readingTitle: { en: 'How to read this page', 'zh-CN': '如何阅读本页' },
-  readingBody: {
-    en: 'Each principle below carries a status. **Encoded directly** means a rule states it as an obligation. **Adopted with a condition** means the principle applies only once a stated trigger is observed — the project treats unconditional application as a cost with no buyer. **No dedicated rule** means the project does not legislate it; the reason and the nearest related constraint are given instead.',
-    'zh-CN': '下面每条原则都标有状态。**有直接条款**表示存在一条规则把它写成义务；**附条件采纳**表示只有在规定的触发条件被观察到之后才适用——项目把无条件套用视为一笔没有买家的成本；**无独立条款**表示项目没有为它立规矩，此时会说明原因，并给出最接近的相关约束。',
-  },
-  readingNote: {
-    en: 'Rule identifiers such as REQ-01 or DESIGN-02 refer to the behavioral specification in the source repository. Every rule there must map to a failure mode that was actually observed.',
-    'zh-CN': 'REQ-01、DESIGN-02 之类的规则编号对应源仓库中的行为规范。那里的每条规则都必须对应一个被真实观察到的失败模式。',
-  },
-
   principlesTitle: { en: 'Object-oriented design principles', 'zh-CN': '面向对象设计原则' },
-  principlesIntro: {
-    en: 'Seven principles, in the order they matter to this project.',
-    'zh-CN': '七条原则，按它们在本项目中的分量排序。',
-  },
   principles: [
     {
       abbr: 'SRP',
@@ -145,10 +131,6 @@ export const engineeringPage = {
   ],
 
   budgetTitle: { en: 'The complexity budget', 'zh-CN': '复杂度预算' },
-  budgetIntro: {
-    en: 'Three of the principles above are conditional for the same reason. The project’s stated objective is minimum necessary complexity — not minimum syntax, not maximum principle coverage. Three mechanisms enforce that.',
-    'zh-CN': '上面有三条原则是附条件的，原因相同：项目的既定目标是"必要的最小复杂度"，既不是最少的语法，也不是最高的原则覆盖率。三个机制负责守住这一点。',
-  },
   budgetItems: [
     {
       icon: 'design',
@@ -177,10 +159,6 @@ export const engineeringPage = {
   ],
 
   processTitle: { en: 'Constraints the classical principles do not cover', 'zh-CN': '经典原则未覆盖的约束' },
-  processIntro: {
-    en: 'Object-oriented principles govern the shape of code. They say nothing about how an agent should behave around your repository, which is where the remaining failure modes live.',
-    'zh-CN': '面向对象原则约束的是代码的形态，它们没有规定一个智能体在你的仓库周围应当如何行事——而剩下的失败模式恰恰出现在那里。',
-  },
   processItems: [
     {
       icon: 'chat',
@@ -204,8 +182,8 @@ export const engineeringPage = {
       icon: 'pulse',
       title: { en: 'Evidence precedes the claim', 'zh-CN': '证据先于结论' },
       detail: {
-        en: 'New behavior is implemented before any test file changes, then only coverage that protects critical behavior or an established risk boundary is added — a temporary probe never substitutes for it. The one exception is a reproducible regression, which still goes red before the fix. Completion is not claimed without fresh, scope-appropriate command output; each accepted behavior is either supported by that evidence or reported as incomplete.',
-        'zh-CN': '新行为先完成生产实现、再动测试文件，随后只补充能保护关键行为或既定风险边界的覆盖——临时探针不能顶替。唯一的例外是可稳定复现的回归：仍然先观察到测试失败再修复。没有新鲜且范围匹配的命令输出，不得声称完成；每条验收行为要么有证据支持，要么被明确报告为未完成。',
+        en: 'Verification is derived from accepted behavior and independent expected results. Implementation and verification proceed in observable slices, with test timing chosen by risk rather than a fixed order; critical behavior and established boundaries keep coverage through stable interfaces, and a temporary probe never substitutes for it. The exception is a reproducible regression, which still goes red before the fix. Completion is not claimed without fresh, scope-appropriate command output; each accepted behavior is either supported by that evidence or reported as incomplete.',
+        'zh-CN': '验证方式从验收行为和独立预期结果推导。实现与验证按可观察的切片推进，测试时机由风险决定而不是固定顺序；关键行为和既定边界通过稳定接口保留覆盖，临时探针不能顶替。例外是可稳定复现的回归：仍然先观察到测试失败再修复。没有新鲜且范围匹配的命令输出，不得声称完成；每条验收行为要么有证据支持，要么被明确报告为未完成。',
       },
       rules: ['TEST-01', 'TEST-03', 'TEST-06', 'DONE-01', 'DONE-02'],
     },
@@ -221,10 +199,6 @@ export const engineeringPage = {
   ],
 
   ownerTitle: { en: 'Which workflow owns which activity', 'zh-CN': '各项活动的归属工作流' },
-  ownerIntro: {
-    en: 'A compact set of rules applies to every session automatically. The five workflows each deepen one segment of the loop, which is why they are invoked by name rather than loaded together.',
-    'zh-CN': '一组精简规则在每次会话自动生效；五个工作流各自加深其中一段，这也是它们需要点名调用、而不是一起加载的原因。',
-  },
   ownerColumns: {
     en: ['Activity', 'Owner', 'Guarantee'],
     'zh-CN': ['工程活动', '归属', '它保证什么'],
@@ -264,12 +238,8 @@ export const engineeringPage = {
 
   measuredTitle: { en: 'The trade-off is measured', 'zh-CN': '这份取舍是实测得出的' },
   measuredBody: {
-    en: 'The same discipline applies to the tooling. Controlled runs showed that loading a full workflow automatically for an ordinary task cost roughly a third more tool calls and input tokens while changing no outcome. The workflows were therefore made user-invoked and the always-on core was reduced rather than extended. A rule that cannot show a failure behind it does not get added; a rule that buys nothing gets removed.',
-    'zh-CN': '同一套纪律也适用于工具本身。对照实验显示：给普通任务自动加载完整工作流，工具调用与输入 token 大约多出三分之一，而结果没有变化。因此这些工作流改为用户点名调用，常驻 Core 被削减而非扩充。拿不出背后失败模式的规则不会被加入；买不到任何东西的规则会被移除。',
-  },
-  measuredNote: {
-    en: 'The runs and the measured cost behind these decisions are on the Experiments & results page.',
-    'zh-CN': '这些决定背后的实验记录与实测成本，见「实验与验证」页。',
+    en: 'The same discipline applies to the tooling. Controlled runs showed that loading a full workflow automatically for an ordinary task added cost while changing no outcome. The workflows were therefore made user-invoked and the always-on core was reduced rather than extended. A rule that cannot show a failure behind it does not get added; a rule that buys nothing gets removed.',
+    'zh-CN': '同一套纪律也适用于工具本身。对照实验显示：给普通任务自动加载完整工作流只会增加成本，结果没有变化。因此这些工作流改为用户点名调用，常驻 Core 被削减而非扩充。拿不出背后失败模式的规则不会被加入；买不到任何东西的规则会被移除。',
   },
 } satisfies Record<string, unknown>;
 

@@ -2,10 +2,9 @@
 import DocsShell from '../../../components/DocsShell.astro';
 import Icon from '../../../components/Icon.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
-import { inlineCode } from '../../../data/docs';
 import { engineeringPage } from '../../../data/engineering';
 import type { Locale } from '../../../data/site';
-import { locales, localizePath } from '../../../lib/routes.mjs';
+import { locales } from '../../../lib/routes.mjs';
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -13,9 +12,7 @@ export function getStaticPaths() {
 
 const locale = Astro.params.locale as Locale;
 const d = engineeringPage;
-const bold = (text: string) => inlineCode(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 const toc = [
-  { id: 'reading', label: d.readingTitle[locale] },
   { id: 'principles', label: d.principlesTitle[locale] },
   { id: 'budget', label: d.budgetTitle[locale] },
   { id: 'process', label: d.processTitle[locale] },
@@ -26,18 +23,8 @@ const toc = [
 
 <SiteLayout locale={locale} title={d.title[locale]} description={d.lede[locale]} active="docs" docs>
   <DocsShell locale={locale} path="docs/engineering" eyebrow={d.eyebrow[locale]} title={d.title[locale]} lede={d.lede[locale]} toc={toc}>
-    <section id="reading">
-      <h2>{d.readingTitle[locale]}</h2>
-      <p set:html={bold(d.readingBody[locale])}></p>
-      <div class="doc-note">
-        <Icon name="document" size={17} />
-        <span>{d.readingNote[locale]}</span>
-      </div>
-    </section>
-
     <section id="principles">
       <h2>{d.principlesTitle[locale]}</h2>
-      <p>{d.principlesIntro[locale]}</p>
 
       <table class="doc-table principle-index">
         <thead>
@@ -81,7 +68,6 @@ const toc = [
 
     <section id="budget">
       <h2>{d.budgetTitle[locale]}</h2>
-      <p>{d.budgetIntro[locale]}</p>
       <div class="doc-grid" style="--cols: 1">
         {d.budgetItems.map((item) => (
           <article class="budget-card">
@@ -97,7 +83,6 @@ const toc = [
 
     <section id="process">
       <h2>{d.processTitle[locale]}</h2>
-      <p>{d.processIntro[locale]}</p>
       <div class="doc-grid">
         {d.processItems.map((item) => (
           <article class="process-card">
@@ -114,7 +99,6 @@ const toc = [
 
     <section id="owner">
       <h2>{d.ownerTitle[locale]}</h2>
-      <p>{d.ownerIntro[locale]}</p>
       <table class="doc-table">
         <thead>
           <tr>{d.ownerColumns[locale].map((column) => <th>{column}</th>)}</tr>
@@ -134,10 +118,6 @@ const toc = [
     <section id="measured">
       <h2>{d.measuredTitle[locale]}</h2>
       <p>{d.measuredBody[locale]}</p>
-      <div class="doc-note">
-        <Icon name="check" size={17} />
-        <span><a href={localizePath(locale, 'docs/experiments')}>{d.measuredNote[locale]}</a></span>
-      </div>
     </section>
   </DocsShell>
 </SiteLayout>
