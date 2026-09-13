@@ -34,7 +34,8 @@ release-over-release narrative and does not enumerate occasional model non-compl
   reproducible regression still goes red before the fix, and a conversation-sized task still gets
   no requirement record.
 - Guide stages mirror the source `SKILL.md` structure: Develop three, Diagnose two, Code Design
-  two, Review three, Handoff four.
+  two, Review three, Handoff four. The homepage lifecycle diagram keeps its own seven-node grain
+  (Discover, Clarify, Checkpoint, Approval, Implement, Verify, Complete) and highlights Approval.
 - Figures read `47/47` behavior rules across `45` scenarios with `9` holdouts, `219/219`
   deterministic tests, and `18/18` for the six-scenario release cohort. The 17-scenario
   no-workflows comparison keeps both arms (`45/51` versus `51/51`).
@@ -65,7 +66,9 @@ release-over-release narrative and does not enumerate occasional model non-compl
 - `src/data/site.ts` owns `snapshotMeta`, home statistics, the results-page cards, the workflow
   summaries/processes/mechanisms, `developSteps`, and the `B01`–`B42` scenario table.
 - `src/data/playground.ts` owns the Develop replay trace, which is index-paired with
-  `developSteps` and carries a hard `gateIndex`.
+  `developSteps`, and the gate position derived from the `approval` step.
+- `src/components/Lifecycle.astro` owns the homepage lifecycle diagram and highlights the
+  `approval` step.
 - `src/data/evidence.ts` owns the results-page figures and case cards, including the sixth case.
 - `src/data/docs.ts` owns the documentation copy: the overview decision table, the philosophy
   page, the experiments page chains and limits, and all five workflow guides.
@@ -83,8 +86,12 @@ release-over-release narrative and does not enumerate occasional model non-compl
   `Regression still goes red first` was added. `developSteps` went 7 → 6 (Approval merged into the
   Checkpoint that precedes it). `scenarioSnapshot`'s `B34` row was rewritten to the current policy
   and `B35`–`B42` were appended.
-- `src/data/playground.ts`: Develop's `gateIndex` moved `3 → 2` and its `trace` went 7 → 6 entries,
-  because the array is index-paired with the imported `developSteps`.
+- `src/components/Lifecycle.astro`: the highlighted node is now located by step id
+  (`step.id === 'approval'`) instead of a hard-coded `activeIndex` default. The homepage hero and
+  the philosophy page both rely on that default to spotlight the human gate.
+- `src/data/playground.ts`: Develop's gate position is derived from the `approval` step rather than
+  written as a numeric literal, so the two cannot drift apart again. The `trace` array stays
+  index-paired with the imported `developSteps`.
 - `src/data/evidence.ts`: rewritten. The `lede` now attributes the figures to the project's own
   published test records and explains the external scorer. Method step 2 carries `45` scenarios /
   `47` rules / `9` holdouts. Removed entirely: `methodIntro`, `compareIntro`, `compareNote`,
@@ -127,6 +134,9 @@ release-over-release narrative and does not enumerate occasional model non-compl
 - Structure audit of `dist/en/docs/workflows/*`: rendered stage counts are Develop 3 (1 gate),
   Diagnose 2 (1 gate), Code Design 2, Review 3 (1 gate), Handoff 4 — matching the source
   `SKILL.md` sections. No page renders an empty paragraph.
+- Lifecycle audit: `dist/{en,zh-CN}/index.html` each render seven `lifecycle-step` nodes in
+  order (discover, clarify, checkpoint, approval, implement, verify, complete) with `approval`
+  carrying `active`. The Develop playground demo renders all seven turns.
 - New-figure audit: `47/47` renders on the home page, the evidence page, and the experiments page
   in both locales.
 
@@ -144,6 +154,16 @@ release-over-release narrative and does not enumerate occasional model non-compl
 - The `install.astro` and `quickstart.astro` callouts were converted to body text rather than
   deleted, because they carry functional instructions that are not derivable from the surrounding
   prose.
+- The homepage lifecycle diagram keeps seven nodes rather than the three the new Develop guide
+  has. The diagram is the site's own model of the flow and its job is to show the human gate as a
+  distinct node; a three-node version would fold Approval into "Align and pause". The
+  Discover/Clarify split is also still real in v1.0.4 — reusing evidence and batching material
+  questions remain separate rules in the first section.
+- A first pass of this work changed the diagram to six nodes (merging Discover and Clarify into
+  "Align") without updating `Lifecycle.astro`'s hard-coded `activeIndex` default, which left the
+  hero highlighting Implement instead of Approval. Both were corrected: the node count was
+  restored to seven, and the highlight and the playground gate now resolve from the `approval`
+  step id rather than a numeric index.
 - No new automated test was added. This is a content and presentation change with no new logic in
   `src/lib/`, which matches the project's stated policy of relying on `npm run check` and
   `npm run build` for presentation-only work.

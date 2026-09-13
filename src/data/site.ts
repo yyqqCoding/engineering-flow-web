@@ -432,7 +432,8 @@ export const workflows: Array<{
 ];
 
 export const developSteps = [
-  { id: 'align', icon: 'compass', title: { en: 'Align', 'zh-CN': '对齐' }, description: { en: 'Read rules, docs, code, tests, and callers; batch the open decisions.', 'zh-CN': '阅读规则、文档、代码、测试和调用方；未决问题合并成一批。' } },
+  { id: 'discover', icon: 'compass', title: { en: 'Discover', 'zh-CN': '发现' }, description: { en: 'Read rules, docs, code, tests, and callers; reused evidence is not re-read.', 'zh-CN': '阅读规则、文档、代码、测试和调用方；已读过的证据不重复发现。' } },
+  { id: 'clarify', icon: 'chat', title: { en: 'Clarify', 'zh-CN': '澄清' }, description: { en: 'Batch the open decisions that materially change behavior.', 'zh-CN': '把会实质改变行为的未决问题合并成一批问完。' } },
   { id: 'checkpoint', icon: 'document', title: { en: 'Checkpoint', 'zh-CN': '检查点' }, description: { en: 'Record the acceptance examples and the implementation boundary.', 'zh-CN': '记录验收实例与实施边界。' } },
   { id: 'approval', icon: 'lock', title: { en: 'Approval', 'zh-CN': '批准' }, description: { en: 'Require clear action language from the user.', 'zh-CN': '要求用户给出明确行动指令。' } },
   { id: 'implement', icon: 'code', title: { en: 'Implement', 'zh-CN': '实施' }, description: { en: 'Build the change in independently verifiable slices.', 'zh-CN': '按可独立验证的切片实施改动。' } },
