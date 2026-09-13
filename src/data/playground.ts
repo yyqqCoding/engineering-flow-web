@@ -27,7 +27,7 @@ export const playgroundMeta = {
 export const playgroundDemos: WorkflowDemo[] = [
   {
     slug: 'develop',
-    gateIndex: 3,
+    gateIndex: 2,
     mutationsAfter: 3,
     scenario: localized('Customer CSV export', '客户 CSV 导出'),
     request: localized(
@@ -38,28 +38,23 @@ export const playgroundDemos: WorkflowDemo[] = [
     trace: [
       {
         actor: 'USER',
-        title: localized('Request received', '收到用户请求'),
-        body: localized('The contract names validation, filtering, sorting, escaping, and verification behavior.', '契约明确了校验、过滤、排序、转义和验证行为。'),
-      },
-      {
-        actor: 'AGENT',
-        title: localized('Repository context discovered', '已发现仓库上下文'),
-        body: localized('The existing customer export module is the owning boundary. No unrelated files need to change.', '现有客户导出模块是规则所有者，无需修改无关文件。'),
+        title: localized('Request and context aligned', '请求与上下文已对齐'),
+        body: localized('The contract names validation, filtering, sorting, escaping, and verification behavior. The existing customer export module is the owning boundary, and no unrelated files need to change.', '契约明确了校验、过滤、排序、转义和验证行为。现有客户导出模块是规则所有者，无需修改无关文件。'),
       },
       {
         actor: 'CHECKPOINT',
         title: localized('Implementation boundary recorded', '已记录实施边界'),
-        body: localized('Goal, accepted behavior, out of scope, assumptions, and verification are ready for approval.', '目标、接受行为、范围外事项、假设和验证方式已准备好等待批准。'),
+        body: localized('Goal, acceptance examples, out of scope, assumptions, and the solution boundary are ready — and approval is stated as still pending.', '目标、验收实例、范围外事项、假设和方案边界已就绪，并明确说明"批准待定"。'),
       },
       {
         actor: 'HUMAN GATE',
         title: localized('Explicit approval required', '需要明确批准'),
-        body: localized('Production code and tests remain unchanged until the user approves implementation.', '在用户批准实施前，生产代码和测试保持不变。'),
+        body: localized('Production code, tests, and configuration remain unchanged until the user approves implementation.', '在用户批准实施前，生产代码、测试和配置保持不变。'),
       },
       {
         actor: 'AGENT',
         title: localized('Focused implementation', '聚焦实施'),
-        body: localized('Validation, filtering, sorting, and CSV escaping are applied at the existing module boundary.', '校验、过滤、排序和 CSV 转义在现有模块边界内实现。'),
+        body: localized('Validation, filtering, sorting, and CSV escaping are applied at the existing module boundary, in independently verifiable slices.', '校验、过滤、排序和 CSV 转义在现有模块边界内按可独立验证的切片实现。'),
       },
       {
         actor: 'VERIFY',

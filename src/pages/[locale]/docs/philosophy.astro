@@ -42,7 +42,6 @@ const toc = [
 
     <section id="layers">
       <h2>{d.layerTitle[locale]}</h2>
-      <p>{d.layerIntro[locale]}</p>
       <div class="doc-grid">
         {d.layers.map((layer) => (
           <article class:list={['layer-card', layer.kind]}>
@@ -62,7 +61,6 @@ const toc = [
 
     <section id="explicit">
       <h2>{d.explicitTitle[locale]}</h2>
-      <p>{d.explicitIntro[locale]}</p>
       <div class="lesson-list">
         {d.lessons.map((lesson) => (
           <article>
@@ -74,15 +72,10 @@ const toc = [
           </article>
         ))}
       </div>
-      <div class="doc-note">
-        <Icon name="flag" size={17} />
-        <span>{d.lessonsConclusion[locale]}</span>
-      </div>
     </section>
 
     <section id="standard">
       <h2>{d.standardTitle[locale]}</h2>
-      <p>{d.standardIntro[locale]}</p>
       <dl class="standard-list">
         {d.standards.map((item) => (
           <div>

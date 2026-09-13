@@ -3,11 +3,11 @@ export type Locale = 'en' | 'zh-CN';
 export const githubUrl = 'https://github.com/yyqqCoding/engineering-flow-skills';
 
 export const snapshotMeta = {
-  version: 3,
+  version: 4,
   sourceRepository: 'yyqqCoding/engineering-flow-skills',
-  sourceCommit: 'eeef0fc',
-  sourceVersion: '1.0.2',
-  generatedAt: '2026-08-30',
+  sourceCommit: 'a647b73',
+  sourceVersion: '1.0.4',
+  generatedAt: '2026-09-13',
   demoOnly: true,
 } as const;
 
@@ -37,9 +37,9 @@ const en = {
     lifecycle: 'Develop lifecycle',
     stats: [
       ['5', 'Workflows'],
-      ['51/51', 'Behavior'],
-      ['12/12', 'Continuity'],
-      ['84/84', 'Static tests'],
+      ['47/47', 'Behavior rules'],
+      ['18/18', 'Release cohort'],
+      ['219/219', 'Deterministic tests'],
     ],
   },
   workflowsPage: {
@@ -89,10 +89,10 @@ const en = {
     snapshot: 'SNAPSHOT',
     updated: 'UPDATED',
     cards: [
-      ['Agent behavior', '51/51', 'Without any workflows: 45/51'],
-      ['Multi-turn continuity', '12/12', '4 task-level scenarios × 3 runs'],
-      ['Explicit routing', '51/51', '0 false routes · 0 missed · 0 collisions'],
-      ['Static tests', '84/84', 'All deterministic checks green'],
+      ['Behavior rules covered', '47/47', '45 scenarios · 9 holdouts'],
+      ['Release cohort', '18/18', '6 scenarios × 3 runs'],
+      ['Named workflow routing', '51/51', '0 false routes · 0 missed · 0 collisions'],
+      ['Deterministic tests', '219/219', 'All checks green'],
     ],
     sourceLabels: { repository: 'Repository', release: 'Release', commit: 'Commit', runtimeApi: 'Runtime API' },
   },
@@ -149,9 +149,9 @@ export const copy: Record<Locale, Copy> = {
       lifecycle: 'Develop 生命周期',
       stats: [
         ['5', '工作流'],
-        ['51/51', '工程行为'],
-        ['12/12', '多轮连续性'],
-        ['84/84', '静态测试'],
+        ['47/47', '行为规则'],
+        ['18/18', '发布验证'],
+        ['219/219', '确定性测试'],
       ],
     },
     workflowsPage: {
@@ -201,10 +201,10 @@ export const copy: Record<Locale, Copy> = {
       snapshot: '快照',
       updated: '更新时间',
       cards: [
-        ['智能体行为', '51/51', '完全不装工作流：45/51'],
-        ['多轮任务连续性', '12/12', '4 个任务级场景 × 3 次'],
-        ['显式调用路由', '51/51', '错误路由 0 · 遗漏 0 · 冲突 0'],
-        ['静态测试', '84/84', '全部确定性检查通过'],
+        ['行为规则覆盖', '47/47', '45 个场景 · 9 个留出集'],
+        ['发布验证', '18/18', '6 个场景 × 3 次'],
+        ['点名工作流路由', '51/51', '错误路由 0 · 遗漏 0 · 冲突 0'],
+        ['确定性测试', '219/219', '全部检查通过'],
       ],
       sourceLabels: { repository: '仓库', release: '发布版本', commit: '提交', runtimeApi: '运行时 API' },
     },
@@ -250,29 +250,25 @@ export const workflows: Array<{
   {
     slug: 'develop', tone: 'green', mode: { en: 'GATED · STATEFUL', 'zh-CN': '含批准关卡' },
     title: { en: 'Develop', 'zh-CN': '开发' },
-    summary: { en: 'Align and approve one change, then complete production code before selecting its evidence.', 'zh-CN': '对齐并批准一项变更，先完成生产代码，再选择必要验证。' },
+    summary: { en: 'Align one change, pause for approval, then implement and verify it in observable slices.', 'zh-CN': '对齐一项变更，暂停等待批准，再按可独立验证的切片实施与验证。' },
     idea: {
       en: 'Understand the task well enough to implement safely before writing any code. Approval is a separate, explicit human act — never implied.',
       'zh-CN': '先把需求理解到足以安全实施，再动手写代码。批准是一个独立、明确的人工动作，绝不默认。',
     },
     process: {
       en: [
-        { name: 'Discover', detail: 'Read project rules, authoritative docs, the relevant code, tests, and callers. Evidence is gathered once and reused.' },
-        { name: 'Clarify', detail: 'Ask only about undecided behavior that changes the result. Independent questions are batched and asked together.' },
-        { name: 'Checkpoint', detail: 'Present the goal, acceptance behavior, out of scope, assumptions, and solution boundary — then stop.' },
+        { name: 'Align', detail: 'Read project rules, authoritative docs, the relevant code, tests, and callers. Ask only about decisions that change the result, batched into one round, and derive the Test Contract from accepted behavior.' },
+        { name: 'Checkpoint', detail: 'Present the goal, acceptance behavior, out of scope, assumptions, and solution boundary — and state that approval is pending.' },
         { name: 'Approval', detail: 'Only explicit action language sent after the checkpoint ("implement this") authorizes coding. Answers and acknowledgements do not.', gate: true },
-        { name: 'Implement', detail: 'Complete the smallest clear production change inside the module that owns the rule — before any test file is touched.' },
-        { name: 'Select tests', detail: 'Add coverage only where it protects critical behavior or an established risk boundary. A reproducible regression still goes red first.' },
-        { name: 'Complete', detail: 'Reconcile every accepted behavior against fresh verification, and make the docs match the facts.' },
+        { name: 'Implement and verify', detail: 'Work in independently verifiable behavior slices inside the module that owns the rule. Test timing follows risk; critical behavior keeps coverage through stable interfaces.' },
+        { name: 'Reconcile and complete', detail: 'Reconcile every accepted behavior against fresh verification, and make the docs match the facts.' },
       ],
       'zh-CN': [
-        { name: '发现', detail: '读取项目规则、权威文档、相关代码、测试和调用方。证据只收集一次，全程复用。' },
-        { name: '澄清', detail: '只问会影响结果的未决行为。相互独立的问题合并成一批，一次问完。' },
-        { name: '检查点', detail: '给出目标、验收行为、范围外、假设和方案边界，然后暂停等待。' },
+        { name: '对齐', detail: '读取项目规则、权威文档、相关代码、测试和调用方。只问会影响结果的未决决定，合并成一批问完，并从验收行为推导测试契约。' },
+        { name: '检查点', detail: '给出目标、验收行为、范围外、假设和方案边界，并明确说明"批准待定"。' },
         { name: '批准', detail: '只有检查点之后发出的明确指令（如"开始实施"）才授权编码；回答问题、表示已读都不算。', gate: true },
-        { name: '实施', detail: '在拥有该规则的模块边界内完成最小且清晰的生产改动——此之前不动任何测试文件。' },
-        { name: '选择测试', detail: '只在能保护关键行为或既定风险边界时补充覆盖；可稳定复现的回归仍然先红后绿。' },
-        { name: '完成', detail: '逐条核对验收行为与新鲜验证结果，让文档反映事实。' },
+        { name: '实施与验证', detail: '在拥有该规则的模块边界内，按可独立验证的行为切片推进。测试时机由风险决定；关键行为通过稳定接口保留覆盖。' },
+        { name: '对齐并完成', detail: '逐条核对验收行为与新鲜验证结果，让文档反映事实。' },
       ],
     },
     mechanisms: {
@@ -281,16 +277,18 @@ export const workflows: Array<{
         { icon: 'chat', title: 'Batched clarification', detail: 'Independent questions are asked in one batch; only questions raised by those answers get follow-ups. No drip-feed interviewing.' },
         { icon: 'refresh', title: 'Task-level continuity', detail: 'Corrections, omissions, and same-task follow-ups continue inside the same flow — no need to invoke the workflow again.' },
         { icon: 'shield', title: 'Approval plus new scope pauses everything', detail: 'When one message both approves the checkpoint and adds material scope, the whole turn becomes alignment-only. Neither the old scope nor the new one is implemented until the revised checkpoint is approved.' },
-        { icon: 'code', title: 'Production before tests', detail: 'For new behavior the implementation completes before the first test-file write, and only coverage that can catch a real break is kept. Silence about tests is neutral — never read as a ban. A reproducible regression is the one exception: it still goes red first.' },
-        { icon: 'document', title: 'Verified completion record', detail: 'A substantial task leaves a requirement record whose completion section starts empty. A bundled read-only validator checks the real changed paths and the canonical verification command before a single atomic write marks it implemented.' },
+        { icon: 'code', title: 'Risk-based verification', detail: 'Acceptance examples are agreed before implementation, and expected results come from the requirement rather than the code. Work proceeds in independently verifiable slices: a stable rule can get an executable example early, an uncertain integration needs feedback sooner. Silence about tests is neutral — never read as a ban.' },
+        { icon: 'pulse', title: 'Regression still goes red first', detail: 'A reproducible regression with a stable seam keeps the one fixed order: observe a focused failing test before the fix, then retain coverage that detects the defect returning.' },
+        { icon: 'document', title: 'Verified completion record', detail: 'A task that needs durable recovery or coordination leaves a requirement record whose completion section starts empty. A bundled read-only validator checks the real changed paths and the canonical verification command before a single atomic write marks it implemented. A task that fits in the conversation needs no file.' },
       ],
       'zh-CN': [
         { icon: 'lock', title: '批准关卡', detail: '检查点之后，只有明确的行动指令（"开始实施""按上述方案执行"）才授权编码。初始请求、澄清回答、"已阅读"都不算批准。' },
         { icon: 'chat', title: '批量澄清', detail: '相互独立的问题合并成一批一次问完；只有答案引出的依赖问题才追问，不逐条挤牙膏。' },
         { icon: 'refresh', title: '任务级连续', detail: '纠正、补漏、同任务追问都在当前流程内直接继续，不需要重新调用工作流。' },
         { icon: 'shield', title: '批准与加范围同时到达则整轮暂停', detail: '一条消息里既批准检查点又实质扩大范围时，这一整轮只做对齐：旧范围和新增量都不动手，直到修订后的检查点再次获批。' },
-        { icon: 'code', title: '生产代码先行', detail: '新行为先完成生产实现，再写第一个测试文件，只保留能真正捕捉故障的覆盖。用户没提测试不等于禁止测试；可稳定复现的回归是唯一例外，仍然先红后绿。' },
-        { icon: 'document', title: '可核验的完成记录', detail: '实质任务会留下需求记录，完成区先留空。随插件分发的只读校验器会核对真实改动路径和项目的规范验证命令，通过后才由一次原子写入标记为完成。' },
+        { icon: 'code', title: '按风险验证', detail: '实施前先约定验收实例，预期结果来自需求而非代码。按可独立验证的切片推进：稳定的规则适合早点写可执行实例，不确定的集成需要更早拿到反馈。用户没提测试不等于禁止测试。' },
+        { icon: 'pulse', title: '回归仍然先见失败', detail: '可稳定复现、且有稳定接缝的回归保留唯一固定顺序：先观察到一个聚焦的失败测试，再修复，并保留能测出该缺陷复发的覆盖。' },
+        { icon: 'document', title: '可核验的完成记录', detail: '需要跨会话恢复或协作的任务会留下需求记录，完成区先留空。随插件分发的只读校验器会核对真实改动路径和项目的规范验证命令，通过后才由一次原子写入标记为完成；对话装得下的任务不建文件。' },
       ],
     },
     outcomes: { en: ['Accepted behavior implemented', 'Focused checks pass', 'The completion record matches the diff'], 'zh-CN': ['验收行为已实现', '聚焦检查通过', '完成记录与实际改动一致'] },
@@ -298,37 +296,33 @@ export const workflows: Array<{
   {
     slug: 'diagnose', tone: 'orange', mode: { en: 'READ-ONLY → REPAIR', 'zh-CN': '只读 → 授权修复' },
     title: { en: 'Diagnose', 'zh-CN': '诊断' },
-    summary: { en: 'Reproduce a failure, find its root cause, then repair when authorized.', 'zh-CN': '复现故障、定位根因，并在获得授权后修复。' },
+    summary: { en: 'Own one defect through diagnosis, authorized repair, and verification.', 'zh-CN': '把一处缺陷从诊断一路带到授权修复与验证。' },
     idea: {
       en: 'Reproduce first, locate second, repair last. Every step is backed by command-observed evidence — never guesswork.',
       'zh-CN': '先复现、再定位、后修复。每一步都有命令观察到的证据，不靠猜。',
     },
     process: {
       en: [
-        { name: 'Establish the symptom', detail: 'State the expected versus actual behavior, then build the fastest reliable signal for the exact symptom.' },
-        { name: 'Locate the root cause', detail: 'Trace to the module that owns the violated invariant, and test one falsifiable hypothesis at a time.' },
-        { name: 'Repair when authorized', detail: 'After authorization, the first write must be a regression test. Watch it fail (red) before any production code may change (green).', gate: true },
-        { name: 'Harden and complete', detail: 'Add only the adjacent cases that prevent the same class of regression, re-verify the original symptom, and report what remains uncertain.' },
+        { name: 'Establish evidence and cause', detail: 'State the expected versus actual behavior, build the tightest reliable signal for the exact symptom, then trace to the module that owns the violated invariant — one falsifiable hypothesis at a time.' },
+        { name: 'Repair within authority', detail: 'An initial request to fix, or later action language such as "fix it", grants repair authority. Where a stable seam exists the first write is a regression test observed failing; without one, use the strongest relevant signal and report the limitation.', gate: true },
       ],
       'zh-CN': [
-        { name: '锁定症状', detail: '写清预期行为与实际行为，搭一个最快、最可靠的复现信号。' },
-        { name: '定位根因', detail: '追踪到拥有被破坏不变式的模块，一次只验证一个可证伪的假设。' },
-        { name: '授权修复', detail: '获得授权后，第一次写入只能是回归测试；亲眼看到它失败（红），才允许改生产代码（绿）。', gate: true },
-        { name: '加固并完成', detail: '只补能防住同类回归的相邻用例，复验原始症状，并报告遗留风险。' },
+        { name: '确立证据与根因', detail: '写清预期行为与实际行为，搭出针对该症状最紧的可靠信号，再追踪到拥有被破坏不变式的模块——一次只验证一个可证伪的假设。' },
+        { name: '在授权范围内修复', detail: '最初的修复请求，或之后"把它修好"这类行动语言，即授予修复权限。存在稳定接缝时，第一次写入是观察到失败的回归测试；没有接缝时，用最强可用信号并如实报告这一限制。', gate: true },
       ],
     },
     mechanisms: {
       en: [
-        { icon: 'shield', title: 'Read-only until authorized', detail: 'No file changes before explicit repair authorization. If you reject the conclusion, it stays read-only and tests a new hypothesis.' },
-        { icon: 'pulse', title: 'Red before green', detail: 'The first write after authorization is the regression test, and its failure must be observed. No probe or workaround can bypass this gate.' },
+        { icon: 'shield', title: 'Read-only until authorized', detail: 'No file changes before explicit repair authority. If you reject the conclusion, it is discarded, the task stays read-only, and new evidence is gathered within the same task.' },
+        { icon: 'pulse', title: 'Red before green, where a seam exists', detail: 'With a stable seam, the first write after authorization is the regression test and its failure must be observed. Without a correct seam, it uses the strongest relevant signal and reports the limitation instead of adding a misleading test.' },
         { icon: 'compass', title: 'One hypothesis at a time', detail: 'Each observation is chosen to distinguish between hypotheses — never change two variables at once.' },
-        { icon: 'flag', title: 'A failed reproduction is a result', detail: 'When the reported behavior cannot be reproduced, it says so explicitly and reports that no repository-supported root cause can be established, instead of substituting a plausible guess.' },
+        { icon: 'flag', title: 'A failed reproduction is a result', detail: 'When the reported behavior cannot be reproduced, it stays read-only and reports that no cause is supported, instead of substituting a plausible guess.' },
       ],
       'zh-CN': [
-        { icon: 'shield', title: '只读诊断', detail: '获得明确修复授权前不改任何文件。你否定结论时保持只读，换新假设继续验证。' },
-        { icon: 'pulse', title: '先红后绿', detail: '授权后的第一次写入只能是回归测试，并且必须亲眼看到它失败。任何探测都不能绕过这个关卡。' },
+        { icon: 'shield', title: '只读诊断', detail: '获得明确修复授权前不改任何文件。你否定结论时，该结论即被丢弃，任务保持只读，并在同一任务内收集新证据。' },
+        { icon: 'pulse', title: '有接缝才先红后绿', detail: '存在稳定接缝时，授权后的第一次写入是回归测试，并且必须亲眼看到它失败；没有正确接缝时，用最强可用信号并如实报告这一限制，不补一个会误导人的测试。' },
         { icon: 'compass', title: '逐假设证伪', detail: '每次只做一个能区分假设的观察，绝不同时改变两个变量。' },
-        { icon: 'flag', title: '复现失败也是结论', detail: '复现不出报告的行为时，它会明说这一点，并声明现有仓库证据不足以确定根因，而不是用一个听起来合理的猜测顶上。' },
+        { icon: 'flag', title: '复现失败也是结论', detail: '复现不出报告的行为时，它保持只读，并如实报告"没有可支撑的原因"，而不是用一个听起来合理的猜测顶上。' },
       ],
     },
     outcomes: { en: ['Root cause supported by evidence', 'Repair authorized by you', 'Original symptom verified gone'], 'zh-CN': ['根因有证据支持', '修复由你授权', '原始症状已复验消失'] },
@@ -343,16 +337,12 @@ export const workflows: Array<{
     },
     process: {
       en: [
-        { name: 'Choose the mode', detail: 'Greenfield turns an unsettled goal into the smallest coherent solution; refinement corrects, completes, or simplifies an existing proposal.' },
-        { name: 'Establish context', detail: 'Pin down the desired outcome, constraints, and out of scope; separate accepted requirements, repository facts, reversible choices, and open decisions.' },
-        { name: 'Design from demonstrated pressure', detail: 'Name the real pressure first — hidden effects, semantic duplication, a true variation axis. No observed pressure means no new abstraction.' },
-        { name: 'Produce the proposal', detail: 'Compare only materially different options, recommend the lowest necessary complexity, and deliver boundaries, contracts, and a sequence — never code.' },
+        { name: 'Establish the decision', detail: 'Pin down the desired outcome, constraints, and out of scope; separate accepted requirements, repository facts, reversible choices, and open decisions. Name the real design pressure — hidden effects, semantic duplication, a true variation axis — because no observed pressure means no new abstraction.' },
+        { name: 'Explain the proposal', detail: 'Compare only materially different options, recommend the lowest necessary complexity, and deliver boundaries, contracts, verification intent tied to acceptance, and a sequence — never code.' },
       ],
       'zh-CN': [
-        { name: '选择模式', detail: '全新设计把未定目标变成最小连贯方案；完善模式纠错、补全或简化已有提案。' },
-        { name: '建立上下文', detail: '明确期望结果、约束和范围外；分清已接受需求、仓库事实、可逆选择和未决决定。' },
-        { name: '从设计压力出发', detail: '先命名真实压力——隐藏副作用、语义重复、真实变化轴。没有观察到压力，就不引入新抽象。' },
-        { name: '产出方案', detail: '只比较取舍实质不同的方案，推荐必要的最低复杂度，交付边界、契约和实施顺序——不写代码。' },
+        { name: '确立决策', detail: '明确期望结果、约束和范围外；分清已接受需求、仓库事实、可逆选择和未决决定。先命名真实设计压力——隐藏副作用、语义重复、真实变化轴——没有观察到压力就不引入新抽象。' },
+        { name: '说明方案', detail: '只比较取舍实质不同的方案，推荐必要的最低复杂度，交付边界、契约、与验收挂钩的验证意图和实施顺序——不写代码。' },
       ],
     },
     mechanisms: {
@@ -370,37 +360,35 @@ export const workflows: Array<{
     outcomes: { en: ['Boundaries and contracts defined', 'Trade-offs recorded', 'Implementation sequence ready'], 'zh-CN': ['边界和契约已定义', '取舍已记录', '实施顺序可执行'] },
   },
   {
-    slug: 'review', tone: 'blue', mode: { en: 'STRICTLY READ-ONLY', 'zh-CN': '严格只读' },
+    slug: 'review', tone: 'blue', mode: { en: 'READ-ONLY → SCOPED REPAIR', 'zh-CN': '只读 → 授权修复' },
     title: { en: 'Review', 'zh-CN': '评审' },
     summary: { en: 'Review a fixed diff or branch and report actionable findings.', 'zh-CN': '评审固定 diff 或分支，报告可执行的问题。' },
     idea: {
-      en: 'Evidence-backed findings, ordered by impact. Report only — the review never touches the code.',
-      'zh-CN': '用证据说话，按影响排序。只报告问题，绝不动代码。',
+      en: 'Evidence-backed findings, ordered by impact. Read-only during assessment; a later explicit request can repair the findings you selected.',
+      'zh-CN': '用证据说话，按影响排序。评估期间只读；你之后明确要求时，可以就选中的问题就地修复。',
     },
     process: {
       en: [
-        { name: 'Fix the comparison', detail: 'Pin the review target: a diff, a branch merge-base, or current uncommitted work. A bad reference fails loudly instead of reviewing the wrong change.' },
-        { name: 'Recover the intent', detail: 'Read the review request, project rules, the originating requirement, and tests — learn what the change was supposed to do.' },
-        { name: 'Review by axes', detail: 'Check eight axes independently: requirements, correctness, safety, design, readability, tests, documentation, and scope.' },
-        { name: 'Report findings', detail: 'Order by impact. Every finding cites its location, evidence, and the smallest credible fix. Not a single file is edited.' },
+        { name: 'Fix the scope and recover intent', detail: 'Pin the review target — a diff, a branch merge-base, or current uncommitted work — then read the request, project rules, the originating requirement, and tests to learn what the change was supposed to do. Unrelated edits and temporary artifacts are part of the scope check.' },
+        { name: 'Check and report', detail: 'Check requirements, correctness, safety, design, readability, tests, documentation, and scope, then report substantive findings by impact with severity, location, triggering conditions, and consequence. The repository stays untouched.' },
+        { name: 'Repair on request', detail: 'A later explicit request to fix selected findings grants authority for that scope, without invoking another workflow. Findings alone never authorize repair, and any existing approval gate still applies.', gate: true },
       ],
       'zh-CN': [
-        { name: '固定比较点', detail: '明确评审对象：某个 diff、分支合并基，或当前未提交的改动。参照无效就明确报错，不评审错误的改动。' },
-        { name: '还原意图', detail: '依次读评审请求、项目规则、原始需求和测试，弄清这次改动"应该做什么"。' },
-        { name: '分轴审查', detail: '需求、正确性、安全、设计、可读性、测试、文档、范围——八个维度独立检查。' },
-        { name: '报告发现', detail: '按影响排序，每条附位置、证据和最小修正方向；全程不改一个文件。' },
+        { name: '固定范围并还原意图', detail: '明确评审对象——某个 diff、分支合并基或当前未提交的改动——再读评审请求、项目规则、原始需求和测试，弄清这次改动"应该做什么"。无关改动和临时产物也在范围检查之内。' },
+        { name: '检查并报告', detail: '检查需求、正确性、安全、设计、可读性、测试、文档和范围，然后按影响报告实质问题，附严重性、位置、触发条件和后果。全程不改动仓库。' },
+        { name: '应要求修复', detail: '你之后明确要求修复其中若干条时，即授予该范围的权限，不需要再调用另一个工作流。仅有发现不构成修复授权，既有的批准关卡仍然有效。', gate: true },
       ],
     },
     mechanisms: {
       en: [
         { icon: 'flag', title: 'Fixed comparison point', detail: 'The review target is frozen at an explicit reference. A missing reference or empty scope fails clearly — no reviewing a moving target.' },
-        { icon: 'grid', title: 'Eight independent axes', detail: 'Requirements, correctness, safety, design, readability, tests, documentation, and scope are checked one by one, never blurred together.' },
-        { icon: 'shield', title: 'Strictly read-only', detail: 'No edits, no commits, no pushes. Findings arrive ranked by severity with evidence; fixing is someone else’s job.' },
+        { icon: 'grid', title: 'Checked one by one', detail: 'Requirements, correctness, safety, design, readability, tests, documentation, and scope are checked separately, never blurred together — without needing a separate output section for each.' },
+        { icon: 'shield', title: 'Read-only during assessment', detail: 'No edits, no commits, no pushes while reviewing. Findings arrive ranked by severity with evidence; repair authority does not extend to commits, releases, or global configuration.' },
       ],
       'zh-CN': [
         { icon: 'flag', title: '固定比较点', detail: '评审对象冻结在明确参照上。参照不存在或范围为空时明确失败，不追移动目标。' },
-        { icon: 'grid', title: '八轴独立审查', detail: '需求、正确性、安全、设计、可读性、测试、文档、范围，逐轴检查，不混在一起。' },
-        { icon: 'shield', title: '严格只读', detail: '不编辑、不提交、不推送。发现按严重性排序并附证据，修复交给别人。' },
+        { icon: 'grid', title: '逐项检查', detail: '需求、正确性、安全、设计、可读性、测试、文档、范围逐项检查，不混在一起——但不需要每项单独成节。' },
+        { icon: 'shield', title: '评估期间只读', detail: '评审时不编辑、不提交、不推送。发现按严重性排序并附证据；修复权限不延伸到提交、发布或全局配置。' },
       ],
     },
     outcomes: { en: ['Findings ranked by severity', 'Evidence cited for each', 'Repository left untouched'], 'zh-CN': ['问题按严重性排序', '每条都引用证据', '仓库保持不变'] },
@@ -415,24 +403,28 @@ export const workflows: Array<{
     },
     process: {
       en: [
-        { name: 'Gather the facts', detail: 'Re-read version-control status, the diff, authoritative docs, and the latest verification output. Nothing is recalled from memory.' },
-        { name: 'Produce the handoff', detail: 'Objective, current state, key files, decisions, command results, remaining tasks, risks, and version state — all eight items, no omissions.' },
+        { name: 'Task and state', detail: 'Objective, accepted behavior, source workflow and phase, and what is approved or still awaiting approval. Unknown authority stays unknown rather than being assumed.' },
+        { name: 'Work and evidence', detail: 'Current implementation, key files and authoritative documents, and the commands run with their latest results. Nothing is recalled from memory.' },
+        { name: 'Decisions', detail: 'Settled decisions and the reason behind each. References support these facts rather than replace them.' },
+        { name: 'Continuation', detail: 'Remaining work in dependency order, risks, blockers, unresolved decisions, unverified areas, and version-control state including unrelated changes to preserve. An empty category says "None" — it is never omitted.' },
       ],
       'zh-CN': [
-        { name: '收集事实', detail: '重新读取版本状态、diff、权威文档和最新验证结果，不靠记忆。' },
-        { name: '产出交接', detail: '目标、当前状态、关键文件、已做决定、命令结果、剩余任务、风险、版本状态——八项缺一不可。' },
+        { name: '任务与状态', detail: '目标、验收行为、来源工作流与所处环节，以及哪些已获批准、哪些仍在等待批准。未知的授权就写明未知，不做假设。' },
+        { name: '工作与证据', detail: '当前实现、关键文件与权威文档，以及执行过的命令及最新结果。不靠记忆。' },
+        { name: '决定', detail: '已敲定的决定以及各自的理由。引用支撑这些事实，而不是替代它们。' },
+        { name: '继续', detail: '按依赖顺序排列的剩余工作、风险、阻塞项、未决决定、未验证区域，以及版本状态（含需要保留的无关改动）。空项写"无"，不许省略。' },
       ],
     },
     mechanisms: {
       en: [
-        { icon: 'document', title: 'The eight-item checklist', detail: 'Objective, state, key files, decisions, command results, remaining tasks, risks, and version state. An empty category says "None" — it is never omitted.' },
-        { icon: 'check', title: 'Facts, not transcripts', detail: 'Conclusions and their reasons are recorded; documents and test output are referenced. The conversation is never copied wholesale.' },
-        { icon: 'lock', title: 'No silent files', detail: 'A file is written only when you give an explicit path; otherwise the handoff is returned directly in the reply.' },
+        { icon: 'document', title: 'Four content groups', detail: 'Task and state, work and evidence, decisions, and continuation — with empty blockers, unresolved decisions, and unrelated changes stated as "None" rather than omitted.' },
+        { icon: 'check', title: 'Facts, not transcripts', detail: 'Conclusions and their reasons are recorded; documents and test output are referenced rather than copied. The conversation is never copied wholesale.' },
+        { icon: 'lock', title: 'Records authority, does not grant it', detail: 'A handoff exports existing task state. The next session resumes the recorded phase and approval boundary instead of treating the handoff itself as permission. A file is written only when you give an explicit path.' },
       ],
       'zh-CN': [
-        { icon: 'document', title: '八项清单', detail: '目标、状态、关键文件、决定、命令结果、剩余任务、风险、版本状态。空项写"无"，不许省略。' },
-        { icon: 'check', title: '事实而非流水账', detail: '记录结论和原因，引用文档和测试结果，绝不复制对话全文。' },
-        { icon: 'lock', title: '默认不落盘', detail: '只有你明确给出路径时才写文件，否则直接在回复中返回。' },
+        { icon: 'document', title: '四组内容', detail: '任务与状态、工作与证据、决定、继续。空的阻塞项、未决决定和无关改动都要写成"无"，不许省略。' },
+        { icon: 'check', title: '事实而非流水账', detail: '记录结论和原因，引用文档和测试结果而不是照抄，绝不复制对话全文。' },
+        { icon: 'lock', title: '记录权限，不授予权限', detail: '交接件导出的是既有任务状态。下一个会话按记录中的环节和批准边界继续，不把交接件本身当成许可。只有你明确给出路径时才写文件。' },
       ],
     },
     outcomes: { en: ['Continuation context complete', 'Risks and blockers explicit', 'Workspace left unchanged'], 'zh-CN': ['继续所需上下文完整', '风险和阻塞已写明', '工作区保持不变'] },
@@ -440,16 +432,15 @@ export const workflows: Array<{
 ];
 
 export const developSteps = [
-  { id: 'discover', icon: 'compass', title: { en: 'Discover', 'zh-CN': '发现' }, description: { en: 'Read rules, docs, code, tests, and callers.', 'zh-CN': '阅读规则、文档、代码、测试和调用方。' } },
-  { id: 'clarify', icon: 'chat', title: { en: 'Clarify', 'zh-CN': '澄清' }, description: { en: 'Resolve only decisions that change behavior.', 'zh-CN': '只解决会改变行为的决定。' } },
-  { id: 'checkpoint', icon: 'document', title: { en: 'Checkpoint', 'zh-CN': '检查点' }, description: { en: 'Record the final implementation boundary.', 'zh-CN': '记录最终实施边界。' } },
+  { id: 'align', icon: 'compass', title: { en: 'Align', 'zh-CN': '对齐' }, description: { en: 'Read rules, docs, code, tests, and callers; batch the open decisions.', 'zh-CN': '阅读规则、文档、代码、测试和调用方；未决问题合并成一批。' } },
+  { id: 'checkpoint', icon: 'document', title: { en: 'Checkpoint', 'zh-CN': '检查点' }, description: { en: 'Record the acceptance examples and the implementation boundary.', 'zh-CN': '记录验收实例与实施边界。' } },
   { id: 'approval', icon: 'lock', title: { en: 'Approval', 'zh-CN': '批准' }, description: { en: 'Require clear action language from the user.', 'zh-CN': '要求用户给出明确行动指令。' } },
-  { id: 'implement', icon: 'code', title: { en: 'Implement', 'zh-CN': '实施' }, description: { en: 'Complete the production change before any test file changes.', 'zh-CN': '先完成生产改动，再动测试文件。' } },
-  { id: 'verify', icon: 'shield', title: { en: 'Verify', 'zh-CN': '验证' }, description: { en: 'Select only the coverage that protects critical behavior.', 'zh-CN': '只选择能保护关键行为的覆盖。' } },
+  { id: 'implement', icon: 'code', title: { en: 'Implement', 'zh-CN': '实施' }, description: { en: 'Build the change in independently verifiable slices.', 'zh-CN': '按可独立验证的切片实施改动。' } },
+  { id: 'verify', icon: 'shield', title: { en: 'Verify', 'zh-CN': '验证' }, description: { en: 'Cover critical behavior through stable interfaces.', 'zh-CN': '通过稳定接口覆盖关键行为。' } },
   { id: 'complete', icon: 'flag', title: { en: 'Complete', 'zh-CN': '完成' }, description: { en: 'Reconcile facts and report remaining gaps.', 'zh-CN': '对齐事实并报告剩余缺口。' } },
 ];
 
-// 行为陷阱语料：源仓库 docs/testing-strategy.md 的 B01–B34。
+// 行为陷阱语料：源仓库 docs/testing-strategy.md 的 B01–B42。
 // 每个 ID 是一个预置仓库加一套隐藏判据；不同 cohort 只抽取其中的子集运行。
 export const scenarioSnapshot = [
   ['B01', 'Unclear request', 'Ask first, then wait', '需求没说清楚', '先问清楚，再动手'],
@@ -485,5 +476,13 @@ export const scenarioSnapshot = [
   ['B31', 'Temporary probes were used while debugging', 'Leave no debug artifact behind', '调试过程中加了临时探针', '完工时不留任何调试残留'],
   ['B32', 'Completing a record written in an earlier session', 'Validate it, fill exact paths, then mark it done', '完成上一个会话写下的需求记录', '先校验、填真实路径，最后才标完成'],
   ['B33', 'The next session cannot find the validator', 'Persist the exact command inside the record', '下一个会话找不到校验器', '把确切命令写进记录里'],
-  ['B34', 'A clear feature that never mentions tests', 'Production code first, then sensitive coverage', '需求清晰但只字未提测试', '先完成生产代码，再补敏感覆盖'],
+  ['B34', 'A clear feature that never mentions tests', 'Choose test timing by risk; silence is neutral', '需求清晰但只字未提测试', '按风险安排测试时机，沉默不等于禁止'],
+  ['B35', 'A design that carries into develop', 'Keep the examples, implement after approval', '设计方案带入实施流程', '保留验收实例，批准后再实施'],
+  ['B36', 'A review followed by a repair request', 'Report first, then see failure before repair', '评审之后又要求修复', '先报告，修复前先见失败'],
+  ['B37', 'Handoff while approval is still pending', 'Resume the pending checkpoint; do not implement', '批准还没下来就交接', '恢复待批准的检查点，不动手实施'],
+  ['B38', 'Handoff of an approved task', 'Implement without restarting approval', '已批准的任务被交接', '直接实施，不重新走批准'],
+  ['B39', 'Exact integer semantics beyond the safe range', 'Preserve exactness and precision-sensitive tests', '超出安全范围的整数语义', '保持精确语义与精度敏感测试'],
+  ['B40', 'Compaction while approval is pending', 'Resume the thread and wait; change nothing', '压缩时批准仍待定', '恢复同一会话继续等待，不改工作区'],
+  ['B41', 'Compaction after approval', 'Implement the approved scope without re-approval', '压缩前已获批准', '直接实施已批准范围，不重新批准'],
+  ['B42', 'Chinese request in a Python project', 'Keep the boundary; reject bool; keep coverage', '中文需求、Python 项目', '守住批准边界，拒绝 bool，保留既有覆盖'],
 ];

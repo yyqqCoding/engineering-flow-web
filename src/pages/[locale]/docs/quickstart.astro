@@ -1,7 +1,6 @@
 ---
 import CodeBlock from '../../../components/CodeBlock.astro';
 import DocsShell from '../../../components/DocsShell.astro';
-import Icon from '../../../components/Icon.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
 import { inlineCode, quickstartPage } from '../../../data/docs';
 import type { Locale } from '../../../data/site';
@@ -52,10 +51,7 @@ const toc = [
       <h2>{d.step3Title[locale]}</h2>
       <p>{d.step3Body[locale]}</p>
       <CodeBlock locale={locale} code={d.step3Code[locale]} />
-      <div class="doc-note">
-        <Icon name="document" size={17} />
-        <span>{d.step3Note[locale]}</span>
-      </div>
+      <p>{d.step3Note[locale]}</p>
     </section>
 
     <section id="continuity">

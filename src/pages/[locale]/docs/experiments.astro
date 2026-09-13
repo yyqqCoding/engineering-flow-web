@@ -40,7 +40,6 @@ const toc = [
 
     <section id="results">
       <h2>{d.resultsTitle[locale]}</h2>
-      <p>{d.resultsNote[locale]}</p>
       <div class="result-grid">
         {cards.map((card) => (
           <div class="result-cell">
@@ -57,7 +56,6 @@ const toc = [
 
     <section id="lessons">
       <h2>{d.lessonsTitle[locale]}</h2>
-      <p>{d.lessonsIntro[locale]}</p>
       <div class="lesson-list">
         {philosophyPage.lessons.map((lesson) => (
           <article>
@@ -69,15 +67,10 @@ const toc = [
           </article>
         ))}
       </div>
-      <div class="doc-note">
-        <Icon name="flag" size={17} />
-        <span>{philosophyPage.lessonsConclusion[locale]}</span>
-      </div>
     </section>
 
     <section id="chain">
       <h2>{d.chainTitle[locale]}</h2>
-      <p>{d.chainIntro[locale]}</p>
       <ol class="chain-list">
         {d.chain.map((round) => (
           <li class:list={['chain-step', round.score.startsWith('6/') ? 'cleared' : '']}>
@@ -89,15 +82,10 @@ const toc = [
           </li>
         ))}
       </ol>
-      <div class="doc-note">
-        <Icon name="check" size={17} />
-        <span>{d.chainConclusion[locale]}</span>
-      </div>
     </section>
 
     <section id="policy">
       <h2>{d.policyTitle[locale]}</h2>
-      <p>{d.policyIntro[locale]}</p>
       <ol class="chain-list">
         {d.policy.map((round) => (
           <li class:list={['chain-step', { cleared: round.score === 'pass' }]}>
@@ -109,10 +97,6 @@ const toc = [
           </li>
         ))}
       </ol>
-      <div class="doc-note">
-        <Icon name="check" size={17} />
-        <span>{d.policyConclusion[locale]}</span>
-      </div>
     </section>
 
     <section id="limits">
@@ -120,10 +104,6 @@ const toc = [
       <ul class="doc-list">
         {d.limits.map((item) => <li>{item[locale]}</li>)}
       </ul>
-      <div class="doc-note warn">
-        <Icon name="shield" size={17} />
-        <span>{d.limitsWarning[locale]}</span>
-      </div>
     </section>
   </DocsShell>
 </SiteLayout>

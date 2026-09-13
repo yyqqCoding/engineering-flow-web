@@ -66,7 +66,6 @@ const toc = [
 
       <section id="stages">
         <h2>{l.stages[locale]}</h2>
-        <p>{l.stagesIntro[locale]}</p>
         <ol class="stage-rail">
           {stages.map((stage, index) => (
             <li class:list={['stage', { gate: stage.gate }]}>
@@ -104,7 +103,6 @@ const toc = [
 
       <section id="example">
         <h2>{l.example[locale]}</h2>
-        <p>{l.exampleIntro[locale]}</p>
         <CodeBlock locale={locale} code={guide.example[locale].prompt} />
         <ol class="turn-list">
           {guide.example[locale].turns.map((turn) => (
